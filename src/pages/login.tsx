@@ -1,23 +1,16 @@
 import { useState } from "react";
-import axios from "axios";
 import { useAuth } from "../components/isLoggedIn";
-const api = axios.create({
-    baseURL: `${import.meta.env.VITE_API_URL}`,
-    withCredentials: true,
-    withXSRFToken: true,
-    headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-    }
-});
+import { authApi } from "../api/auth";
 
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const { user } = useAuth();
+    
     if (user) {
         return <p>You are already logged in as {user.name}.</p>;
     }
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -27,9 +20,9 @@ const Login = () => {
         };
 
         try {
-            await api.get('/sanctum/csrf-cookie');
-            await api.post(`/api/auth/login`, formData);
-
+            await authApi.login(formData.email, formData.password);
+            // Optionally refresh the auth context or redirect
+            window.location.reload();
         } catch (error: any) {
             console.error("Login failed:", error.response?.data || error.message);
         }

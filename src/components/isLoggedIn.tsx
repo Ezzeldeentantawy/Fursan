@@ -7,7 +7,7 @@ import {
     useCallback,
     ReactNode
 } from "react";
-import axios from "axios";
+import { authApi } from '../api/auth';
 
 // 1. Define strict types instead of 'any'
 interface User {
@@ -32,24 +32,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const api = axios.create({
-        baseURL: `${import.meta.env.VITE_API_URL}`,
-        withCredentials: true,
-        withXSRFToken: true,
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-        }
-    });
-
-
 
     // 2. Wrap the check in useCallback so it's stable
     const checkAuth = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await api.get<User>(`/api/user`);
-            setUser(res.data);
+            const user = await authApi.checkAuth();
+            setUser(user);
             setError(null);
         } catch (err: any) {
             setUser(null);
@@ -66,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const logout = async () => {
         try {
-            await axios.post("/api/logout");
+            await authApi.logout();
             setUser(null);
         } catch (err) {
             console.error("Logout failed", err);

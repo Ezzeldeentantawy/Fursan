@@ -18,7 +18,7 @@ const AdminGuard = () => {
     // Authorization: Check if the user has the 'admin' role
     // Match this with your Laravel 'role:admin' middleware logic
     if (user.role !== 'admin') {
-        return <Navigate to="/unauthorized" replace />;
+        return <Navigate to="/" state={{ error: "You don't have permission to access this page" }} replace />;
     }
 
     // If everything is fine, render the child routes

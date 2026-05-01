@@ -1,16 +1,7 @@
 import { useState } from "react";
-import axios from "axios";
 import { useAuth } from "../components/isLoggedIn";
+import { authApi } from "../api/auth";
 import CTASection from "../components/CTASection";
-const api = axios.create({
-    baseURL: `${import.meta.env.VITE_API_URL}`,
-    withCredentials: true,
-    withXSRFToken: true,
-    headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-    }
-});
 
 const Register = () => {
     const [name, setName] = useState("");
@@ -18,6 +9,7 @@ const Register = () => {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const { user } = useAuth();
+    
     if (user) {
         return (
             <div className="min-h-[60vh] flex items-center justify-center bg-white px-4">
@@ -46,7 +38,7 @@ const Register = () => {
                         </button>
 
                         <button
-                            onClick={() => {/* add logout logic here */ }}
+                            onClick={() => authApi.logout().then(() => window.location.reload())}
                             className="w-full bg-transparent border border-[#2A69C6] text-[#2A69C6] py-3 rounded-xl font-['Roboto'] font-medium hover:bg-white transition-colors"
                         >
                             Logout
@@ -56,6 +48,7 @@ const Register = () => {
             </div>
         );
     }
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -68,13 +61,13 @@ const Register = () => {
             name,
             email,
             password,
-            password_confirmation: confirmPassword
+            passwordConfirmation: confirmPassword
         };
 
         try {
-            await api.get('/sanctum/csrf-cookie');
-            await api.post(`/api/auth/register/candidate`, formData);
-
+            await authApi.register(formData);
+            // Optionally redirect to login or show success message
+            alert("Registration successful! Please login.");
         } catch (error: any) {
             console.error("Registration failed:", error.response?.data || error.message);
         }
