@@ -1,0 +1,38 @@
+import React from 'react';
+import { useBuilderStore } from '../store/builderStore';
+import { DroppableNode } from './DroppableNode';
+import { BuilderNode } from '../utils/nodeFactory';
+import { CONTAINER_TYPES } from '../DynamicPages';
+
+interface NodeRendererProps {
+  node: BuilderNode;
+}
+
+export const NodeRenderer: React.FC<NodeRendererProps> = ({ node }) => {
+  const selectedId = useBuilderStore((state) => state.selectedId);
+  const isPreviewMode = useBuilderStore((state) => state.isPreviewMode);
+  
+  const isSelected = selectedId === node.id;
+  const isContainer = CONTAINER_TYPES.includes(node.type);
+
+  // Recursively render children
+  const renderChildren = () => {
+    if (!isContainer || !node.children || node.children.length === 0) {
+      return null;
+    }
+
+    return node.children.map((child) => (
+      <NodeRenderer key={child.id} node={child} />
+    ));
+  };
+
+  return (
+    <DroppableNode
+      node={node}
+      isSelected={isSelected}
+      isPreviewMode={isPreviewMode}
+    >
+      {renderChildren()}
+    </DroppableNode>
+  );
+};
