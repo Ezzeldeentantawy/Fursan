@@ -6,9 +6,12 @@ interface ToolbarProps {
   pageTitle?: string;
   onSave: () => void;
   isSaving: boolean;
+  onToggleNavigator?: () => void;
+  showNavigator?: boolean;
+  onToggleTemplates?: () => void;
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, onToggleNavigator, showNavigator, onToggleTemplates }) => {
   const isPreviewMode = useBuilderStore((state) => state.isPreviewMode);
   const setPreviewMode = useBuilderStore((state) => state.setPreviewMode);
   const resetTree = useBuilderStore((state) => state.resetTree);
@@ -139,6 +142,36 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving })
         >
           Clear
         </button>
+
+        <div className="h-6 w-px bg-gray-300 mx-2" />
+
+        {/* Navigator Toggle */}
+        {onToggleNavigator && (
+          <button
+            type="button"
+            onClick={onToggleNavigator}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              showNavigator
+                ? 'bg-blue-500 text-white hover:bg-blue-600'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+            title="Toggle Layers Panel"
+          >
+            ☰ Layers
+          </button>
+        )}
+
+        {/* Templates Toggle */}
+        {onToggleTemplates && (
+          <button
+            type="button"
+            onClick={onToggleTemplates}
+            className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            title="Browse Templates"
+          >
+            📋 Templates
+          </button>
+        )}
       </div>
 
       {/* Right Section - Save */}

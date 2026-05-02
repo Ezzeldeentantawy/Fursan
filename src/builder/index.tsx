@@ -5,7 +5,7 @@
  * Built with React, @dnd-kit, Zustand, and TipTap.
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   DndContext,
@@ -23,6 +23,10 @@ import { WidgetPanel } from './components/WidgetPanel';
 import { CanvasInner } from './components/Canvas';
 import { PropsPanel } from './components/PropsPanel';
 import { Toolbar } from './components/Toolbar';
+import { Navigator } from './components/Navigator';
+import { DraggablePanel } from './components/DraggablePanel';
+import { breakpoints, Breakpoint } from './DynamicPages';
+import { TemplatePicker } from './components/TemplatePicker';
 import pagesApi from '../api/pagesApi';
 import { createNode, isContainer } from './utils/nodeFactory';
 import { CONTAINER_TYPES } from './DynamicPages';
@@ -47,6 +51,18 @@ export const Builder: React.FC = () => {
   const [activeDragType, setActiveDragType] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
+  // Breakpoint state for preview
+  const [activeBp, setActiveBp] = useState<Breakpoint>('md');
+
+  // Navigator panel visibility
+  const [showNavigator, setShowNavigator] = useState(false);
+
+  // Template picker visibility
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  // Ref to prevent multiple simultaneous loads
+  const isLoadingRef = useRef(false);
+
   // Configure sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -57,6 +73,14 @@ export const Builder: React.FC = () => {
 
   // Load page data on mount
   useEffect(() => {
+    // Prevent multiple simultaneous loads
+    if (isLoadingRef.current) {
+      console.log('[Builder] Load already in progress, skipping');
+      return;
+    }
+    
+    let cancelled = false;
+    
     const loadPage = async () => {
       if (!id || id === 'new') {
         resetTree();
@@ -64,9 +88,17 @@ export const Builder: React.FC = () => {
         return;
       }
 
+      // Set loading ref BEFORE any async operations
+      isLoadingRef.current = true;
       setIsLoading(true);
       try {
         const response = await pagesApi.getOne(id);
+        
+        // Check if this request was cancelled (component unmounted or id changed)
+        if (cancelled) {
+          return;
+        }
+        
         const pageData = response.data?.data || response.data;
         
         if (pageData) {
@@ -74,8 +106,24 @@ export const Builder: React.FC = () => {
           
           // Try to load from content.elements (new format)
           if (pageData.content && pageData.content.elements) {
-            const elements = pageData.content.elements;
+            let elements = pageData.content.elements;
+            
             if (Array.isArray(elements) && elements.length > 0) {
+              // Deduplicate elements by ID to prevent duplicates
+              const seenIds = new Set();
+              const uniqueElements = elements.filter((el: any) => {
+                if (!el.id || seenIds.has(el.id)) {
+                  console.warn('[Builder] Duplicate or missing ID detected:', el);
+                  return false;
+                }
+                seenIds.add(el.id);
+                return true;
+              });
+              
+              if (uniqueElements.length !== elements.length) {
+                console.warn(`[Builder] Removed ${elements.length - uniqueElements.length} duplicate elements`);
+              }
+              
               const rootTree: BuilderNode = {
                 id: 'root',
                 type: 'container',
@@ -87,7 +135,7 @@ export const Builder: React.FC = () => {
                   padding: '16px', direction: 'column', align: 'stretch',
                   justify: 'flex-start', gap: '16px',
                 },
-                children: elements,
+                children: uniqueElements,
               };
               setTree(rootTree);
               return;
@@ -102,10 +150,21 @@ export const Builder: React.FC = () => {
                 : pageData.blocks_en;
               
               if (Array.isArray(parsedTree)) {
+                // Deduplicate elements for blocks_en too
+                const seenIds = new Set();
+                const uniqueTree = parsedTree.filter((el: any) => {
+                  if (!el.id || seenIds.has(el.id)) {
+                    console.warn('[Builder] Duplicate or missing ID in blocks_en:', el);
+                    return false;
+                  }
+                  seenIds.add(el.id);
+                  return true;
+                });
+                
                 const rootTree: BuilderNode = {
                   id: 'root', type: 'container',
                   props: { bgColor: 'transparent', padding: '16px', direction: 'column', align: 'stretch', justify: 'flex-start', gap: '16px' },
-                  children: parsedTree,
+                  children: uniqueTree,
                 };
                 setTree(rootTree);
               } else {
@@ -121,14 +180,24 @@ export const Builder: React.FC = () => {
           resetTree();
         }
       } catch (error) {
-        console.error('Failed to load page:', error);
-        alert('Failed to load page. Please try again.');
+        if (!cancelled) {
+          console.error('Failed to load page:', error);
+          alert('Failed to load page. Please try again.');
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+          isLoadingRef.current = false;
+        }
       }
     };
 
     loadPage();
+    
+    // Cleanup function to cancel the request if component unmounts or id changes
+    return () => {
+      cancelled = true;
+    };
   }, [id, setTree, resetTree]);
 
   // Drag handlers
@@ -214,11 +283,33 @@ export const Builder: React.FC = () => {
     setIsSaving(true);
     try {
       const elements = tree.children || [];
-      const contentData = { elements };
+      
+      // Deduplicate elements before saving
+      const seenIds = new Set();
+      const uniqueElements = elements.filter((el: any) => {
+        if (!el.id || seenIds.has(el.id)) {
+          console.warn('[Builder] Removing duplicate element before save:', el);
+          return false;
+        }
+        seenIds.add(el.id);
+        return true;
+      });
+      
+      if (uniqueElements.length !== elements.length) {
+        console.warn(`[Builder] Removed ${elements.length - uniqueElements.length} duplicates before saving`);
+      }
+      
+      const contentData = { elements: uniqueElements };
       
       await pagesApi.update(id, {
         content: JSON.stringify(contentData),
       });
+      
+      // Update the tree with deduplicated elements
+      if (uniqueElements.length !== elements.length) {
+        const updatedTree = { ...tree, children: uniqueElements };
+        setTree(updatedTree);
+      }
       
       alert('Page saved successfully!');
     } catch (error) {
@@ -227,7 +318,46 @@ export const Builder: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [id, tree]);
+  }, [id, tree, setTree]);
+
+  // Template handlers
+  const handleTemplateSelect = (template: any) => {
+    // Deep clone the template tree to avoid mutations
+    const clonedTree = JSON.parse(JSON.stringify(template.tree));
+    setTree(clonedTree);
+    setShowTemplates(false);
+  };
+
+  const handleSaveAsTemplate = (name: string) => {
+    const currentTree = useBuilderStore.getState().tree;
+    
+    // Create a new template from current tree
+    const newTemplate = {
+      id: `template-${Date.now()}`,
+      name: name,
+      description: `Saved on ${new Date().toLocaleDateString()}`,
+      thumbnail: '📄',
+      tree: JSON.parse(JSON.stringify(currentTree)),
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save to localStorage
+    const savedTemplates = localStorage.getItem('fursan_templates');
+    const templates = savedTemplates ? JSON.parse(savedTemplates) : [];
+    templates.push(newTemplate);
+    localStorage.setItem('fursan_templates', JSON.stringify(templates));
+    
+    alert(`Template "${name}" saved successfully!`);
+  };
+
+  const handleDeleteTemplate = (id: string) => {
+    const savedTemplates = localStorage.getItem('fursan_templates');
+    if (savedTemplates) {
+      const templates = JSON.parse(savedTemplates);
+      const filtered = templates.filter((t: any) => t.id !== id);
+      localStorage.setItem('fursan_templates', JSON.stringify(filtered));
+    }
+  };
 
   const renderDragOverlay = () => {
     if (!activeDragId) return null;
@@ -272,13 +402,40 @@ export const Builder: React.FC = () => {
           pageTitle={pageTitle}
           onSave={handleSave}
           isSaving={isSaving}
+          onToggleNavigator={() => setShowNavigator(!showNavigator)}
+          showNavigator={showNavigator}
+          onToggleTemplates={() => setShowTemplates(!showTemplates)}
         />
+        
+        {/* Breakpoint Preview Bar */}
+        <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-center gap-2">
+          <span className="text-xs font-medium text-gray-500 mr-2">Preview:</span>
+          {breakpoints.map((bp) => {
+            const Icon = bp.icon;
+            return (
+              <button
+                key={bp.key}
+                onClick={() => setActiveBp(bp.key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md transition-all ${
+                  activeBp === bp.key
+                    ? 'bg-blue-500 text-white font-medium shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={`${bp.label} (${bp.width})`}
+              >
+                <Icon size={12} />
+                <span>{bp.label}</span>
+                <span className="text-[10px] opacity-75">{bp.width}</span>
+              </button>
+            );
+          })}
+        </div>
         
         <div className="flex-1 flex overflow-hidden">
           <WidgetPanel />
           
           <div className="flex-1 overflow-auto bg-gray-200">
-            <CanvasInner />
+            <CanvasInner activeBreakpoint={activeBp} />
           </div>
           
           <PropsPanel />
@@ -288,6 +445,29 @@ export const Builder: React.FC = () => {
       <DragOverlay>
         {renderDragOverlay()}
       </DragOverlay>
+      
+        {/* Navigator Panel */}
+        {showNavigator && (
+          <DraggablePanel
+            title="Layers"
+            defaultPosition={{ x: window.innerWidth - 350, y: 100 }}
+            width={280}
+            height={500}
+            onClose={() => setShowNavigator(false)}
+          >
+            <Navigator tree={tree} onClose={() => setShowNavigator(false)} />
+          </DraggablePanel>
+        )}
+
+        {/* Template Picker Modal */}
+        {showTemplates && (
+          <TemplatePicker
+            onSelect={handleTemplateSelect}
+            onClose={() => setShowTemplates(false)}
+            onSaveCurrent={handleSaveAsTemplate}
+            onDeleteTemplate={handleDeleteTemplate}
+          />
+        )}
     </DndContext>
   );
 };

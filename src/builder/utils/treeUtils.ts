@@ -65,12 +65,19 @@ export function insertNode(tree: BuilderNode, parentId: string, node: BuilderNod
   }
 
   // Find the parent and insert
+  let inserted = false;
+  
   function insertIntoParent(current: BuilderNode): BuilderNode {
+    if (inserted) {
+      return current; // Stop recursing once inserted
+    }
+    
     if (current.id === parentId) {
       if (!current.children) {
         current.children = [];
       }
       current.children.push(node);
+      inserted = true;
       return current;
     }
 
@@ -81,7 +88,8 @@ export function insertNode(tree: BuilderNode, parentId: string, node: BuilderNod
     return current;
   }
 
-  return insertIntoParent(newTree);
+  insertIntoParent(newTree);
+  return newTree;
 }
 
 /**

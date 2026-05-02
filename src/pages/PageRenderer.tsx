@@ -5,9 +5,10 @@ import { Loader2 } from 'lucide-react';
 import { pagesApi as basePagesApi } from '../api/pagesApi';
 import {
   Block, BLOCK_CATALOG,
-  Breakpoint, BREAKPOINTS
+  Breakpoint
 } from './admin/Pages/Builder/blockTypes';
 import { WIDGETS } from '../widgets';
+import { breakpoints } from '../builder/DynamicPages';
 
 const pagesApi = basePagesApi as any;
 
@@ -27,18 +28,13 @@ function generateResponsiveStyles(blockId: string, responsive: Record<string, Re
   if (!responsive) return null;
 
   let css = '';
-  const bpMap: Record<Breakpoint, { minWidth: string; maxWidth: string | null }> = {
-    base: { minWidth: '', maxWidth: '767px' },
-    sm: { minWidth: '768px', maxWidth: '1023px' },
-    md: { minWidth: '1024px', maxWidth: null },
-    lg: { minWidth: '1280px', maxWidth: null }
-  };
 
-  Object.entries(bpMap).forEach(([bp, bpConfig]) => {
-    const props = responsive[bp as Breakpoint];
+  // Use breakpoints from DynamicPages
+  breakpoints.forEach((bpConfig) => {
+    const bp = bpConfig.key;
+    const props = responsive[bp];
     if (!props || Object.keys(props).length === 0) return;
 
-    let rules = '';
     Object.entries(props).forEach(([key, val]) => {
       if (!val) return;
       let targetSelector = `#block-${blockId}`;
@@ -93,19 +89,28 @@ function generateResponsiveStyles(blockId: string, responsive: Record<string, Re
       if (cleanKey === 'flexWrap') rule = `flex-wrap: ${val} !important; `;
       if (rule) {
         let mediaQuery = '';
-        if (bpConfig.minWidth && bpConfig.maxWidth) {
-          mediaQuery = `@media (min-width: ${bpConfig.minWidth}) and (max-width: ${bpConfig.maxWidth}) { ${targetSelector} { ${rule} } }\n`;
-        } else if (bpConfig.minWidth) {
-          mediaQuery = `@media (min-width: ${bpConfig.minWidth}) { ${targetSelector} { ${rule} } }\n`;
-        } else if (bpConfig.maxWidth) {
-          mediaQuery = `@media (max-width: ${bpConfig.maxWidth}) { ${targetSelector} { ${rule} } }\n`;
-        } else {
-          mediaQuery = `${targetSelector} { ${rule} }\n`;
+        const { minWidth, maxWidth } = bpConfig;
+
+        // Handle base breakpoint (minWidth === 0, maxWidth !== null)
+        // Handle sm breakpoint (minWidth > 0, maxWidth !== null)
+        // Handle md breakpoint (minWidth > 0, maxWidth === null)
+        if (minWidth === 0 && maxWidth !== null) {
+          // Mobile (base): 0 to maxWidth
+          mediaQuery = `@media (max-width: ${maxWidth}px) { ${targetSelector} { ${rule} } }\n`;
+        } else if (minWidth !== null && maxWidth !== null) {
+          // Tablet (sm): minWidth to maxWidth
+          mediaQuery = `@media (min-width: ${minWidth}px) and (max-width: ${maxWidth}px) { ${targetSelector} { ${rule} } }\n`;
+        } else if (minWidth !== null && maxWidth === null) {
+          // Desktop (md): minWidth and up
+          mediaQuery = `@media (min-width: ${minWidth}px) { ${targetSelector} { ${rule} } }\n`;
         }
+
         css += mediaQuery;
       }
     });
   });
+
+  if (!css) return null;
 
   return <style dangerouslySetInnerHTML={{ __html: css }} />;
 }

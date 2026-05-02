@@ -55,9 +55,25 @@ export const useBuilderStore = create<BuilderState>()(
       
       select: (id) => set({ selectedId: id }),
       
-      addNode: (parentId, node) => set((state) => ({
-        tree: treeUtils.insertNode(state.tree, parentId, node),
-      })),
+      addNode: (parentId, node) => set((state) => {
+        // Check if node with this ID already exists in the tree
+        const nodeExists = (tree: BuilderNode, id: string): boolean => {
+          if (tree.id === id) return true;
+          if (tree.children) {
+            return tree.children.some(child => nodeExists(child, id));
+          }
+          return false;
+        };
+        
+        if (nodeExists(state.tree, node.id)) {
+          console.warn('[BuilderStore] Node with ID already exists, generating new ID:', node.id);
+          node.id = crypto.randomUUID();
+        }
+        
+        return {
+          tree: treeUtils.insertNode(state.tree, parentId, node),
+        };
+      }),
       
       moveNode: (activeId, overId) => set((state) => ({
         tree: treeUtils.reorderNode(state.tree, activeId, overId),
@@ -76,7 +92,27 @@ export const useBuilderStore = create<BuilderState>()(
         tree: treeUtils.duplicateNode(state.tree, id),
       })),
       
-      setTree: (tree) => set({ tree }),
+       setTree: (tree) => {
+        // Deduplicate tree before setting
+        const deduplicateTree = (node: BuilderNode): BuilderNode => {
+          if (node.children && node.children.length > 0) {
+            const seenIds = new Set<string>();
+            const uniqueChildren = node.children.filter(child => {
+              if (!child.id || seenIds.has(child.id)) {
+                console.warn('[BuilderStore] Removing duplicate node:', child.id);
+                return false;
+              }
+              seenIds.add(child.id);
+              return true;
+            });
+            node.children = uniqueChildren.map(child => deduplicateTree(child));
+          }
+          return node;
+        };
+        
+        const dedupedTree = deduplicateTree(JSON.parse(JSON.stringify(tree)));
+        set({ tree: dedupedTree });
+      },
       setPreviewMode: (mode) => set({ isPreviewMode: mode }),
       resetTree: () => set({ 
         tree: JSON.parse(JSON.stringify(defaultTree)),

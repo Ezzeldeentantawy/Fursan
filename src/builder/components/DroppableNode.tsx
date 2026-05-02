@@ -3,21 +3,100 @@ import { useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useBuilderStore } from '../store/builderStore';
-import { ELEMENTS_BY_TYPE, CONTAINER_TYPES } from '../DynamicPages';
+import { ELEMENTS_BY_TYPE, CONTAINER_TYPES, generateResponsiveStyles } from '../DynamicPages';
 import { renderNode } from '../registry/componentRegistry';
 import { BuilderNode } from '../utils/nodeFactory';
+import { Breakpoint } from '../DynamicPages';
+import { breakpoints } from '../DynamicPages';
 
 interface DroppableNodeProps {
   node: BuilderNode;
   isSelected: boolean;
   isPreviewMode: boolean;
+  activeBreakpoint?: Breakpoint;
   children?: React.ReactNode;
 }
+
+// Helper to get responsive styles for a given breakpoint
+const getResponsiveStyles = (node: BuilderNode, breakpoint: Breakpoint): React.CSSProperties => {
+  const responsive = node.props?.responsive;
+  if (!responsive || !responsive[breakpoint]) {
+    return {};
+  }
+
+  const bpStyles = responsive[breakpoint];
+  const styles: React.CSSProperties = {};
+
+  // Map responsive props to CSS properties
+  const styleMap: Record<string, keyof React.CSSProperties> = {
+    fontSize: 'fontSize',
+    fontWeight: 'fontWeight',
+    textAlign: 'textAlign',
+    width: 'width',
+    height: 'height',
+    minWidth: 'minWidth',
+    minHeight: 'minHeight',
+    maxWidth: 'maxWidth',
+    maxHeight: 'maxHeight',
+    padding: 'padding',
+    margin: 'margin',
+    pt: 'paddingTop',
+    pr: 'paddingRight',
+    pb: 'paddingBottom',
+    pl: 'paddingLeft',
+    mt: 'marginTop',
+    mr: 'marginRight',
+    mb: 'marginBottom',
+    ml: 'marginLeft',
+    lineHeight: 'lineHeight',
+    letterSpacing: 'letterSpacing',
+    display: 'display',
+    flexDirection: 'flexDirection',
+    justifyContent: 'justifyContent',
+    alignItems: 'alignItems',
+    gap: 'gap',
+    boxShadow: 'boxShadow',
+    zIndex: 'zIndex',
+    visibility: 'visibility',
+    borderRadius: 'borderRadius',
+    overflow: 'overflow',
+  };
+
+  Object.entries(bpStyles).forEach(([key, value]) => {
+    const cssProp = styleMap[key];
+    if (cssProp && value) {
+      (styles as any)[cssProp] = value;
+    }
+  });
+
+  return styles;
+};
+
+// Helper to cascade styles from smaller to larger breakpoints
+const getCascadedStyles = (node: BuilderNode, activeBreakpoint: Breakpoint): React.CSSProperties => {
+  const breakpointKeys = breakpoints.map(bp => bp.key);
+  const currentIndex = breakpointKeys.indexOf(activeBreakpoint);
+  
+  // Start with base styles, then cascade up to the active breakpoint
+  let cascadedStyles: Record<string, any> = {};
+  
+  for (let i = 0; i <= currentIndex; i++) {
+    const bp = breakpointKeys[i];
+    const bpStyles = node.props?.responsive?.[bp];
+    if (bpStyles) {
+      cascadedStyles = { ...cascadedStyles, ...bpStyles };
+    }
+  }
+  
+  // Convert to CSS properties
+  return getResponsiveStyles(node, activeBreakpoint) || cascadedStyles;
+};
 
 export const DroppableNode: React.FC<DroppableNodeProps> = ({
   node,
   isSelected,
   isPreviewMode,
+  activeBreakpoint = 'md',
   children,
 }) => {
   const select = useBuilderStore((state) => state.select);
@@ -59,6 +138,13 @@ export const DroppableNode: React.FC<DroppableNodeProps> = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // Get responsive styles for the active breakpoint
+  const responsiveStyles = getCascadedStyles(node, activeBreakpoint);
+
+  // Generate responsive CSS style element for media query-based styles
+  // This handles responsive props defined in node.props.responsive (e.g., display: flex at md breakpoint)
+  const responsiveStyleElement = generateResponsiveStyles(node.id, node.props?.responsive);
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isPreviewMode) {
@@ -87,18 +173,22 @@ export const DroppableNode: React.FC<DroppableNodeProps> = ({
   };
 
   return (
-    <div
-      ref={setRefs}
-      style={style}
-      {...attributes}
-      className={`
-        relative group mb-2
-        ${isSelected && !isPreviewMode ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
-        ${isOver && isContainer && !isPreviewMode ? 'ring-2 ring-blue-400 ring-offset-1 bg-blue-50/50' : ''}
-        ${isDragging ? 'opacity-50' : ''}
-      `}
-      onClick={handleClick}
-    >
+    <>
+      {/* Inject responsive styles for this node */}
+      {responsiveStyleElement}
+      
+      <div
+        ref={setRefs}
+        style={{ ...style, ...responsiveStyles }}
+        {...attributes}
+        className={`
+          relative group mb-2
+          ${isSelected && !isPreviewMode ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
+          ${isOver && isContainer && !isPreviewMode ? 'ring-2 ring-blue-400 ring-offset-1 bg-blue-50/50' : ''}
+          ${isDragging ? 'opacity-50' : ''}
+        `}
+        onClick={handleClick}
+      >
       {/* Drag Handle & Controls - only show when not in preview mode */}
       {!isPreviewMode && (
         <>
@@ -149,25 +239,26 @@ export const DroppableNode: React.FC<DroppableNodeProps> = ({
         {renderNode(node, children)}
       </div>
 
-      {/* Drop zone indicator for containers */}
-      {isContainer && !isPreviewMode && (
-        <div
-          className={`min-h-[60px] border-2 border-dashed rounded p-2 mt-1 transition-colors ${
-            isOver
-              ? 'border-blue-400 bg-blue-50/70'
-              : 'border-gray-300 bg-transparent'
-          }`}
-        >
-          {children}
-          {(!children || (Array.isArray(children) && children.length === 0)) && (
-            <div className={`text-center text-sm py-6 transition-colors ${
-              isOver ? 'text-blue-500 font-medium' : 'text-gray-400'
-            }`}>
-              {isOver ? 'Drop here' : 'Drop elements here'}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+       {/* Drop zone indicator for containers - only show in edit mode */}
+       {isContainer && !isPreviewMode && (
+         <div
+           className={`min-h-[60px] border-2 border-dashed rounded p-2 mt-1 transition-colors ${
+             isOver
+               ? 'border-blue-400 bg-blue-50/70'
+               : 'border-gray-300 bg-transparent'
+           }`}
+         >
+           {/* Children are already rendered by renderNode above, so we don't render them again here */}
+           {(!children || (Array.isArray(children) && children.length === 0)) && (
+             <div className={`text-center text-sm py-6 transition-colors ${
+               isOver ? 'text-blue-500 font-medium' : 'text-gray-400'
+             }`}>
+               {isOver ? 'Drop here' : 'Drop elements here'}
+             </div>
+           )}
+         </div>
+       )}
+     </div>
+   </>
   );
 };

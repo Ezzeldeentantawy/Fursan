@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ELEMENTS_BY_CATEGORY } from '../DynamicPages';
+import { ELEMENTS_BY_CATEGORY, ELEMENTS } from '../DynamicPages';
 import { DraggableWidget } from './DraggableWidget';
 
 const categoryLabels: Record<string, string> = {

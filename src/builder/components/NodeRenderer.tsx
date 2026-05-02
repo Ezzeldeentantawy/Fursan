@@ -3,12 +3,14 @@ import { useBuilderStore } from '../store/builderStore';
 import { DroppableNode } from './DroppableNode';
 import { BuilderNode } from '../utils/nodeFactory';
 import { CONTAINER_TYPES } from '../DynamicPages';
+import { Breakpoint } from '../DynamicPages';
 
 interface NodeRendererProps {
   node: BuilderNode;
+  activeBreakpoint?: Breakpoint;
 }
 
-export const NodeRenderer: React.FC<NodeRendererProps> = ({ node }) => {
+export const NodeRenderer: React.FC<NodeRendererProps> = ({ node, activeBreakpoint = 'md' }) => {
   const selectedId = useBuilderStore((state) => state.selectedId);
   const isPreviewMode = useBuilderStore((state) => state.isPreviewMode);
   
@@ -22,7 +24,7 @@ export const NodeRenderer: React.FC<NodeRendererProps> = ({ node }) => {
     }
 
     return node.children.map((child) => (
-      <NodeRenderer key={child.id} node={child} />
+      <NodeRenderer key={child.id} node={child} activeBreakpoint={activeBreakpoint} />
     ));
   };
 
@@ -31,6 +33,7 @@ export const NodeRenderer: React.FC<NodeRendererProps> = ({ node }) => {
       node={node}
       isSelected={isSelected}
       isPreviewMode={isPreviewMode}
+      activeBreakpoint={activeBreakpoint}
     >
       {renderChildren()}
     </DroppableNode>

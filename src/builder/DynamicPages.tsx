@@ -1,956 +1,1135 @@
 import React from 'react';
-import {
-  Type,
-  AlignLeft,
-  MousePointerClick,
-  Minus,
-  MoveVertical,
-  Box,
-  Image,
-  ListChecks,
-  List,
-  Clock,
-  Hash,
-  Menu,
-  ImagePlus,
-  Puzzle,
-  ChevronDown,
-  LayoutGrid,
-} from 'lucide-react';
+import { Type, AlignLeft, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor } from 'lucide-react';
 
-// ============= INTERFACES =============
+// ============= HELPER FUNCTIONS =============
 
-export interface ControlDefinition {
-  key: string;
+/**
+ * Clean URL strings that may have JSON escape sequences
+ */
+export const cleanUrl = (url: string): string => {
+  if (!url || typeof url !== 'string') return url || '';
+  return url.replace(/\\\//g, '/');
+};
+
+/**
+ * Get alignment class for text elements
+ */
+export const getTextAlignmentClass = (alignment: string): string => {
+  if (alignment === 'center') return 'text-center';
+  if (alignment === 'right') return 'text-right';
+  return 'text-left';
+};
+
+// Keep old name as alias for backward compatibility
+export const getAlignClass = getTextAlignmentClass;
+
+// ============= BREAKPOINT CONFIGURATION =============
+
+export type Breakpoint = 'base' | 'sm' | 'md';
+
+export interface BreakpointConfig {
+  key: Breakpoint;
   label: string;
-  type: "text" | "textarea" | "number" | "color" | "select" | "toggle" | "richtext" | "image-url";
-  options?: { label: string; value: string | number }[] | string[];
-}
-
-export interface ElementDefinition {
-  type: string;
-  label: string;
+  prefix: string;
   icon: React.FC<{ size?: number; className?: string }>;
-  category: "basic" | "layout" | "media" | "advanced";
-  defaultProps: Record<string, any>;
-  controls: ControlDefinition[];
-  component: React.FC<any>;
+  width: string;
+  minWidth: number;
+  maxWidth: number | null;
 }
 
-// ============= BASIC ELEMENTS =============
+export const breakpoints: BreakpointConfig[] = [
+  {
+    key: 'base',
+    label: 'Mobile',
+    prefix: '',
+    icon: Smartphone,
+    width: '375px',
+    minWidth: 0,
+    maxWidth: 767
+  },
+  {
+    key: 'sm',
+    label: 'Tablet',
+    prefix: 'sm:',
+    icon: Tablet,
+    width: '768px',
+    minWidth: 768,
+    maxWidth: 1023
+  },
+  {
+    key: 'md',
+    label: 'Desktop',
+    prefix: 'md:',
+    icon: Monitor,
+    width: '100%',
+    minWidth: 1024,
+    maxWidth: null
+  }
+];
 
-// Heading Element Component
-export const HeadingComponent: React.FC<any> = ({ content, level, align, color, ...rest }) => {
-  const Tag = level || 'h2';
-  const htmlContent = content || 'Heading Text';
+// ============= DEFAULT PROPS & FIELD DEFINITIONS =============
+
+export const defaultResponsiveProps = {
+  customClass: '',
+  customId: '',
+  boxShadow: '',
+  zIndex: 0,
+  responsive: {}
+};
+
+export const commonAdvancedFields = [
+  {
+    key: 'sep_sizing',
+    label: 'Layering & Depth',
+    type: 'separator'
+  },
+  {
+    key: 'zIndex',
+    label: 'Z-Index Layer',
+    type: 'number',
+    min: -100,
+    max: 9999,
+    step: 1
+  },
+  {
+    key: 'boxShadow',
+    label: 'Box Shadow',
+    type: 'text',
+    placeholder: '0 4px 12px rgba(0,0,0,0.1)'
+  },
+  {
+    key: 'sep_common',
+    label: 'Advanced Identity',
+    type: 'separator'
+  },
+  {
+    key: 'customClass',
+    label: 'Custom CSS Class',
+    type: 'text',
+    placeholder: 'my-element-class'
+  },
+  {
+    key: 'customId',
+    label: 'Custom HTML ID',
+    type: 'text',
+    placeholder: 'my-element-id'
+  },
+  {
+    key: 'responsive',
+    label: 'Responsive Styles',
+    type: 'responsive'
+  }
+];
+
+export const defaultTypographyProps = {
+  fontSize: '',
+  fontWeight: '',
+  textTransform: 'none',
+  textDecoration: 'none',
+  letterSpacing: '',
+  wordSpacing: '',
+  lineHeight: ''
+};
+
+export const createTypographyFields = (prefix = '') => [
+  {
+    key: prefix + 'fontSize',
+    label: 'Font Size',
+    type: 'text',
+    placeholder: '24px, 1.5rem'
+  },
+  {
+    key: prefix + 'fontWeight',
+    label: 'Font Weight',
+    type: 'select',
+    options: [
+      { label: 'Default', value: '' },
+      { label: '100', value: '100' },
+      { label: '200', value: '200' },
+      { label: '300', value: '300' },
+      { label: '400', value: '400' },
+      { label: '500', value: '500' },
+      { label: '600', value: '600' },
+      { label: '700', value: '700' },
+      { label: '800', value: '800' },
+      { label: '900', value: '900' }
+    ]
+  },
+  {
+    key: prefix + 'textTransform',
+    label: 'Text Transform',
+    type: 'select',
+    options: [
+      { label: 'None', value: 'none' },
+      { label: 'Uppercase', value: 'uppercase' },
+      { label: 'Lowercase', value: 'lowercase' },
+      { label: 'Capitalize', value: 'capitalize' }
+    ]
+  },
+  {
+    key: prefix + 'textDecoration',
+    label: 'Text Decoration',
+    type: 'select',
+    options: [
+      { label: 'None', value: 'none' },
+      { label: 'Underline', value: 'underline' },
+      { label: 'Line Through', value: 'line-through' },
+      { label: 'Overline', value: 'overline' }
+    ]
+  },
+  {
+    key: prefix + 'letterSpacing',
+    label: 'Letter Spacing',
+    type: 'text',
+    placeholder: '0.1em, 2px'
+  },
+  {
+    key: prefix + 'wordSpacing',
+    label: 'Word Spacing',
+    type: 'text',
+    placeholder: '0.2em, 5px'
+  },
+  {
+    key: prefix + 'lineHeight',
+    label: 'Line Height',
+    type: 'text',
+    placeholder: '1.5, 24px'
+  }
+];
+
+// ============= ELEMENT DEFINITIONS =============
+
+// (Component definitions moved to before this section - see end of file)
+// Using lazy references to avoid circular dependency issues
+
+export const elementDefinitions: Record<string, any> = {
+  heading: {
+    type: 'heading',
+    label: 'Heading',
+    icon: Type,
+    category: 'basic',
+    defaults: {
+      ...defaultResponsiveProps,
+      text: '<h2>Heading Text</h2>',
+      level: 'h2',
+      align: 'left',
+      color: '#000000',
+      bgColor: '',
+      bgImage: '',
+      bgSize: 'cover',
+      minHeight: '',
+      borderRadius: '',
+      borderWidth: '0px',
+      borderColor: '#e2e8f0',
+      borderStyle: 'none',
+      opacity: 1,
+      width: '',
+      height: '',
+      textDecoration: 'none',
+      fontSize: '',
+      fontWeight: '',
+      textTransform: 'none',
+      letterSpacing: '',
+      wordSpacing: '',
+      lineHeight: '',
+    },
+    controls: [
+      { key: 'text', label: 'Content', type: 'richtext' },
+      { key: 'level', label: 'Heading Level', type: 'select', options: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] },
+      { key: 'align', label: 'Alignment', type: 'select', options: ['left', 'center', 'right'] },
+      { key: 'color', label: 'Color', type: 'color' },
+      { key: 'bgColor', label: 'Background Color', type: 'color' },
+      { key: 'bgImage', label: 'Background Image URL', type: 'image-url' },
+      { key: 'bgSize', label: 'BG Size', type: 'select', options: ['cover', 'contain', 'auto'] },
+      { key: 'minHeight', label: 'Min Height', type: 'text' },
+      { key: 'borderRadius', label: 'Border Radius', type: 'text' },
+      { key: 'borderWidth', label: 'Border Width', type: 'text' },
+      { key: 'borderColor', label: 'Border Color', type: 'color' },
+      { key: 'borderStyle', label: 'Border Style', type: 'select', options: ['none', 'solid', 'dashed', 'dotted'] },
+      { key: 'opacity', label: 'Opacity', type: 'number', min: 0, max: 1, step: 0.1 },
+      { key: 'width', label: 'Width', type: 'text' },
+      { key: 'height', label: 'Height', type: 'text' },
+      { key: 'textDecoration', label: 'Text Decoration', type: 'select', options: ['none', 'underline', 'line-through'] },
+      ...createTypographyFields(),
+      ...commonAdvancedFields,
+    ],
+    get component() { return HeadingComponent; },
+  },
+  paragraph: {
+    type: 'paragraph',
+    label: 'Paragraph',
+    icon: AlignLeft,
+    category: 'basic',
+    defaults: {
+      ...defaultResponsiveProps,
+      html: '<p>Enter your text here...</p>',
+      align: 'left',
+      color: '#333333',
+      textDecoration: 'none',
+      opacity: 1,
+      minHeight: '',
+      fontSize: '',
+      fontWeight: '',
+      textTransform: 'none',
+      letterSpacing: '',
+      wordSpacing: '',
+      lineHeight: '',
+    },
+    controls: [
+      { key: 'html', label: 'Content', type: 'richtext' },
+      { key: 'align', label: 'Alignment', type: 'select', options: ['left', 'center', 'right', 'justify'] },
+      { key: 'color', label: 'Color', type: 'color' },
+      { key: 'textDecoration', label: 'Text Decoration', type: 'select', options: ['none', 'underline', 'line-through'] },
+      { key: 'opacity', label: 'Opacity', type: 'number', min: 0, max: 1, step: 0.1 },
+      { key: 'minHeight', label: 'Min Height', type: 'text' },
+      ...createTypographyFields(),
+      ...commonAdvancedFields,
+    ],
+    get component() { return TextComponent; },
+  },
+  button: {
+    type: 'button',
+    label: 'Button',
+    icon: MousePointerClick,
+    category: 'basic',
+    defaults: {
+      ...defaultResponsiveProps,
+      text: 'Click Me',
+      url: '#',
+      bgColor: '#3b82f6',
+      textColor: '#ffffff',
+      borderRadius: '',
+      borderWidth: '',
+      borderColor: '',
+      borderStyle: 'solid',
+      size: 'md',
+      align: 'left',
+      padding: '',
+      icon: '',
+      iconPos: 'left',
+      iconSize: '18',
+      iconColor: '',
+      hoverBg: '',
+      hoverColor: '',
+      hoverBorderColor: '',
+      hoverBorderWidth: '',
+      hoverBorderStyle: '',
+      hoverScale: 1,
+    },
+    controls: [
+      { key: 'text', label: 'Label', type: 'text' },
+      { key: 'url', label: 'Link URL', type: 'text' },
+      { key: 'bgColor', label: 'Background Color', type: 'color' },
+      { key: 'textColor', label: 'Text Color', type: 'color' },
+      { key: 'borderRadius', label: 'Border Radius', type: 'text' },
+      { key: 'borderWidth', label: 'Border Width', type: 'text' },
+      { key: 'borderColor', label: 'Border Color', type: 'color' },
+      { key: 'borderStyle', label: 'Border Style', type: 'select', options: ['solid', 'dashed', 'dotted', 'none'] },
+      { key: 'size', label: 'Size', type: 'select', options: ['sm', 'md', 'lg'] },
+      { key: 'align', label: 'Alignment', type: 'select', options: ['left', 'center', 'right'] },
+      { key: 'padding', label: 'Padding', type: 'text' },
+      { key: 'icon', label: 'Icon Name', type: 'text' },
+      { key: 'iconPos', label: 'Icon Position', type: 'select', options: ['left', 'right'] },
+      { key: 'iconSize', label: 'Icon Size', type: 'text' },
+      { key: 'iconColor', label: 'Icon Color', type: 'color' },
+      { key: 'hoverBg', label: 'Hover Background', type: 'color' },
+      { key: 'hoverColor', label: 'Hover Text Color', type: 'color' },
+      { key: 'hoverBorderColor', label: 'Hover Border Color', type: 'color' },
+      { key: 'hoverBorderWidth', label: 'Hover Border Width', type: 'text' },
+      { key: 'hoverBorderStyle', label: 'Hover Border Style', type: 'select', options: ['solid', 'dashed', 'dotted', 'none'] },
+      { key: 'hoverScale', label: 'Hover Scale', type: 'number' },
+      ...commonAdvancedFields,
+    ],
+    get component() { return ButtonComponent; },
+  },
+  container: {
+    type: 'container',
+    label: 'Container',
+    icon: Box,
+    category: 'layout',
+    defaults: {
+      ...defaultResponsiveProps,
+      bgColor: 'transparent',
+      bgImage: '',
+      bgSize: 'cover',
+      width: '',
+      height: '',
+      minWidth: '',
+      minHeight: '',
+      maxWidth: '',
+      maxHeight: '',
+      borderRadius: '',
+      borderWidth: '0px',
+      borderColor: '#e2e8f0',
+      borderStyle: 'none',
+      padding: '16px',
+      direction: 'column',
+      align: 'stretch',
+      items: 'stretch',
+      justify: 'flex-start',
+      gap: '16px',
+      flexWrap: '',
+      textAlign: '',
+      display: 'flex',
+      flexDir: '',
+      bgGradient: false,
+      bgGradientDirection: '180deg',
+      bgGradientType: 'linear',
+      bgGradientColor1: '',
+      bgGradientColor2: '',
+      bgGradientPosition: 'center',
+      tag: 'div',
+      linkUrl: '',
+    },
+    controls: [
+      { key: 'bgColor', label: 'Background Color', type: 'color' },
+      { key: 'bgImage', label: 'Background Image URL', type: 'image-url' },
+      { key: 'bgSize', label: 'BG Size', type: 'select', options: ['cover', 'contain', 'auto'] },
+      { key: 'bgGradient', label: 'Use Gradient', type: 'toggle' },
+      { key: 'bgGradientType', label: 'Gradient Type', type: 'select', options: ['linear', 'radial'] },
+      { key: 'bgGradientDirection', label: 'Gradient Direction', type: 'text' },
+      { key: 'bgGradientColor1', label: 'Gradient Color 1', type: 'color' },
+      { key: 'bgGradientColor2', label: 'Gradient Color 2', type: 'color' },
+      { key: 'width', label: 'Width', type: 'text', responsiveOnly: true },
+      { key: 'height', label: 'Height', type: 'text', responsiveOnly: true },
+      { key: 'minWidth', label: 'Min Width', type: 'text', responsiveOnly: true },
+      { key: 'minHeight', label: 'Min Height', type: 'text', responsiveOnly: true },
+      { key: 'maxWidth', label: 'Max Width', type: 'text', responsiveOnly: true },
+      { key: 'maxHeight', label: 'Max Height', type: 'text', responsiveOnly: true },
+      { key: 'borderRadius', label: 'Border Radius', type: 'text', responsiveOnly: true },
+      { key: 'borderWidth', label: 'Border Width', type: 'text', responsiveOnly: true },
+      { key: 'borderColor', label: 'Border Color', type: 'color' },
+      { key: 'borderStyle', label: 'Border Style', type: 'select', options: ['none', 'solid', 'dashed', 'dotted'] },
+      { key: 'padding', label: 'Padding', type: 'text', responsiveOnly: true },
+      { key: 'direction', label: 'Direction (legacy)', type: 'select', options: ['row', 'column'] },
+      { key: 'flexDir', label: 'Flex Direction', type: 'text', responsiveOnly: true },
+      { key: 'align', label: 'Align Items (legacy)', type: 'select', options: ['flex-start', 'center', 'flex-end', 'stretch', 'baseline'], responsiveOnly: true },
+      { key: 'items', label: 'Align Items', type: 'text', responsiveOnly: true },
+      { key: 'justify', label: 'Justify Content', type: 'text', responsiveOnly: true },
+      { key: 'gap', label: 'Gap', type: 'text', responsiveOnly: true },
+      {
+        key: "flexWrap",
+        label: "Flex Wrap",
+        type: "select",
+        responsiveOnly: true,
+        options: [
+          { label: "Default (nowrap)", value: "" },
+          { label: "No Wrap", value: "nowrap" },
+          { label: "Wrap", value: "wrap" },
+          { label: "Wrap Reverse", value: "wrap-reverse" }
+        ]
+      },
+      { key: 'textAlign', label: 'Text Align', type: 'text', responsiveOnly: true },
+      { key: 'display', label: 'Display', type: 'text', responsiveOnly: true },
+      { key: 'tag', label: 'HTML Tag', type: 'text' },
+      { key: 'linkUrl', label: 'Link URL (if tag=a)', type: 'text' },
+      ...commonAdvancedFields,
+    ],
+    get component() { return ContainerComponent; },
+  },
+  image: {
+    type: 'image',
+    label: 'Image',
+    icon: Image,
+    category: 'media',
+    defaults: {
+      ...defaultResponsiveProps,
+      src: '',
+      alt: '',
+      align: 'left',
+      borderRadius: '',
+      caption: '',
+    },
+    controls: [
+      { key: 'src', label: 'Image URL', type: 'image-url' },
+      { key: 'alt', label: 'Alt Text', type: 'text' },
+      { key: 'align', label: 'Alignment', type: 'select', options: ['left', 'center', 'right'] },
+      { key: 'borderRadius', label: 'Border Radius', type: 'text' },
+      { key: 'caption', label: 'Caption', type: 'text' },
+      ...commonAdvancedFields,
+    ],
+    get component() { return ImageComponent; },
+  },
+  divider: {
+    type: 'divider',
+    label: 'Divider',
+    icon: Minus,
+    category: 'basic',
+    defaults: {
+      ...defaultResponsiveProps,
+      thickness: 1,
+      color: '#e5e7eb',
+      style: 'solid',
+      padding: '',
+    },
+    controls: [
+      { key: 'thickness', label: 'Thickness', type: 'number' },
+      { key: 'color', label: 'Color', type: 'color' },
+      { key: 'style', label: 'Style', type: 'select', options: ['solid', 'dashed', 'dotted'] },
+      { key: 'padding', label: 'Padding', type: 'text' },
+      ...commonAdvancedFields,
+    ],
+    get component() { return DividerComponent; },
+  },
+  spacer: {
+    type: 'spacer',
+    label: 'Spacer',
+    icon: MoveVertical,
+    category: 'basic',
+    defaults: {
+      ...defaultResponsiveProps,
+      height: 40,
+    },
+    controls: [
+      { key: 'height', label: 'Height (px)', type: 'number' },
+      ...commonAdvancedFields,
+    ],
+    get component() { return SpacerComponent; },
+  },
+};
+
+// ============= ELEMENT FACTORY FUNCTIONS =============
+
+export const createElementNode = (elementType: string) => {
+  const node = {
+    id: `${elementType}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    type: elementType,
+    props: {
+      ...elementDefinitions[elementType].defaults
+    }
+  };
+  if (elementType === 'container' || elementType === 'tabs') {
+    node.children = [];
+  }
+  return node;
+};
+
+export const elementCategories = ['layout', 'content', 'media', 'actions'];
+
+export const categoryLabels = {
+  layout: 'Layout',
+  content: 'Content',
+  media: 'Media',
+  actions: 'Actions'
+};
+
+export const findComponentDefinition = (elementType: string) => {
+  return elementDefinitions[elementType] || null;
+};
+
+// ============= RESPONSIVE STYLE FUNCTIONS =============
+
+export const generateResponsiveStyles = (blockId: string, responsiveConfig: any) => {
+  if (!responsiveConfig) return null;
+
+  const buildStylesForBreakpoint = (breakpointProps: any) => {
+    if (!breakpointProps || Object.keys(breakpointProps).length === 0) return "";
+
+    let styles = "";
+    Object.entries(breakpointProps).forEach(([propKey, propValue]) => {
+      if (!propValue) return;
+
+      let cssProp = propKey;
+      // Handle content/desc prefix normalization
+      if (propKey.startsWith('content')) {
+        cssProp = propKey.replace('content', '').charAt(0).toLowerCase() + propKey.replace('content', '').slice(1);
+      } else if (propKey.startsWith('desc')) {
+        cssProp = propKey.replace('desc', '').charAt(0).toLowerCase() + propKey.replace('desc', '').slice(1);
+      }
+
+      let cssRule = "";
+      switch (cssProp) {
+        case 'fontSize':
+          cssRule = `font-size: ${propValue} !important; `;
+          break;
+        case 'fontWeight':
+          cssRule = `font-weight: ${propValue} !important; `;
+          break;
+        case 'textAlign':
+          cssRule = `text-align: ${propValue} !important; `;
+          break;
+        case 'lineHeight':
+          cssRule = `line-height: ${propValue} !important; `;
+          break;
+        case 'letterSpacing':
+          cssRule = `letter-spacing: ${propValue} !important; `;
+          break;
+        case 'maxWidth':
+          cssRule = `max-width: ${propValue} !important; `;
+          break;
+        case 'display':
+          cssRule = `display: ${propValue} !important; `;
+          break;
+        case 'flexDir':
+          cssRule = `flex-direction: ${propValue} !important; `;
+          break;
+        case 'flexWrap':
+          cssRule = `flex-wrap: ${propValue} !important; `;
+          break;
+        case 'gridCols':
+          cssRule = `grid-template-columns: repeat(${propValue}, minmax(0, 1fr)) !important; `;
+          break;
+        case 'gridRows':
+          cssRule = `grid-template-rows: repeat(${propValue}, minmax(0, 1fr)) !important; `;
+          break;
+        case 'gap':
+          cssRule = `gap: ${propValue} !important; `;
+          break;
+        case 'items': {
+          let alignValue = propValue;
+          if (propValue === 'start') alignValue = 'flex-start';
+          else if (propValue === 'center') alignValue = 'center';
+          else if (propValue === 'end') alignValue = 'flex-end';
+          else if (propValue === 'stretch') alignValue = 'stretch';
+          else if (propValue === 'baseline') alignValue = 'baseline';
+          cssRule = `align-items: ${alignValue} !important; `;
+          break;
+        }
+        case 'justify': {
+          let justifyValue = propValue;
+          if (propValue === 'start') justifyValue = 'flex-start';
+          else if (propValue === 'center') justifyValue = 'center';
+          else if (propValue === 'end') justifyValue = 'flex-end';
+          else if (propValue === 'between') justifyValue = 'space-between';
+          else if (propValue === 'around') justifyValue = 'space-around';
+          else if (propValue === 'evenly') justifyValue = 'space-evenly';
+          cssRule = `justify-content: ${justifyValue} !important; `;
+          break;
+        }
+        case 'width':
+          cssRule = `width: ${propValue} !important; `;
+          break;
+        case 'maxWidthC':
+          cssRule = `max-width: ${propValue} !important; `;
+          break;
+        case 'colSpan':
+          cssRule = `grid-column: span ${propValue} / span ${propValue} !important; `;
+          break;
+        case 'pt':
+          cssRule = `padding-top: ${propValue} !important; `;
+          break;
+        case 'pr':
+          cssRule = `padding-right: ${propValue} !important; `;
+          break;
+        case 'pb':
+          cssRule = `padding-bottom: ${propValue} !important; `;
+          break;
+        case 'pl':
+          cssRule = `padding-left: ${propValue} !important; `;
+          break;
+        case 'mt':
+          cssRule = `margin-top: ${propValue} !important; `;
+          break;
+        case 'mr':
+          cssRule = `margin-right: ${propValue} !important; `;
+          break;
+        case 'mb':
+          cssRule = `margin-bottom: ${propValue} !important; `;
+          break;
+        case 'ml':
+          cssRule = `margin-left: ${propValue} !important; `;
+          break;
+        case 'boxShadow':
+          cssRule = `box-shadow: ${propValue} !important; `;
+          break;
+        case 'zIndex':
+          cssRule = `z-index: ${propValue} !important; position: relative !important; `;
+          break;
+        case 'visibility':
+          cssRule = `display: ${propValue === 'hidden' ? 'none' : propValue} !important; `;
+          break;
+        case 'rounded':
+          cssRule = `border-radius: ${propValue} !important; `;
+          break;
+        case 'overflow':
+          cssRule = `overflow: ${propValue} !important; `;
+          break;
+        case 'textTransform':
+          cssRule = `text-transform: ${propValue} !important; `;
+          break;
+        case 'wordSpacing':
+          cssRule = `word-spacing: ${propValue} !important; `;
+          break;
+        case 'height':
+          cssRule = `height: ${propValue} !important; `;
+          break;
+        case 'minWidth':
+          cssRule = `min-width: ${propValue} !important; `;
+          break;
+        case 'minHeight':
+          cssRule = `min-height: ${propValue} !important; `;
+          break;
+        case 'maxHeight':
+          cssRule = `max-height: ${propValue} !important; `;
+          break;
+        default:
+          cssRule = `${cssProp}: ${propValue} !important; `;
+      }
+      styles += cssRule;
+    });
+    return styles;
+  };
+
+  let cssText = "";
+  const blockSelector = `#block-${blockId}`;
+
+  // Process breakpoints in order: base → sm → md
+  // Each gets its own media query based on the breakpoints array
+
+  breakpoints.forEach((breakpoint) => {
+    const breakpointProps = responsiveConfig[breakpoint.key];
+    if (!breakpointProps || Object.keys(breakpointProps).length === 0) return;
+
+    const styles = buildStylesForBreakpoint(breakpointProps);
+    if (!styles) return;
+
+    // Generate media query based on breakpoint's minWidth and maxWidth
+    let mediaQuery = "";
+    const { minWidth, maxWidth } = breakpoint;
+
+    if (minWidth === 0 && maxWidth !== null) {
+      // Mobile (base): 0 to maxWidth
+      mediaQuery = `@media (max-width: ${maxWidth}px)`;
+    } else if (minWidth > 0 && maxWidth !== null) {
+      // Tablet (sm): minWidth to maxWidth
+      mediaQuery = `@media (min-width: ${minWidth}px) and (max-width: ${maxWidth}px)`;
+    } else if (minWidth > 0 && maxWidth === null) {
+      // Desktop (md): minWidth and up
+      mediaQuery = `@media (min-width: ${minWidth}px)`;
+    }
+
+    if (mediaQuery) {
+      cssText += `${mediaQuery} { ${blockSelector} { ${styles} } }\n`;
+    }
+  });
+
+  if (!cssText) return null;
+
+  return React.createElement('style', {
+    dangerouslySetInnerHTML: { __html: cssText }
+  });
+};
+
+export const extractTypographyStyles = (props: any, prefix = '') => ({
+  fontSize: props[prefix + 'fontSize'] || undefined,
+  fontWeight: props[prefix + 'fontWeight'] || undefined,
+  textTransform: props[prefix + 'textTransform'] || undefined,
+  letterSpacing: props[prefix + 'letterSpacing'] || undefined,
+  wordSpacing: props[prefix + 'wordSpacing'] || undefined,
+  lineHeight: props[prefix + 'lineHeight'] || undefined
+});
+
+export const cssPropertyMap = {
+  fontSize: 'fontSize',
+  fontWeight: 'fontWeight',
+  textAlign: 'textAlign',
+  lineHeight: 'lineHeight',
+  letterSpacing: 'letterSpacing',
+  display: 'display',
+  flexDir: 'flexDirection',
+  flexWrap: 'flexWrap',
+  gap: 'gap',
+  items: 'alignItems',
+  justify: 'justifyContent',
+  width: 'width',
+  height: 'height',
+  minWidth: 'minWidth',
+  minHeight: 'minHeight',
+  maxWidth: 'maxWidth',
+  maxHeight: 'maxHeight',
+  maxWidthC: 'maxWidth',
+  pt: 'paddingTop',
+  pr: 'paddingRight',
+  pb: 'paddingBottom',
+  pl: 'paddingLeft',
+  mt: 'marginTop',
+  mr: 'marginRight',
+  mb: 'marginBottom',
+  ml: 'marginLeft',
+  rounded: 'borderRadius',
+  overflow: 'overflow',
+  textTransform: 'textTransform',
+  wordSpacing: 'wordSpacing',
+  menuTextTransform: 'textTransform',
+  textAlignProp: 'textAlign',
+  boxShadow: 'boxShadow',
+  zIndex: 'zIndex'
+};
+
+export const mergeResponsiveStyles = (responsiveConfig: any, activeBreakpoint: string) => {
+  if (!responsiveConfig) return {};
+
+  const breakpointKeys = breakpoints.map(bp => bp.key);
+  const activeIndex = breakpointKeys.indexOf(activeBreakpoint);
+  const mergedStyles: any = {};
+
+  for (let i = 0; i <= activeIndex; i++) {
+    const breakpointKey = breakpointKeys[i];
+    const breakpointProps = responsiveConfig[breakpointKey];
+    if (!breakpointProps) continue;
+
+    Object.entries(breakpointProps).forEach(([propKey, propValue]) => {
+      if (!propValue) return;
+
+      if (propKey === 'gridCols') {
+        mergedStyles.gridTemplateColumns = `repeat(${propValue}, minmax(0, 1fr))`;
+      } else if (propKey === 'gridRows') {
+        mergedStyles.gridTemplateRows = `repeat(${propValue}, minmax(0, 1fr))`;
+      } else if (propKey === 'colSpan') {
+        mergedStyles.gridColumn = `span ${propValue} / span ${propValue}`;
+      } else if (propKey === 'visibility') {
+        mergedStyles.display = propValue === 'hidden' ? 'none' : propValue;
+      } else {
+        const cssProp = cssPropertyMap[propKey] || propKey;
+        mergedStyles[cssProp] = propValue;
+      }
+    });
+  }
+
+  return mergedStyles;
+};
+
+export const resetNodeIds = (node: any) => ({
+  ...node,
+  id: `${node.type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  children: (node.children || []).map(resetNodeIds)
+});
+
+// ============= EXPORT INDIVIDUAL ELEMENTS =============
+
+export const HeadingElement = elementDefinitions.heading;
+export const TextElement = elementDefinitions.paragraph;
+export const ButtonElement = elementDefinitions.button;
+export const ContainerElement = elementDefinitions.container;
+export const ImageElement = elementDefinitions.image;
+export const DividerElement = elementDefinitions.divider;
+export const SpacerElement = elementDefinitions.spacer;
+
+// ============= ELEMENT COLLECTIONS =============
+
+export const ELEMENTS = Object.values(elementDefinitions);
+
+export const ELEMENTS_BY_TYPE: Record<string, any> = {};
+ELEMENTS.forEach(el => { ELEMENTS_BY_TYPE[el.type] = el; });
+
+export const ELEMENTS_BY_CATEGORY: Record<string, any[]> = {};
+ELEMENTS.forEach(el => {
+  if (!ELEMENTS_BY_CATEGORY[el.category]) {
+    ELEMENTS_BY_CATEGORY[el.category] = [];
+  }
+  ELEMENTS_BY_CATEGORY[el.category].push(el);
+});
+
+export const CONTAINER_TYPES = ['container'];
+
+// ============= COMPONENTS =============
+
+// Heading Component - SIMPLIFIED & ROBUST
+export const HeadingComponent: React.FC<any> = (props) => {
+  const {
+    text, content, level, align, color, bgColor, bgImage, bgSize,
+    minHeight, borderRadius, borderWidth, borderColor, borderStyle,
+    opacity, width, height, textDecoration, fontSize, fontWeight,
+    textTransform, letterSpacing, wordSpacing, lineHeight,
+    id, customClass, customId, boxShadow, zIndex, responsive
+  } = props;
+
+  // Normalize heading level
+  const getTag = (levelProp: any): string => {
+    if (!levelProp) return 'h2';
+    const str = levelProp.toString();
+    if (str.startsWith('h')) return str;
+    if (str.startsWith('heading-')) return `h${str.replace('heading-', '')}`;
+    return `h${str}`;
+  };
+  
+  const Tag = getTag(level) as keyof JSX.IntrinsicElements;
+  const htmlContent = text || content || 'Heading Text';
+  
+  // Sizes
+  const sizes: Record<string, string> = { '1': 'text-5xl', '2': 'text-3xl', '3': 'text-2xl', '4': 'text-xl' };
+  const levelNum = (level || '2').toString().replace('h', '').replace('heading-', '');
+  
+  // Background
+  let bg = bgColor || undefined;
+  if (bgImage) {
+    bg = `url(${cleanUrl(bgImage)}) center / ${bgSize || 'cover'} no-repeat`;
+  }
+  
+  const alignClass = getTextAlignmentClass(align);
+
   return (
-    <div style={{ textAlign: align || 'left' }} {...rest}>
+    <div id={customId || `block-wrap-${id}`} className={`${alignClass} ${customClass || ''}`}>
       <Tag
-        style={{ color: color || '#000000' }}
+        id={`block-${id}`}
+        className={`font-black ${(!fontSize) ? (sizes[levelNum] || 'text-3xl') : ''}`}
+        style={{
+          color: color || '#000000',
+          textDecoration: textDecoration || 'none',
+          opacity: opacity ?? 1,
+          width: width || undefined,
+          height: height || undefined,
+          background: bg,
+          minHeight: minHeight || undefined,
+          borderRadius: borderRadius || undefined,
+          borderColor: borderColor || undefined,
+          borderWidth: borderWidth || undefined,
+          borderStyle: (borderWidth && borderWidth !== '0px') ? 'solid' : 'none',
+          textAlign: align as any || undefined,
+          boxShadow: boxShadow || undefined,
+          zIndex: zIndex || undefined,
+          position: (zIndex || zIndex === 0) ? 'relative' : undefined,
+          fontSize: fontSize || undefined,
+          fontWeight: fontWeight || undefined,
+          textTransform: (textTransform && textTransform !== 'none') ? textTransform : undefined,
+          letterSpacing: (letterSpacing && letterSpacing !== 'normal') ? letterSpacing : undefined,
+          wordSpacing: (wordSpacing && wordSpacing !== 'normal') ? wordSpacing : undefined,
+          lineHeight: (lineHeight && lineHeight !== 'normal') ? lineHeight : undefined,
+        }}
         dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
     </div>
   );
 };
 
-export const HeadingElement: ElementDefinition = {
-  type: 'heading',
-  label: 'Heading',
-  icon: Type,
-  category: 'basic',
-  defaultProps: {
-    content: '<h2>Heading Text</h2>',
-    level: 'h2',
-    align: 'left',
-    color: '#000000',
-  },
-  controls: [
-    { key: 'content', label: 'Content', type: 'richtext' },
-    { key: 'level', label: 'Heading Level', type: 'select', options: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] },
-    { key: 'align', label: 'Alignment', type: 'select', options: ['left', 'center', 'right'] },
-    { key: 'color', label: 'Color', type: 'color' },
-  ],
-  component: HeadingComponent,
-};
+// Text Component (Paragraph) - SIMPLIFIED & ROBUST
+export const TextComponent: React.FC<any> = (props) => {
+  const {
+    html, content, align, color, textDecoration, opacity, minHeight,
+    fontSize, fontWeight, textTransform, letterSpacing, wordSpacing, lineHeight,
+    id, customClass, customId, boxShadow, zIndex, responsive
+  } = props;
 
-// Text Element Component
-export const TextComponent: React.FC<any> = ({ content, fontSize, color, align, ...rest }) => {
-  const htmlContent = content || '<p>Enter your text here...</p>';
+  const htmlContent = html || content || '<p>Enter your text here...</p>';
+  const alignClass = getTextAlignmentClass(align);
+
   return (
-    <div
-      style={{
-        fontSize: fontSize || 16,
-        color: color || '#333333',
-        textAlign: align || 'left',
-      }}
-      {...rest}
-    >
-      <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+    <div id={customId || `block-wrap-${id}`} className={`${alignClass} ${customClass || ''}`}>
+      <div 
+        id={`block-${id}`}
+        className="prose max-w-none leading-relaxed"
+        style={{
+          color: color || '#333333',
+          textDecoration: textDecoration || 'none',
+          opacity: opacity ?? 1,
+          minHeight: minHeight || undefined,
+          boxShadow: boxShadow || undefined,
+          textAlign: align as any || undefined,
+          zIndex: zIndex || undefined,
+          position: (zIndex || zIndex === 0) ? 'relative' : undefined,
+          fontSize: fontSize || undefined,
+          fontWeight: fontWeight || undefined,
+          textTransform: (textTransform && textTransform !== 'none') ? textTransform : undefined,
+          letterSpacing: (letterSpacing && letterSpacing !== 'normal') ? letterSpacing : undefined,
+          wordSpacing: (wordSpacing && wordSpacing !== 'normal') ? wordSpacing : undefined,
+          lineHeight: (lineHeight && lineHeight !== 'normal') ? lineHeight : undefined,
+        }}
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
     </div>
   );
 };
 
-export const TextElement: ElementDefinition = {
-  type: 'text',
-  label: 'Text',
-  icon: AlignLeft,
-  category: 'basic',
-  defaultProps: {
-    content: '<p>Enter your text here...</p>',
-    fontSize: 16,
-    color: '#333333',
-    align: 'left',
-  },
-  controls: [
-    { key: 'content', label: 'Content', type: 'richtext' },
-    { key: 'fontSize', label: 'Font Size', type: 'number' },
-    { key: 'color', label: 'Color', type: 'color' },
-    { key: 'align', label: 'Alignment', type: 'select', options: ['left', 'center', 'right', 'justify'] },
-  ],
-  component: TextComponent,
+// Button Component - SIMPLIFIED & ROBUST
+export const ButtonComponent: React.FC<any> = (props) => {
+  const {
+    text, label, url, href, bgColor, textColor, borderRadius, borderWidth, borderColor, borderStyle,
+    size, align, padding, icon, iconPos, iconSize, iconColor, 
+    hoverBg, hoverColor, hoverBorderColor, hoverBorderWidth, hoverBorderStyle, hoverScale,
+    id, customClass, customId, boxShadow, zIndex, responsive
+  } = props;
+
+  const Icon = icon ? (require('lucide-react') as any)[icon] : null;
+  
+  const sizeMap: Record<string, string> = {
+    sm: 'px-4 py-2 text-xs',
+    md: 'px-8 py-4 text-sm',
+    lg: 'px-10 py-5 text-base',
+  };
+  
+  const alignClass = getTextAlignmentClass(align);
+  
+  const hoverStyle = `
+    #block-${id}:hover {
+      background-color: ${hoverBg || bgColor || 'initial'} !important;
+      color: ${hoverColor || textColor || 'initial'} !important;
+      border-color: ${hoverBorderColor || borderColor || 'initial'} !important;
+      border-width: ${hoverBorderWidth || borderWidth || 'initial'} !important;
+      border-style: ${hoverBorderStyle || borderStyle || 'solid'} !important;
+      transform: scale(${hoverScale || 1}) !important;
+    }
+  `;
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />
+      <div id={customId || `block-wrap-${id}`} className={`${alignClass} ${customClass || ''}`}>
+        <a
+          id={`block-${id}`}
+          href={url || href || '#'}
+          className={`inline-flex items-center gap-2 font-bold transition-all duration-200 ${sizeMap[size || 'md']} rounded-xl`}
+          style={{
+            backgroundColor: bgColor || '#3b82f6',
+            borderRadius: borderRadius || undefined,
+            color: textColor || '#ffffff',
+            borderWidth: borderWidth || undefined,
+            borderStyle: borderStyle || 'solid',
+            borderColor: borderColor || undefined,
+            padding: padding || undefined,
+            justifyContent: 'center',
+            boxShadow: boxShadow || undefined,
+            zIndex: zIndex || undefined,
+            position: (zIndex || zIndex === 0) ? 'relative' : undefined,
+          }}
+        >
+          {icon && iconPos !== 'right' && Icon && <Icon size={parseInt(iconSize) || 18} color={iconColor || textColor || '#ffffff'} />}
+          {text || label || 'Click Me'}
+          {icon && iconPos === 'right' && Icon && <Icon size={parseInt(iconSize) || 18} color={iconColor || textColor || '#ffffff'} />}
+        </a>
+      </div>
+    </>
+  );
 };
 
-// Button Element Component
-export const ButtonComponent: React.FC<any> = ({ label, href, variant, size, color, bgColor, ...rest }) => {
-  const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
-    lg: 'px-6 py-3 text-lg',
+// Container Component - SIMPLIFIED & ROBUST
+export const ContainerComponent: React.FC<any> = (props) => {
+  const {
+    bgColor, bgImage, bgSize, width, height, minWidth, minHeight, maxWidth, maxHeight, 
+    borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap, 
+    children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display, flexDir, items,
+    bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl,
+  } = props;
+
+  // Map alignment values
+  const mapJustify = (j: string): string => {
+    if (j === 'start') return 'flex-start';
+    if (j === 'center') return 'center';
+    if (j === 'end') return 'flex-end';
+    if (j === 'between') return 'space-between';
+    if (j === 'around') return 'space-around';
+    if (j === 'evenly') return 'space-evenly';
+    return j || 'flex-start';
+  };
+  
+  const mapAlign = (a: string): string => {
+    if (!a || a === 'stretch') return 'stretch';
+    if (a === 'start') return 'flex-start';
+    if (a === 'center') return 'center';
+    if (a === 'end') return 'flex-end';
+    if (a === 'baseline') return 'baseline';
+    return a || 'stretch';
+  };
+  
+  // Build background
+  let bg = bgColor || 'transparent';
+  const bw = borderWidth ? (isNaN(Number(borderWidth)) ? borderWidth : `${borderWidth}px`) : undefined;
+  
+  if (bgImage) {
+    bg = `url(${cleanUrl(bgImage)}) center / ${bgSize ?? 'cover'} no-repeat`;
+  }
+  
+  // Handle gradient
+  if (bgGradient) {
+    const direction = bgGradientDirection || '180deg';
+    if (bgGradientType === 'radial') {
+      bg = `radial-gradient(${bgGradientColor2 || 'center'}, ${bgGradientColor1}, ${bgGradientColor2})`;
+    } else {
+      bg = `linear-gradient(${direction}, ${bgGradientColor1}, ${bgGradientColor2})`;
+    }
+    if (bgImage) {
+      bg = `${bg}, url(${cleanUrl(bgImage)}) center / ${bgSize ?? 'cover'} no-repeat`;
+    }
+  }
+  
+  const containerStyle: React.CSSProperties = {
+    minHeight: minHeight || undefined, 
+    minWidth: minWidth || undefined, 
+    maxWidth: maxWidth || undefined, 
+    maxHeight: maxHeight || undefined,
+    width: width || '100%', 
+    height: height || 'auto', 
+    borderRadius: borderRadius || undefined, 
+    padding: padding || '16px',
+    flexWrap: flexWrap as any || undefined,
+    textAlign: textAlign as any || undefined,
+    borderWidth: bw || undefined,
+    borderColor: borderColor || undefined,
+    borderStyle: borderStyle || (bw && bw !== '0px' ? 'solid' : 'none'),
+    background: bg,
+    display: display || 'flex', 
+    flexDirection: flexDir || direction || 'column',
+    justifyContent: mapJustify(justify),
+    alignItems: mapAlign(items || align),
+    gap: gap || '16px',
+    boxShadow: boxShadow || undefined,
+    zIndex: zIndex || undefined,
+    position: (zIndex || zIndex === 0) ? 'relative' : undefined,
   };
 
-  const bgStyle: React.CSSProperties = {};
-  const textStyle: React.CSSProperties = {};
-
-  if (variant === 'primary') {
-    bgStyle.backgroundColor = bgColor || '#3b82f6';
-    textStyle.color = '#ffffff';
-  } else if (variant === 'secondary') {
-    bgStyle.backgroundColor = '#e5e7eb';
-    textStyle.color = '#374151';
-  } else if (variant === 'outline') {
-    bgStyle.backgroundColor = 'transparent';
-    bgStyle.border = `2px solid ${bgColor || '#3b82f6'}`;
-    textStyle.color = bgColor || '#3b82f6';
-  }
+  // Handle tag and link
+  const Tag = (tag === 'a' && linkUrl) ? 'a' : tag || 'div';
+  const linkProps = (tag === 'a' && linkUrl) ? { href: linkUrl } : {};
 
   return (
-    <div {...rest}>
-      <a
-        href={href || '#'}
-        className={`inline-block font-medium rounded transition-colors cursor-pointer ${sizeClasses[size || 'md']}`}
-        style={{ ...bgStyle, ...textStyle }}
-      >
-        {label || 'Click Me'}
-      </a>
+    <Tag 
+      id={`block-${id}`} 
+      style={containerStyle} 
+      className={`${customClass || ''}`}
+      {...linkProps}
+    >
+      {children}
+    </Tag>
+  );
+};
+
+// Image Component - SIMPLIFIED & ROBUST
+export const ImageComponent: React.FC<any> = (props) => {
+  const {
+    src, alt, align, caption, id, customClass, customId, 
+    boxShadow, zIndex, responsive
+  } = props;
+
+  const imageSrc = cleanUrl(src);
+  const alignClass = align === 'center' ? 'items-center' : align === 'right' ? 'items-end' : 'items-start';
+
+  return (
+    <div id={customId || `block-wrap-${id}`} className={`flex flex-col ${alignClass} ${customClass || ''}`}>
+      <img 
+        id={`block-${id}`}
+        src={imageSrc || ''} 
+        alt={alt || ''} 
+        className="object-cover"
+        style={{
+          borderRadius: undefined,
+          boxShadow: boxShadow || undefined,
+          zIndex: zIndex || undefined,
+          position: (zIndex || zIndex === 0) ? 'relative' : undefined,
+        }}
+      />
+      {caption && <p className="text-xs text-slate-400 mt-2 italic">{caption}</p>}
     </div>
   );
 };
 
-export const ButtonElement: ElementDefinition = {
-  type: 'button',
-  label: 'Button',
-  icon: MousePointerClick,
-  category: 'basic',
-  defaultProps: {
-    label: 'Click Me',
-    href: '#',
-    variant: 'primary',
-    size: 'md',
-    color: '#ffffff',
-    bgColor: '#3b82f6',
-  },
-  controls: [
-    { key: 'label', label: 'Label', type: 'text' },
-    { key: 'href', label: 'Link URL', type: 'text' },
-    { key: 'variant', label: 'Variant', type: 'select', options: ['primary', 'secondary', 'outline'] },
-    { key: 'size', label: 'Size', type: 'select', options: ['sm', 'md', 'lg'] },
-    { key: 'color', label: 'Text Color', type: 'color' },
-    { key: 'bgColor', label: 'Background Color', type: 'color' },
-  ],
-  component: ButtonComponent,
-};
-
-// Divider Element Component
-export const DividerComponent: React.FC<any> = ({ thickness, color, style: divStyle, ...rest }) => {
+// Divider Component
+export const DividerComponent: React.FC<any> = (props) => {
+  const { thickness, color, style: divStyle, padding, id, customClass, customId } = props;
   return (
-    <hr
-      style={{
-        border: 'none',
-        borderTop: `${thickness || 1}px ${divStyle || 'solid'} ${color || '#e5e7eb'}`,
-        margin: '16px 0',
-      }}
-      {...rest}
-    />
+    <div id={customId || `block-${id}`} className={`${customClass || ''}`} style={{ paddingTop: padding, paddingBottom: padding }}>
+      <hr style={{ borderColor: color || '#e5e7eb', borderWidth: thickness || '1px', borderStyle: divStyle || 'solid' }} />
+    </div>
   );
 };
 
-export const DividerElement: ElementDefinition = {
-  type: 'divider',
-  label: 'Divider',
-  icon: Minus,
-  category: 'basic',
-  defaultProps: {
-    thickness: 1,
-    color: '#e5e7eb',
-    style: 'solid',
-  },
-  controls: [
-    { key: 'thickness', label: 'Thickness', type: 'number' },
-    { key: 'color', label: 'Color', type: 'color' },
-    { key: 'style', label: 'Style', type: 'select', options: ['solid', 'dashed', 'dotted'] },
-  ],
-  component: DividerComponent,
-};
-
-// Spacer Element Component
-export const SpacerComponent: React.FC<any> = ({ height, ...rest }) => {
+// Spacer Component
+export const SpacerComponent: React.FC<any> = (props) => {
+  const { height, id, customClass, customId } = props;
   return (
-    <div
-      style={{ height: height || 40, width: '100%' }}
-      {...rest}
+    <div 
+      id={customId || `block-${id}`} 
+      style={{ height: height || 40 }} 
+      className={customClass || ''}
       aria-label="Spacer"
     />
   );
 };
-
-export const SpacerElement: ElementDefinition = {
-  type: 'spacer',
-  label: 'Spacer',
-  icon: MoveVertical,
-  category: 'basic',
-  defaultProps: {
-    height: 40,
-  },
-  controls: [
-    { key: 'height', label: 'Height (px)', type: 'number' },
-  ],
-  component: SpacerComponent,
-};
-
-// ============= LAYOUT ELEMENTS =============
-
-// Container Element Component (Container)
-export const ContainerComponent: React.FC<any> = ({ bgColor, bgImage, bgSize, width, height, minWidth, minHeight, maxWidth, maxHeight, borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap, children, ...rest }) => {
-  const bgStyle: React.CSSProperties = {};
-  if (bgColor && bgColor !== 'transparent') bgStyle.backgroundColor = bgColor;
-  if (bgImage) {
-    bgStyle.backgroundImage = `url(${bgImage})`;
-    bgStyle.backgroundSize = bgSize || 'cover';
-    bgStyle.backgroundPosition = 'center';
-    bgStyle.backgroundRepeat = 'no-repeat';
-  }
-
-  const borderStyleObj: React.CSSProperties = {};
-  if (borderWidth && borderWidth !== '0px') {
-    borderStyleObj.borderWidth = borderWidth;
-    borderStyleObj.borderColor = borderColor || '#e2e8f0';
-    borderStyleObj.borderStyle = borderStyle || 'solid';
-  }
-
-  return (
-    <div
-      style={{
-        ...bgStyle,
-        ...borderStyleObj,
-        width: width || '100%',
-        height: height || 'auto',
-        minWidth: minWidth || undefined,
-        minHeight: minHeight || undefined,
-        maxWidth: maxWidth || undefined,
-        maxHeight: maxHeight || undefined,
-        borderRadius: borderRadius || undefined,
-        padding: padding || '16px',
-        display: 'flex',
-        flexDirection: direction || 'column',
-        alignItems: align || 'stretch',
-        justifyContent: justify || 'flex-start',
-        gap: gap || '16px',
-      }}
-      className="min-h-[50px] w-full"
-      {...rest}
-    >
-      {children}
-    </div>
-  );
-};
-
-export const ContainerElement: ElementDefinition = {
-  type: 'container',
-  label: 'Container',
-  icon: Box,
-  category: 'layout',
-  defaultProps: {
-    bgColor: 'transparent',
-    bgImage: '',
-    bgSize: 'cover',
-    width: '',
-    height: '',
-    minWidth: '',
-    minHeight: '',
-    maxWidth: '',
-    maxHeight: '',
-    borderRadius: '',
-    borderWidth: '0px',
-    borderColor: '#e2e8f0',
-    borderStyle: 'none',
-    padding: '16px',
-    direction: 'column',
-    align: 'stretch',
-    justify: 'flex-start',
-    gap: '16px',
-  },
-  controls: [
-    { key: 'bgColor', label: 'Background Color', type: 'color' },
-    { key: 'bgImage', label: 'Background Image URL', type: 'image-url' },
-    { key: 'bgSize', label: 'BG Size', type: 'select', options: ['cover', 'contain', 'auto'] },
-    { key: 'padding', label: 'Padding', type: 'text' },
-    { key: 'direction', label: 'Direction', type: 'select', options: ['row', 'column'] },
-    { key: 'align', label: 'Align Items', type: 'select', options: ['flex-start', 'center', 'flex-end', 'stretch', 'baseline'] },
-    { key: 'justify', label: 'Justify Content', type: 'select', options: ['flex-start', 'center', 'flex-end', 'space-between', 'space-around', 'space-evenly'] },
-    { key: 'gap', label: 'Gap', type: 'text' },
-    { key: 'borderRadius', label: 'Border Radius', type: 'text' },
-    { key: 'borderWidth', label: 'Border Width', type: 'text' },
-    { key: 'borderColor', label: 'Border Color', type: 'color' },
-    { key: 'borderStyle', label: 'Border Style', type: 'select', options: ['none', 'solid', 'dashed', 'dotted'] },
-  ],
-  component: ContainerComponent,
-};
-
-// ============= MEDIA ELEMENTS =============
-
-// Image Element Component
-export const ImageComponent: React.FC<any> = ({ src, alt, width, height, objectFit, borderRadius, ...rest }) => {
-  return (
-    <div style={{ width: width || '100%', height: height || 'auto' }} {...rest}>
-      {src ? (
-        <img
-          src={src}
-          alt={alt || ''}
-          style={{
-            width: '100%',
-            height: height || 'auto',
-            objectFit: objectFit || 'cover',
-            borderRadius: borderRadius || '0',
-          }}
-        />
-      ) : (
-        <div
-          style={{
-            width: '100%',
-            height: height || '200px',
-            backgroundColor: '#e5e7eb',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: borderRadius || '0',
-          }}
-        >
-          <span style={{ color: '#9ca3af' }}>No image selected</span>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export const ImageElement: ElementDefinition = {
-  type: 'image',
-  label: 'Image',
-  icon: Image,
-  category: 'media',
-  defaultProps: {
-    src: '',
-    alt: '',
-    width: '100%',
-    height: 'auto',
-    objectFit: 'cover',
-    borderRadius: '0',
-  },
-  controls: [
-    { key: 'src', label: 'Image URL', type: 'image-url' },
-    { key: 'alt', label: 'Alt Text', type: 'text' },
-    { key: 'width', label: 'Width', type: 'text' },
-    { key: 'height', label: 'Height', type: 'text' },
-    { key: 'objectFit', label: 'Object Fit', type: 'select', options: ['cover', 'contain', 'fill', 'none', 'scale-down'] },
-    { key: 'borderRadius', label: 'Border Radius', type: 'text' },
-  ],
-  component: ImageComponent,
-};
-
-// ============= ADVANCED ELEMENTS =============
-
-// Widget Element Component
-export const WidgetComponent: React.FC<any> = ({ widgetName, ...rest }) => {
-  return (
-    <div
-      style={{
-        padding: '24px',
-        backgroundColor: '#f8fafc',
-        border: '2px dashed #cbd5e1',
-        borderRadius: '8px',
-        textAlign: 'center',
-      }}
-      {...rest}
-    >
-      <Puzzle size={32} className="mx-auto mb-2 text-gray-400" />
-      <p className="text-gray-500 font-medium">Widget: {widgetName || 'Not selected'}</p>
-      <p className="text-gray-400 text-sm mt-1">Widget renders on the live site</p>
-    </div>
-  );
-};
-
-export const WidgetElement: ElementDefinition = {
-  type: 'widget',
-  label: 'Widget',
-  icon: Puzzle,
-  category: 'advanced',
-  defaultProps: {
-    widgetName: 'contact_form',
-  },
-  controls: [
-    { key: 'widgetName', label: 'Widget Name', type: 'select', options: [
-      { label: 'Contact Form', value: 'contact_form' },
-      { label: 'Login Form', value: 'login_form' },
-      { label: 'Register Form', value: 'register_form' },
-      { label: 'Newsletter Form', value: 'newsletter_form' },
-    ]},
-  ],
-  component: WidgetComponent,
-};
-
-// Accordion Item Element Component
-export const AccordionItemComponent: React.FC<any> = ({ title, text, icon, iconSize, iconColor, titleBgColor, titleTextColor, contentBgColor, contentTextColor, borderColor, borderRadius, padding, ...rest }) => {
-  const IconComp = icon ? ChevronDown : null;
-  return (
-    <div
-      style={{
-        border: `1px solid ${borderColor || '#e2e8f0'}`,
-        borderRadius: borderRadius || '8px',
-        overflow: 'hidden',
-      }}
-      {...rest}
-    >
-      <div
-        style={{
-          backgroundColor: titleBgColor || '#f8fafc',
-          color: titleTextColor || '#1e293b',
-          padding: padding || '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontWeight: 600,
-        }}
-      >
-        <span>{title || 'Accordion Title'}</span>
-        {IconComp && <IconComp size={parseInt(iconSize) || 16} style={{ color: iconColor || '#64748b' }} />}
-      </div>
-      <div
-        style={{
-          backgroundColor: contentBgColor || '#ffffff',
-          color: contentTextColor || '#475569',
-          padding: padding || '14px 20px',
-        }}
-      >
-        {text || 'Accordion content goes here...'}
-      </div>
-    </div>
-  );
-};
-
-export const AccordionItemElement: ElementDefinition = {
-  type: 'accordionItem',
-  label: 'Accordion Item',
-  icon: ChevronDown,
-  category: 'advanced',
-  defaultProps: {
-    title: 'Accordion Title',
-    text: 'This is the hidden content that appears when you click the title.',
-    icon: 'ChevronDown',
-    iconSize: '16',
-    iconColor: '#64748b',
-    titleBgColor: '#f8fafc',
-    titleTextColor: '#1e293b',
-    contentBgColor: '#ffffff',
-    contentTextColor: '#475569',
-    borderColor: '#e2e8f0',
-    borderRadius: '8px',
-    padding: '14px 20px',
-  },
-  controls: [
-    { key: 'title', label: 'Title', type: 'text' },
-    { key: 'text', label: 'Content', type: 'textarea' },
-    { key: 'icon', label: 'Icon Name', type: 'text' },
-    { key: 'iconSize', label: 'Icon Size', type: 'text' },
-    { key: 'iconColor', label: 'Icon Color', type: 'color' },
-    { key: 'titleBgColor', label: 'Title BG Color', type: 'color' },
-    { key: 'titleTextColor', label: 'Title Text Color', type: 'color' },
-    { key: 'contentBgColor', label: 'Content BG Color', type: 'color' },
-    { key: 'contentTextColor', label: 'Content Text Color', type: 'color' },
-    { key: 'borderColor', label: 'Border Color', type: 'color' },
-    { key: 'borderRadius', label: 'Border Radius', type: 'text' },
-    { key: 'padding', label: 'Padding', type: 'text' },
-  ],
-  component: AccordionItemComponent,
-};
-
-// Tabs Element Component
-export const TabsComponent: React.FC<any> = ({ tabs, activeTab, bgColor, textColor, activeBgColor, activeTextColor, borderColor, ...rest }) => {
-  let parsedTabs = [];
-  try {
-    parsedTabs = tabs ? JSON.parse(tabs) : [
-      { label: 'Tab 1', content: 'Content for tab 1' },
-      { label: 'Tab 2', content: 'Content for tab 2' },
-    ];
-  } catch {
-    parsedTabs = [
-      { label: 'Tab 1', content: 'Content for tab 1' },
-      { label: 'Tab 2', content: 'Content for tab 2' },
-    ];
-  }
-
-  return (
-    <div {...rest}>
-      <div style={{ display: 'flex', borderBottom: `2px solid ${borderColor || '#e2e8f0'}`, gap: '4px' }}>
-        {parsedTabs.map((tab: any, i: number) => (
-          <button
-            key={i}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: i === 0 ? (activeBgColor || '#3b82f6') : (bgColor || 'transparent'),
-              color: i === 0 ? (activeTextColor || '#ffffff') : (textColor || '#64748b'),
-              border: 'none',
-              borderBottom: i === 0 ? `2px solid ${activeBgColor || '#3b82f6'}` : '2px solid transparent',
-              marginBottom: '-2px',
-              cursor: 'pointer',
-              fontWeight: i === 0 ? 600 : 400,
-              borderRadius: '4px 4px 0 0',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <div style={{ padding: '16px', color: textColor || '#374151' }}>
-        {parsedTabs[0]?.content || 'Tab content'}
-      </div>
-    </div>
-  );
-};
-
-export const TabsElement: ElementDefinition = {
-  type: 'tabs',
-  label: 'Tabs',
-  icon: LayoutGrid,
-  category: 'advanced',
-  defaultProps: {
-    tabs: JSON.stringify([
-      { label: 'Tab 1', content: 'Content for tab 1' },
-      { label: 'Tab 2', content: 'Content for tab 2' },
-      { label: 'Tab 3', content: 'Content for tab 3' },
-    ]),
-    bgColor: 'transparent',
-    textColor: '#64748b',
-    activeBgColor: '#3b82f6',
-    activeTextColor: '#ffffff',
-    borderColor: '#e2e8f0',
-  },
-  controls: [
-    { key: 'tabs', label: 'Tabs (JSON)', type: 'textarea' },
-    { key: 'bgColor', label: 'Tab BG Color', type: 'color' },
-    { key: 'textColor', label: 'Tab Text Color', type: 'color' },
-    { key: 'activeBgColor', label: 'Active BG Color', type: 'color' },
-    { key: 'activeTextColor', label: 'Active Text Color', type: 'color' },
-    { key: 'borderColor', label: 'Border Color', type: 'color' },
-  ],
-  component: TabsComponent,
-};
-
-// Icon Element Component
-export const IconComponent: React.FC<any> = ({ icon, size, color, align, ...rest }) => {
-  const IconComp = ListChecks; // fallback
-  return (
-    <div style={{ textAlign: align || 'center' }} {...rest}>
-      <IconComp size={parseInt(size) || 32} style={{ color: color || '#3b82f6' }} />
-    </div>
-  );
-};
-
-export const IconElement: ElementDefinition = {
-  type: 'icon',
-  label: 'Icon',
-  icon: ListChecks,
-  category: 'media',
-  defaultProps: {
-    icon: 'Check',
-    size: '32',
-    color: '#3b82f6',
-    align: 'center',
-  },
-  controls: [
-    { key: 'icon', label: 'Icon Name (Lucide)', type: 'text' },
-    { key: 'size', label: 'Size (px)', type: 'text' },
-    { key: 'color', label: 'Color', type: 'color' },
-    { key: 'align', label: 'Alignment', type: 'select', options: ['left', 'center', 'right'] },
-  ],
-  component: IconComponent,
-};
-
-// List Item Element Component
-export const ListItemComponent: React.FC<any> = ({ text, icon, iconType, iconSize, iconColor, gap, textColor, ...rest }) => {
-  return (
-    <div
-      style={{ display: 'flex', alignItems: 'center', gap: gap || '12px' }}
-      {...rest}
-    >
-      <div style={{ color: iconColor || '#3b82f6', flexShrink: 0 }}>
-        <ListChecks size={parseInt(iconSize) || 20} />
-      </div>
-      <span style={{ color: textColor || '#1e293b' }}>{text || 'List item text'}</span>
-    </div>
-  );
-};
-
-export const ListItemElement: ElementDefinition = {
-  type: 'listItem',
-  label: 'List Item',
-  icon: List,
-  category: 'advanced',
-  defaultProps: {
-    text: 'List item text',
-    icon: 'Check',
-    iconType: 'lucide',
-    iconSize: '20',
-    iconColor: '#3b82f6',
-    gap: '12px',
-    textColor: '#1e293b',
-  },
-  controls: [
-    { key: 'text', label: 'Text', type: 'text' },
-    { key: 'icon', label: 'Icon Name', type: 'text' },
-    { key: 'iconSize', label: 'Icon Size', type: 'text' },
-    { key: 'iconColor', label: 'Icon Color', type: 'color' },
-    { key: 'gap', label: 'Gap', type: 'text' },
-    { key: 'textColor', label: 'Text Color', type: 'color' },
-  ],
-  component: ListItemComponent,
-};
-
-// Timeline Element Component
-export const TimelineComponent: React.FC<any> = ({ items, lineColor, dotColor, textColor, ...rest }) => {
-  let parsedItems = [];
-  try {
-    parsedItems = items ? JSON.parse(items) : [
-      { title: 'Event 1', description: 'Description of event 1' },
-      { title: 'Event 2', description: 'Description of event 2' },
-    ];
-  } catch {
-    parsedItems = [
-      { title: 'Event 1', description: 'Description of event 1' },
-      { title: 'Event 2', description: 'Description of event 2' },
-    ];
-  }
-
-  return (
-    <div style={{ position: 'relative', paddingLeft: '30px' }} {...rest}>
-      <div style={{
-        position: 'absolute', left: '8px', top: 0, bottom: 0,
-        width: '2px', backgroundColor: lineColor || '#e2e8f0',
-      }} />
-      {parsedItems.map((item: any, i: number) => (
-        <div key={i} style={{ position: 'relative', marginBottom: '24px' }}>
-          <div style={{
-            position: 'absolute', left: '-26px', top: '4px',
-            width: '14px', height: '14px', borderRadius: '50%',
-            backgroundColor: dotColor || '#3b82f6',
-          }} />
-          <h4 style={{ margin: '0 0 4px', color: textColor || '#1e293b', fontWeight: 600 }}>{item.title}</h4>
-          <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>{item.description}</p>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-export const TimelineElement: ElementDefinition = {
-  type: 'timeline',
-  label: 'Timeline',
-  icon: Clock,
-  category: 'advanced',
-  defaultProps: {
-    items: JSON.stringify([
-      { title: 'Event 1', description: 'Description of event 1' },
-      { title: 'Event 2', description: 'Description of event 2' },
-      { title: 'Event 3', description: 'Description of event 3' },
-    ]),
-    lineColor: '#e2e8f0',
-    dotColor: '#3b82f6',
-    textColor: '#1e293b',
-  },
-  controls: [
-    { key: 'items', label: 'Items (JSON)', type: 'textarea' },
-    { key: 'lineColor', label: 'Line Color', type: 'color' },
-    { key: 'dotColor', label: 'Dot Color', type: 'color' },
-    { key: 'textColor', label: 'Text Color', type: 'color' },
-  ],
-  component: TimelineComponent,
-};
-
-// Counter Element Component
-export const CounterComponent: React.FC<any> = ({ value, label, prefix, suffix, color, bgColor, ...rest }) => {
-  return (
-    <div
-      style={{
-        textAlign: 'center',
-        padding: '24px',
-        backgroundColor: bgColor || '#f8fafc',
-        borderRadius: '8px',
-      }}
-      {...rest}
-    >
-      <div style={{ fontSize: '48px', fontWeight: 'bold', color: color || '#3b82f6' }}>
-        {prefix || ''}{value || '100'}{suffix || ''}
-      </div>
-      {label && <p style={{ marginTop: '8px', color: '#64748b', fontSize: '16px' }}>{label}</p>}
-    </div>
-  );
-};
-
-export const CounterElement: ElementDefinition = {
-  type: 'counter',
-  label: 'Counter',
-  icon: Hash,
-  category: 'advanced',
-  defaultProps: {
-    value: '100',
-    label: 'Happy Clients',
-    prefix: '',
-    suffix: '+',
-    color: '#3b82f6',
-    bgColor: '#f8fafc',
-  },
-  controls: [
-    { key: 'value', label: 'Value', type: 'text' },
-    { key: 'label', label: 'Label', type: 'text' },
-    { key: 'prefix', label: 'Prefix', type: 'text' },
-    { key: 'suffix', label: 'Suffix', type: 'text' },
-    { key: 'color', label: 'Number Color', type: 'color' },
-    { key: 'bgColor', label: 'Background Color', type: 'color' },
-  ],
-  component: CounterComponent,
-};
-
-// Menu Element Component
-export const MenuComponent: React.FC<any> = ({ items, bgColor, textColor, hoverColor, activeColor, align, ...rest }) => {
-  let parsedItems = [];
-  try {
-    parsedItems = items ? JSON.parse(items) : [
-      { label: 'Home', url: '/' },
-      { label: 'About', url: '/about' },
-      { label: 'Services', url: '/services' },
-      { label: 'Contact', url: '/contact' },
-    ];
-  } catch {
-    parsedItems = [
-      { label: 'Home', url: '/' },
-      { label: 'About', url: '/about' },
-      { label: 'Services', url: '/services' },
-      { label: 'Contact', url: '/contact' },
-    ];
-  }
-
-  return (
-    <nav
-      style={{
-        backgroundColor: bgColor || '#ffffff',
-        padding: '12px 24px',
-        display: 'flex',
-        justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
-        gap: '24px',
-        borderRadius: '8px',
-      }}
-      {...rest}
-    >
-      {parsedItems.map((item: any, i: number) => (
-        <a
-          key={i}
-          href={item.url || '#'}
-          style={{
-            color: i === 0 ? (activeColor || '#3b82f6') : (textColor || '#374151'),
-            textDecoration: 'none',
-            fontWeight: i === 0 ? 600 : 400,
-            fontSize: '15px',
-          }}
-        >
-          {item.label}
-        </a>
-      ))}
-    </nav>
-  );
-};
-
-export const MenuElement: ElementDefinition = {
-  type: 'menu',
-  label: 'Menu',
-  icon: Menu,
-  category: 'advanced',
-  defaultProps: {
-    items: JSON.stringify([
-      { label: 'Home', url: '/' },
-      { label: 'About', url: '/about' },
-      { label: 'Services', url: '/services' },
-      { label: 'Contact', url: '/contact' },
-    ]),
-    bgColor: '#ffffff',
-    textColor: '#374151',
-    hoverColor: '#3b82f6',
-    activeColor: '#3b82f6',
-    align: 'left',
-  },
-  controls: [
-    { key: 'items', label: 'Menu Items (JSON)', type: 'textarea' },
-    { key: 'bgColor', label: 'Background Color', type: 'color' },
-    { key: 'textColor', label: 'Text Color', type: 'color' },
-    { key: 'hoverColor', label: 'Hover Color', type: 'color' },
-    { key: 'activeColor', label: 'Active Color', type: 'color' },
-    { key: 'align', label: 'Alignment', type: 'select', options: ['left', 'center', 'right'] },
-  ],
-  component: MenuComponent,
-};
-
-// Image Box Element Component
-export const ImageBoxComponent: React.FC<any> = ({ image, title, titleLevel, text, flexDir, imageWidth, gap, bgColor, textColor, borderRadius, padding, ...rest }) => {
-  const Tag = titleLevel ? `h${titleLevel}` : 'h4';
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: flexDir || 'row',
-        gap: gap || '20px',
-        backgroundColor: bgColor || 'transparent',
-        color: textColor || '#1e293b',
-        borderRadius: borderRadius || '12px',
-        padding: padding || '16px',
-        alignItems: 'center',
-      }}
-      {...rest}
-    >
-      {image ? (
-        <img
-          src={image}
-          alt={title || ''}
-          style={{
-            width: imageWidth || '100px',
-            height: imageWidth || '100px',
-            objectFit: 'cover',
-            borderRadius: borderRadius || '12px',
-            flexShrink: 0,
-          }}
-        />
-      ) : (
-        <div
-          style={{
-            width: imageWidth || '100px',
-            height: imageWidth || '100px',
-            backgroundColor: '#e5e7eb',
-            borderRadius: borderRadius || '12px',
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <ImagePlus size={24} className="text-gray-400" />
-        </div>
-      )}
-      <div>
-        {title && <Tag style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 600 }}>{title}</Tag>}
-        {text && <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>{text}</p>}
-      </div>
-    </div>
-  );
-};
-
-export const ImageBoxElement: ElementDefinition = {
-  type: 'imageBox',
-  label: 'Image Box',
-  icon: ImagePlus,
-  category: 'media',
-  defaultProps: {
-    image: '',
-    title: 'Feature Title',
-    titleLevel: '4',
-    text: 'Describe this feature in detail here.',
-    flexDir: 'row',
-    imageWidth: '100px',
-    gap: '20px',
-    bgColor: 'transparent',
-    textColor: '#1e293b',
-    borderRadius: '12px',
-    padding: '16px',
-  },
-  controls: [
-    { key: 'image', label: 'Image URL', type: 'image-url' },
-    { key: 'title', label: 'Title', type: 'text' },
-    { key: 'titleLevel', label: 'Heading Level', type: 'select', options: ['h2', 'h3', 'h4', 'h5', 'h6'] },
-    { key: 'text', label: 'Description', type: 'textarea' },
-    { key: 'flexDir', label: 'Layout', type: 'select', options: [
-      { label: 'Image Left', value: 'row' },
-      { label: 'Image Right', value: 'row-reverse' },
-      { label: 'Image Top', value: 'column' },
-      { label: 'Image Bottom', value: 'column-reverse' },
-    ]},
-    { key: 'imageWidth', label: 'Image Size', type: 'text' },
-    { key: 'gap', label: 'Gap', type: 'text' },
-    { key: 'bgColor', label: 'Background', type: 'color' },
-    { key: 'textColor', label: 'Text Color', type: 'color' },
-    { key: 'borderRadius', label: 'Border Radius', type: 'text' },
-    { key: 'padding', label: 'Padding', type: 'text' },
-  ],
-  component: ImageBoxComponent,
-};
-
-// ============= EXPORTS =============
-
-export const ELEMENTS: ElementDefinition[] = [
-  // Basic
-  HeadingElement,
-  TextElement,
-  ButtonElement,
-  DividerElement,
-  SpacerElement,
-  // Layout
-  ContainerElement,
-  // Media
-  ImageElement,
-  IconElement,
-  ImageBoxElement,
-  // Advanced
-  WidgetElement,
-  AccordionItemElement,
-  TabsElement,
-  ListItemElement,
-  TimelineElement,
-  CounterElement,
-  MenuElement,
-];
-
-export const ELEMENTS_BY_TYPE: Record<string, ElementDefinition> = ELEMENTS.reduce(
-  (acc, el) => {
-    acc[el.type] = el;
-    return acc;
-  },
-  {} as Record<string, ElementDefinition>
-);
-
-export const ELEMENTS_BY_CATEGORY: Record<string, ElementDefinition[]> = ELEMENTS.reduce(
-  (acc, el) => {
-    if (!acc[el.category]) {
-      acc[el.category] = [];
-    }
-    acc[el.category].push(el);
-    return acc;
-  },
-  {} as Record<string, ElementDefinition[]>
-);
-
-// Container types that can accept children
-export const CONTAINER_TYPES = ['container'];

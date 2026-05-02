@@ -3,6 +3,7 @@ import { useBuilderStore } from '../store/builderStore';
 import { ELEMENTS_BY_TYPE } from '../DynamicPages';
 import { findNode } from '../utils/treeUtils';
 import { RichTextEditor } from './RichTextEditor';
+import { ResponsivePanel } from './ResponsivePanel';
 
 export const PropsPanel: React.FC = () => {
   const selectedId = useBuilderStore((state) => state.selectedId);
@@ -130,11 +131,35 @@ export const PropsPanel: React.FC = () => {
         );
 
       case 'richtext':
+        // Check if this is a paragraph element with code mode
+        if (selectedNode?.type === 'paragraph' && selectedNode?.props?.editMode === 'code' && control.key === 'content') {
+          // Render raw HTML editor (textarea)
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-600">HTML Code</label>
+              </div>
+              <textarea
+                value={value || ''}
+                onChange={(e) => handleChange(control.key, e.target.value)}
+                rows={12}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="<p>Enter HTML here...</p>"
+              />
+            </div>
+          );
+        }
+        // Otherwise render TipTap rich text editor (visual mode)
         return (
-          <RichTextEditor
-            value={value}
-            onChange={(html) => handleChange(control.key, html)}
-          />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-gray-600">{control.label}</label>
+            </div>
+            <RichTextEditor
+              value={value}
+              onChange={(html) => handleChange(control.key, html)}
+            />
+          </div>
         );
 
       case 'image-url':
@@ -177,14 +202,25 @@ export const PropsPanel: React.FC = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        {elementDef.controls.map((control: any) => (
-          <div key={control.key}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {control.label}
-            </label>
-            {renderControl(control)}
-          </div>
-        ))}
+        {elementDef.controls
+          .filter((control: any) => !control.responsiveOnly)
+          .map((control: any) => (
+            <div key={control.key}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {control.label}
+              </label>
+              {renderControl(control)}
+            </div>
+          ))}
+      </div>
+
+      {/* Responsive Panel */}
+      <div className="p-4 border-t border-gray-200">
+        <ResponsivePanel
+          responsive={selectedNode?.props?.responsive}
+          onChange={(responsive) => handleChange('responsive', responsive)}
+          elementType={selectedNode?.type}
+        />
       </div>
 
       <div className="p-4 border-t border-gray-200">

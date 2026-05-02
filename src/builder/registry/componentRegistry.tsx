@@ -43,7 +43,7 @@ export function renderNode(node: BuilderNode, children?: React.ReactNode): React
     );
   }
 
-  return React.createElement(Component, { ...node.props, key: node.id }, children);
+  return React.createElement(Component, { ...node.props, id: node.id, key: node.id }, children);
 }
 
 /**
