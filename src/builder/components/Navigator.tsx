@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { BuilderNode } from '../utils/nodeFactory';
 import { useBuilderStore } from '../store/builderStore';
-import { CONTAINER_TYPES } from '../DynamicPages';
+import { CONTAINER_TYPES, ELEMENTS_BY_TYPE } from '../DynamicPages';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 
 interface NavigatorProps {
   tree: BuilderNode;
@@ -9,9 +10,10 @@ interface NavigatorProps {
 }
 
 export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
-  const { selectedId, select: setSelectedId, deleteNode, moveNode } = useBuilderStore();
+  const { selectedId, select: setSelectedId, deleteNode, moveNode, duplicateNode } = useBuilderStore();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['root']));
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null);
   
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -83,11 +85,33 @@ export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
     return checkDescendant(ancestor);
   };
   
+  const handleContextMenu = (e: React.MouseEvent, nodeId: string) => {
+    e.preventDefault(); // Prevent browser context menu
+    if (nodeId === 'root') return; // Don't show for root
+    setContextMenu({ nodeId, x: e.clientX, y: e.clientY });
+  };
+
+  // Close context menu on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
   const renderNode = useCallback((node: BuilderNode, depth: number = 0): React.ReactNode => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedIds.has(node.id);
     const isSelected = selectedId === node.id;
     const isDragOver = dragOverId === node.id;
+
+    // Get element definition for icon and label
+    const elementDef = ELEMENTS_BY_TYPE[node.type];
+    const IconComponent = elementDef?.icon;
+    const displayLabel = elementDef?.label || node.type;
     
     return (
       <div key={node.id}>
@@ -97,6 +121,7 @@ export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
           } ${isDragOver ? 'bg-slate-700 border-t-2 border-blue-400' : ''}`}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
           onClick={() => setSelectedId(node.id)}
+          onContextMenu={(e) => handleContextMenu(e, node.id)}
           draggable
           onDragStart={(e) => handleDragStart(e, node.id)}
           onDragOver={(e) => handleDragOver(e, node.id)}
@@ -105,27 +130,19 @@ export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
         >
           {/* Expand/Collapse toggle */}
           <span
-            className={`w-4 h-4 flex items-center justify-center text-xs ${
+            className={`w-4 h-4 flex items-center justify-center ${
               hasChildren ? 'visible cursor-pointer' : 'invisible'
             }`}
             onClick={(e) => { e.stopPropagation(); toggleExpand(node.id); }}
           >
-            {isExpanded ? '▼' : '▶'}
+            {isExpanded ? <ChevronDown size={14} className="text-white" /> : <ChevronRight size={14} className="text-white" />}
           </span>
-          
-          {/* Node icon/type */}
-          <span className="text-xs font-bold truncate flex-1 text-slate-300">{node.type}</span>
-           
-          {/* Delete button */}
-          {node.id !== 'root' && (
-            <span
-              className="text-red-400 hover:text-red-300 text-xs cursor-pointer ml-auto px-1"
-              onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}
-              title="Delete element"
-            >
-              ×
-            </span>
-          )}
+
+          {/* Node icon and label */}
+          <span className="flex items-center gap-1 text-sm truncate flex-1 text-slate-300">
+            {IconComponent && <IconComponent size={14} />}
+            <span className="font-bold">{displayLabel}</span>
+          </span>
         </div>
         
         {/* Render children */}
@@ -136,25 +153,47 @@ export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
         )}
       </div>
     );
-  }, [expandedIds, selectedId, setSelectedId, deleteNode, dragOverId]);
+  }, [expandedIds, selectedId, setSelectedId, deleteNode, duplicateNode, dragOverId]);
    
   return (
     <div className="h-full overflow-y-auto bg-slate-900">
-      <div className="flex items-center justify-between p-2 border-b border-slate-700 bg-slate-900">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">LAYERS</span>
-        {onClose && (
-          <button 
-            onClick={onClose} 
-            className="text-xs text-slate-400 hover:text-slate-200 w-5 h-5 flex items-center justify-center rounded hover:bg-slate-800"
-            title="Close Layers Panel"
-          >
-            ✕
-          </button>
-        )}
-      </div>
       <div className="p-1">
         {tree && renderNode(tree)}
       </div>
+      
+      {contextMenu && (
+        <>
+          {/* Overlay to catch outside clicks */}
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={() => setContextMenu(null)}
+          />
+          {/* Context Menu */}
+          <div 
+            className="fixed z-50 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-lg py-1"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <div
+              className="px-3 py-2 hover:bg-slate-700 cursor-pointer text-sm text-slate-300"
+              onClick={() => {
+                duplicateNode(contextMenu.nodeId);
+                setContextMenu(null);
+              }}
+            >
+              Duplicate
+            </div>
+            <div
+              className="px-3 py-2 hover:bg-slate-700 cursor-pointer text-sm text-red-400"
+              onClick={() => {
+                deleteNode(contextMenu.nodeId);
+                setContextMenu(null);
+              }}
+            >
+              Delete
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
