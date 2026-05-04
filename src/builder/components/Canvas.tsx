@@ -24,9 +24,6 @@ export const CanvasInner: React.FC<CanvasInnerProps> = ({ activeBreakpoint = 'md
     const bpConfig = breakpoints.find(bp => bp.key === activeBreakpoint);
     return bpConfig?.width || '100%';
   };
-
-  console.log('[Canvas] Rendering tree with', tree.children?.length || 0, 'children:', tree.children?.map(c => ({type: c.type, id: c.id?.substring(0, 20)})));
-  console.log('[Canvas] Full tree structure:', JSON.stringify(tree, null, 2).substring(0, 500) + '...');
   
   // Check for duplicates in children
   if (tree.children && tree.children.length > 0) {
@@ -53,7 +50,7 @@ export const CanvasInner: React.FC<CanvasInnerProps> = ({ activeBreakpoint = 'md
         </div>
       ) : (
         <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-          <div className="text-center text-gray-400">
+          <div className="text-center text-slate-400">
             <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 4v16m8-8H4" />
             </svg>

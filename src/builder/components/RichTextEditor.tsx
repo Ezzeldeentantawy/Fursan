@@ -74,15 +74,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
   };
 
   return (
-    <div className="rich-text-editor border border-gray-300 rounded-md overflow-hidden">
+    <div className="rich-text-editor border border-slate-800 rounded-xl overflow-hidden">
       {/* Toolbar */}
-      <div className="bg-gray-50 border-b border-gray-300 p-2 flex flex-wrap gap-1">
+      <div className="bg-slate-950/50 border-b border-slate-800 p-2 flex flex-wrap gap-1">
         {/* Text Formatting */}
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm font-bold ${
-            editor.isActive('bold') ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm font-bold text-slate-300 ${
+            editor.isActive('bold') ? 'bg-slate-700 text-white' : ''
           }`}
           title="Bold"
         >
@@ -91,8 +91,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm italic ${
-            editor.isActive('italic') ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm italic text-slate-300 ${
+            editor.isActive('italic') ? 'bg-slate-700 text-white' : ''
           }`}
           title="Italic"
         >
@@ -101,8 +101,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm underline ${
-            editor.isActive('underline') ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm underline text-slate-300 ${
+            editor.isActive('underline') ? 'bg-slate-700 text-white' : ''
           }`}
           title="Underline"
         >
@@ -111,22 +111,22 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleStrike().run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm line-through ${
-            editor.isActive('strike') ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm line-through text-slate-300 ${
+            editor.isActive('strike') ? 'bg-slate-700 text-white' : ''
           }`}
           title="Strikethrough"
         >
           S
         </button>
 
-        <div className="w-px bg-gray-300 mx-1" />
+        <div className="w-px bg-slate-700 mx-1" />
 
         {/* Headings */}
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm ${
-            editor.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 ${
+            editor.isActive('heading', { level: 1 }) ? 'bg-slate-700 text-white' : ''
           }`}
           title="Heading 1"
         >
@@ -135,8 +135,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm ${
-            editor.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 ${
+            editor.isActive('heading', { level: 2 }) ? 'bg-slate-700 text-white' : ''
           }`}
           title="Heading 2"
         >
@@ -145,22 +145,22 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm ${
-            editor.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 ${
+            editor.isActive('heading', { level: 3 }) ? 'bg-slate-700 text-white' : ''
           }`}
           title="Heading 3"
         >
           H3
         </button>
 
-        <div className="w-px bg-gray-300 mx-1" />
+        <div className="w-px bg-slate-700 mx-1" />
 
         {/* Lists */}
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm ${
-            editor.isActive('bulletList') ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 ${
+            editor.isActive('bulletList') ? 'bg-slate-700 text-white' : ''
           }`}
           title="Bullet List"
         >
@@ -169,22 +169,22 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm ${
-            editor.isActive('orderedList') ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 ${
+            editor.isActive('orderedList') ? 'bg-slate-700 text-white' : ''
           }`}
           title="Numbered List"
         >
           1. List
         </button>
 
-        <div className="w-px bg-gray-300 mx-1" />
+        <div className="w-px bg-slate-700 mx-1" />
 
         {/* Alignment */}
         <button
           type="button"
           onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm ${
-            editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 ${
+            editor.isActive({ textAlign: 'left' }) ? 'bg-slate-700 text-white' : ''
           }`}
           title="Align Left"
         >
@@ -193,8 +193,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <button
           type="button"
           onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm ${
-            editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 ${
+            editor.isActive({ textAlign: 'center' }) ? 'bg-slate-700 text-white' : ''
           }`}
           title="Align Center"
         >
@@ -203,36 +203,36 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <button
           type="button"
           onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm ${
-            editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 ${
+            editor.isActive({ textAlign: 'right' }) ? 'bg-slate-700 text-white' : ''
           }`}
           title="Align Right"
         >
           →
         </button>
 
-        <div className="w-px bg-gray-300 mx-1" />
+        <div className="w-px bg-slate-700 mx-1" />
 
         {/* Link */}
         <button
           type="button"
           onClick={addLink}
-          className={`px-2 py-1 rounded hover:bg-gray-200 text-sm ${
-            editor.isActive('link') ? 'bg-gray-200' : ''
+          className={`px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 ${
+            editor.isActive('link') ? 'bg-slate-700 text-white' : ''
           }`}
           title="Add Link"
         >
           🔗
         </button>
 
-        <div className="w-px bg-gray-300 mx-1" />
+        <div className="w-px bg-slate-700 mx-1" />
 
         {/* Undo/Redo */}
         <button
           type="button"
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
-          className="px-2 py-1 rounded hover:bg-gray-200 text-sm disabled:opacity-50"
+          className="px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 disabled:opacity-50"
           title="Undo"
         >
           ↩
@@ -241,7 +241,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
           type="button"
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
-          className="px-2 py-1 rounded hover:bg-gray-200 text-sm disabled:opacity-50"
+          className="px-2 py-1 rounded hover:bg-slate-800 text-sm text-slate-300 disabled:opacity-50"
           title="Redo"
         >
           ↪
@@ -249,7 +249,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
       </div>
 
       {/* Editor Content */}
-      <div className="p-3 min-h-[120px] bg-white">
+      <div className="p-3 min-h-[120px] bg-slate-900 text-white">
         <EditorContent editor={editor} />
       </div>
     </div>

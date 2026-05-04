@@ -423,38 +423,38 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="bg-white rounded-lg w-3/4 max-w-5xl h-3/4 max-h-[700px] flex flex-col shadow-2xl"
+        className="bg-slate-900 rounded-xl w-3/4 max-w-5xl h-3/4 max-h-[700px] flex flex-col shadow-2xl border border-slate-700"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+        <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
           <div className="flex items-center gap-3">
-            <LayoutTemplate size={20} className="text-purple-600" />
+            <LayoutTemplate size={20} className="text-purple-400" />
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">Page Templates</h2>
-              <p className="text-xs text-gray-500">Choose a template to start with</p>
+              <h2 className="text-lg font-semibold text-white">Page Templates</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Choose a template to start with</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 transition-colors">
             <X size={20} />
           </button>
         </div>
 
         {/* Search and Save Button */}
-        <div className="p-4 border-b flex items-center gap-3">
+        <div className="p-4 border-b border-slate-700 flex items-center gap-3">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search templates..."
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-9 pr-4 py-2 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
           </div>
           <button
             onClick={() => setShowSaveDialog(true)}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-medium flex items-center gap-2 transition-colors"
+            className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 text-xs font-bold flex items-center gap-2 transition-colors"
           >
             <Save size={16} />
             Save Current as Template
@@ -464,7 +464,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
         {/* Templates Grid */}
         <div className="flex-1 overflow-y-auto p-4">
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <div className="flex flex-col items-center justify-center h-full text-slate-400">
               <LayoutTemplate size={48} className="mb-3 opacity-50" />
               <p className="text-sm font-medium">No templates found</p>
               <p className="text-xs">Try a different search term</p>
@@ -477,17 +477,17 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
                   onClick={() => handleSelect(template)}
                   onMouseEnter={() => setHoveredId(template.id)}
                   onMouseLeave={() => setHoveredId(null)}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all relative group ${
+                  className={`border rounded-xl p-4 cursor-pointer transition-all relative group ${
                     selectedId === template.id
-                      ? 'border-purple-500 bg-purple-50 shadow-md'
-                      : 'border-gray-200 hover:border-purple-300 hover:shadow-sm'
+                      ? 'border-purple-500 bg-slate-800 shadow-md'
+                      : 'border-slate-700 hover:border-purple-300 hover:shadow-sm'
                   }`}
                 >
                   {/* Delete button for user-saved templates (not sample templates) */}
                   {!SAMPLE_TEMPLATES.find((t) => t.id === template.id) && onDeleteTemplate && (
                     <button
                       onClick={(e) => handleDelete(e, template.id)}
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-100"
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-900/20 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-900/40"
                       title="Delete template"
                     >
                       <Trash2 size={12} />
@@ -495,14 +495,14 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
                   )}
 
                   {/* Thumbnail */}
-                  <div className="text-4xl mb-3 text-center p-4 bg-gray-50 rounded-md">
+                  <div className="text-4xl mb-3 text-center p-4 bg-slate-950/50 rounded-lg">
                     {template.thumbnail}
                   </div>
 
                   {/* Template Info */}
-                  <div className="font-medium text-sm text-gray-800">{template.name}</div>
+                  <div className="font-medium text-sm text-white">{template.name}</div>
                   {template.description && (
-                    <div className="text-xs text-gray-500 mt-1 line-clamp-2">{template.description}</div>
+                    <div className="text-xs text-slate-500 mt-1 line-clamp-2">{template.description}</div>
                   )}
 
                   {/* Selected indicator */}
@@ -523,24 +523,24 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
         </div>
 
         {/* Footer with Apply Button */}
-        <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
-          <div className="text-xs text-gray-500">
+        <div className="p-4 border-t border-slate-700 bg-slate-900 flex justify-between items-center">
+          <div className="text-xs text-slate-500">
             {selectedId ? 'Template selected' : 'Select a template to apply'}
           </div>
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors"
+              className="px-4 py-2 text-slate-400 hover:text-slate-200 text-xs font-bold transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleApply}
               disabled={!selectedId}
-              className={`px-6 py-2 rounded-lg text-white text-sm font-medium flex items-center gap-2 transition-colors ${
+              className={`px-6 py-2 rounded-xl text-white text-xs font-bold flex items-center gap-2 transition-colors ${
                 selectedId
                   ? 'bg-purple-500 hover:bg-purple-600'
-                  : 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-slate-600 cursor-not-allowed'
               }`}
             >
               <CheckCheck size={16} />
@@ -553,28 +553,28 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
       {/* Save Dialog */}
       {showSaveDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
-          <div className="bg-white rounded-lg p-6 w-96 shadow-2xl">
-            <h3 className="text-lg font-semibold mb-4">Save as Template</h3>
+          <div className="bg-slate-900 rounded-xl p-6 w-96 shadow-2xl border border-slate-700">
+            <h3 className="text-lg font-semibold mb-4 text-white">Save as Template</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Template Name</label>
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Template Name</label>
                 <input
                   type="text"
                   value={newTemplateName}
                   onChange={(e) => setNewTemplateName(e.target.value)}
                   placeholder="Enter template name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Description (optional)</label>
                 <textarea
                   value={newTemplateDesc}
                   onChange={(e) => setNewTemplateDesc(e.target.value)}
                   placeholder="Describe this template..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  className="w-full px-3 py-2 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                 />
               </div>
             </div>
@@ -585,17 +585,17 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
                   setNewTemplateName('');
                   setNewTemplateDesc('');
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors"
+                className="px-4 py-2 text-slate-400 hover:text-slate-200 text-xs font-bold transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={!newTemplateName.trim()}
-                className={`px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-xl text-white text-xs font-bold transition-colors ${
                   newTemplateName.trim()
                     ? 'bg-purple-500 hover:bg-purple-600'
-                    : 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-slate-600 cursor-not-allowed'
                 }`}
               >
                 Save Template

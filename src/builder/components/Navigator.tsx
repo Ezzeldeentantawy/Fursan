@@ -92,9 +92,9 @@ export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
     return (
       <div key={node.id}>
         <div
-          className={`flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-gray-100 transition-colors ${
-            isSelected ? 'bg-blue-100 border-l-2 border-blue-500' : ''
-          } ${isDragOver ? 'bg-blue-50 border-t-2 border-blue-400' : ''}`}
+          className={`flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-slate-800 transition-colors ${
+            isSelected ? 'bg-slate-700 border-l-2 border-blue-500' : ''
+          } ${isDragOver ? 'bg-slate-700 border-t-2 border-blue-400' : ''}`}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
           onClick={() => setSelectedId(node.id)}
           draggable
@@ -114,12 +114,12 @@ export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
           </span>
           
           {/* Node icon/type */}
-          <span className="text-xs font-medium truncate flex-1">{node.type}</span>
-          
+          <span className="text-xs font-bold truncate flex-1 text-slate-300">{node.type}</span>
+           
           {/* Delete button */}
           {node.id !== 'root' && (
             <span
-              className="text-red-500 hover:text-red-700 text-xs cursor-pointer ml-auto px-1"
+              className="text-red-400 hover:text-red-300 text-xs cursor-pointer ml-auto px-1"
               onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}
               title="Delete element"
             >
@@ -137,15 +137,15 @@ export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
       </div>
     );
   }, [expandedIds, selectedId, setSelectedId, deleteNode, dragOverId]);
-  
+   
   return (
-    <div className="h-full overflow-y-auto bg-white">
-      <div className="flex items-center justify-between p-2 border-b bg-gray-50">
-        <span className="text-xs font-semibold tracking-wide text-gray-600">LAYERS</span>
+    <div className="h-full overflow-y-auto bg-slate-900">
+      <div className="flex items-center justify-between p-2 border-b border-slate-700 bg-slate-900">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">LAYERS</span>
         {onClose && (
           <button 
             onClick={onClose} 
-            className="text-xs text-gray-500 hover:text-gray-700 w-5 h-5 flex items-center justify-center rounded hover:bg-gray-200"
+            className="text-xs text-slate-400 hover:text-slate-200 w-5 h-5 flex items-center justify-center rounded hover:bg-slate-800"
             title="Close Layers Panel"
           >
             ✕

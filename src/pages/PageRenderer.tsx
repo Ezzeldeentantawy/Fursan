@@ -15,6 +15,15 @@ const pagesApi = basePagesApi as any;
 const alignClass = (a: string) => a === 'center' ? 'text-center' : a === 'right' ? 'text-right' : 'text-left';
 
 /**
+ * Normalize block ID to ensure it has the "block-" prefix
+ * Handles both legacy IDs (without prefix) and new IDs (with prefix)
+ */
+const getBlockId = (id: string): string => {
+  if (!id) return id;
+  return id.startsWith('block-') ? id : `block-${id}`;
+};
+
+/**
  * Clean URL strings that may have JSON escape sequences
  * Handles cases where URLs come with \/ instead of just /
  */
@@ -28,6 +37,7 @@ function generateResponsiveStyles(blockId: string, responsive: Record<string, Re
   if (!responsive) return null;
 
   let css = '';
+  const normalizedBlockId = getBlockId(blockId);
 
   // Use breakpoints from DynamicPages
   breakpoints.forEach((bpConfig) => {
@@ -35,17 +45,20 @@ function generateResponsiveStyles(blockId: string, responsive: Record<string, Re
     const props = responsive[bp];
     if (!props || Object.keys(props).length === 0) return;
 
+    // ✅ Accumulate ALL rules for this breakpoint
+    let allRules = '';
+    let targetSelector = `#${normalizedBlockId}`;
+
     Object.entries(props).forEach(([key, val]) => {
       if (!val) return;
-      let targetSelector = `#block-${blockId}`;
       let cleanKey = key;
 
       // Handle sub-selectors for prefixed props
       if (key.startsWith('content')) {
-        targetSelector += ` .accordion-content`;
+        targetSelector = `#${normalizedBlockId} .accordion-content`;
         cleanKey = key.replace('content', '').charAt(0).toLowerCase() + key.replace('content', '').slice(1);
       } else if (key.startsWith('desc')) {
-        targetSelector += ` .image-box-desc`;
+        targetSelector = `#${normalizedBlockId} .image-box-desc`;
         cleanKey = key.replace('desc', '').charAt(0).toLowerCase() + key.replace('desc', '').slice(1);
       }
 
@@ -87,27 +100,33 @@ function generateResponsiveStyles(blockId: string, responsive: Record<string, Re
       if (cleanKey === 'minHeight') rule = `min-height: ${val} !important; `;
       if (cleanKey === 'maxHeight') rule = `max-height: ${val} !important; `;
       if (cleanKey === 'flexWrap') rule = `flex-wrap: ${val} !important; `;
+      
       if (rule) {
-        let mediaQuery = '';
-        const { minWidth, maxWidth } = bpConfig;
-
-        // Handle base breakpoint (minWidth === 0, maxWidth !== null)
-        // Handle sm breakpoint (minWidth > 0, maxWidth !== null)
-        // Handle md breakpoint (minWidth > 0, maxWidth === null)
-        if (minWidth === 0 && maxWidth !== null) {
-          // Mobile (base): 0 to maxWidth
-          mediaQuery = `@media (max-width: ${maxWidth}px) { ${targetSelector} { ${rule} } }\n`;
-        } else if (minWidth !== null && maxWidth !== null) {
-          // Tablet (sm): minWidth to maxWidth
-          mediaQuery = `@media (min-width: ${minWidth}px) and (max-width: ${maxWidth}px) { ${targetSelector} { ${rule} } }\n`;
-        } else if (minWidth !== null && maxWidth === null) {
-          // Desktop (md): minWidth and up
-          mediaQuery = `@media (min-width: ${minWidth}px) { ${targetSelector} { ${rule} } }\n`;
-        }
-
-        css += mediaQuery;
+        allRules += rule; // ✅ Accumulate ALL rules
       }
     });
+    
+    // ✅ Create ONE CSS rule for this breakpoint with ALL properties
+    if (allRules) {
+      let mediaQuery = '';
+      const { minWidth, maxWidth } = bpConfig;
+
+      // Handle base breakpoint (minWidth === 0, maxWidth !== null)
+      // Handle sm breakpoint (minWidth > 0, maxWidth !== null)
+      // Handle md breakpoint (minWidth > 0, maxWidth === null)
+      if (minWidth === 0 && maxWidth !== null) {
+        // Mobile (base): 0 to maxWidth
+        mediaQuery = `@media (max-width: ${maxWidth}px) { ${targetSelector} { ${allRules} } }\n`;
+      } else if (minWidth !== null && maxWidth !== null) {
+        // Tablet (sm): minWidth to maxWidth
+        mediaQuery = `@media (min-width: ${minWidth}px) and (max-width: ${maxWidth}px) { ${targetSelector} { ${allRules} } }\n`;
+      } else if (minWidth !== null && maxWidth === null) {
+        // Desktop (md): minWidth and up
+        mediaQuery = `@media (min-width: ${minWidth}px) { ${targetSelector} { ${allRules} } }\n`;
+      }
+
+      css += mediaQuery;
+    }
   });
 
   if (!css) return null;
@@ -315,14 +334,14 @@ const PageRenderer: React.FC = () => {
           return (
             <>
               {styles}
-              <div id={`block-${block.id}`} style={containerStyle} className={`${p.customClass || ''}`}>
+              <div id={getBlockId(block.id)} style={containerStyle} className={`${p.customClass || ''}`}>
                 {(block.children ?? []).map(renderBlock)}
               </div>
             </>
           );
         }
         case 'hero': return (
-          <section key={block.id} id={p.customId || `block-${block.id}`} style={{ background: p.bgColor, color: p.textColor, minHeight: p.minHeight, boxShadow: p.boxShadow, zIndex: p.zIndex, position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined }} className={`w-full flex flex-col items-${p.align === 'center' ? 'center' : p.align === 'right' ? 'end' : 'start'} justify-center px-12 py-16 ${p.customClass || ''}`}>
+          <section key={block.id} id={p.customId || getBlockId(block.id)} style={{ background: p.bgColor, color: p.textColor, minHeight: p.minHeight, boxShadow: p.boxShadow, zIndex: p.zIndex, position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined }} className={`w-full flex flex-col items-${p.align === 'center' ? 'center' : p.align === 'right' ? 'end' : 'start'} justify-center px-12 py-16 ${p.customClass || ''}`}>
             <h1 className={`text-4xl font-black mb-4 max-w-3xl ${alignClass(p.align)}`}>{p.title}</h1>
             <p className="text-lg opacity-80 mb-8 max-w-xl">{p.subtitle}</p>
             {p.ctaText && <a href={p.ctaUrl} className="bg-white text-slate-900 font-bold px-8 py-4 rounded-xl text-sm hover:shadow-lg transition transform hover:scale-105">{p.ctaText}</a>}
@@ -338,9 +357,9 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || `block-wrap-${block.id}`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
+              <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
                 <Tag
-                  id={`block-${block.id}`}
+                  id={getBlockId(block.id)}
                   className={`font-black ${(!typo.fontSize) ? (sizes[p.level] || 'text-3xl') : ''}`}
                   style={{
                     color: p.color,
@@ -372,8 +391,8 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || `block-wrap-${block.id}`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
-                <div id={`block-${block.id}`} className="prose max-w-none leading-relaxed" style={{ color: p.color, textDecoration: p.textDecoration, opacity: p.opacity ?? 1, minHeight: p.minHeight || undefined, boxShadow: p.boxShadow, textAlign: p.textAlign as any, zIndex: p.zIndex, position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined, ...typo }} dangerouslySetInnerHTML={{ __html: p.html }} />
+              <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
+                <div id={getBlockId(block.id)} className="prose max-w-none leading-relaxed" style={{ color: p.color, textDecoration: p.textDecoration, opacity: p.opacity ?? 1, minHeight: p.minHeight || undefined, boxShadow: p.boxShadow, textAlign: p.textAlign as any, zIndex: p.zIndex, position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined, ...typo }} dangerouslySetInnerHTML={{ __html: p.html }} />
               </div>
             </React.Fragment>
           );
@@ -385,8 +404,8 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || `block-wrap-${block.id}`} className={`flex flex-col items-${p.align === 'center' ? 'center' : p.align === 'right' ? 'end' : 'start'} ${p.customClass || ''}`}>
-                <img id={`block-${block.id}`} src={imageSrc} alt={p.alt} style={{
+              <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`flex flex-col items-${p.align === 'center' ? 'center' : p.align === 'right' ? 'end' : 'start'} ${p.customClass || ''}`}>
+                <img id={getBlockId(block.id)} src={imageSrc} alt={p.alt} style={{
                   borderRadius: p.borderRadius,
                   boxShadow: p.boxShadow,
                   zIndex: p.zIndex,
@@ -401,7 +420,7 @@ const PageRenderer: React.FC = () => {
           const styles = generateResponsiveStyles(block.id, p.responsive);
           const Icon = p.icon ? (LucideIcons as any)[p.icon] : null;
           const hoverStyle = `
-            #block-${block.id}:hover {
+            #${getBlockId(block.id)}:hover {
               background-color: ${p.hoverBg || p.bgColor || 'initial'} !important;
               color: ${p.hoverColor || p.textColor || 'initial'} !important;
               border-color: ${p.hoverBorderColor || p.borderColor || 'initial'} !important;
@@ -414,9 +433,9 @@ const PageRenderer: React.FC = () => {
             <React.Fragment key={block.id}>
               {styles}
               <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />
-              <div id={p.customId || `block-wrap-${block.id}`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
+              <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
                 <a
-                  id={`block-${block.id}`}
+                  id={getBlockId(block.id)}
                   href={p.url}
                   className={`inline-flex items-center gap-2 font-bold transition-all duration-200 ${p.size === 'sm' ? 'px-4 py-2 text-xs' : p.size === 'lg' ? 'px-10 py-5 text-base' : 'px-8 py-4 text-sm'} rounded-xl`}
                   style={{
@@ -445,13 +464,13 @@ const PageRenderer: React.FC = () => {
           );
         }
         case 'divider': return (
-          <div key={block.id} id={p.customId || `block-${block.id}`} className={`${p.customClass || ''}`} style={{ paddingTop: p.padding, paddingBottom: p.padding }}>
+          <div key={block.id} id={p.customId || getBlockId(block.id)} className={`${p.customClass || ''}`} style={{ paddingTop: p.padding, paddingBottom: p.padding }}>
             <hr style={{ borderColor: p.color, borderWidth: p.thickness, borderStyle: p.style }} />
           </div>
         );
-        case 'spacer': return <div key={block.id} id={p.customId || `block-${block.id}`} style={{ height: p.height }} className={p.customClass || ''} />;
+        case 'spacer': return <div key={block.id} id={p.customId || getBlockId(block.id)} style={{ height: p.height }} className={p.customClass || ''} />;
         case 'card': return (
-          <div key={block.id} id={p.customId || `block-${block.id}`} className={`${p.customClass || ''}`}>
+          <div key={block.id} id={p.customId || getBlockId(block.id)} className={`${p.customClass || ''}`}>
             <div style={{ background: p.bgColor, boxShadow: p.boxShadow || (p.shadow ? '0 4px 24px rgba(0,0,0,0.08)' : 'none') }} className="rounded-2xl p-6 border border-gray-100">
               <div className="w-8 h-1 rounded-full mb-4" style={{ background: p.accentColor }} />
               <h3 className="font-bold text-slate-800 text-lg mb-2">{p.title}</h3>
@@ -468,7 +487,7 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || `block-${block.id}`} className={`flex items-center ${p.customClass || ''}`} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, boxShadow: p.boxShadow }}>
+              <div id={p.customId || getBlockId(block.id)} className={`flex items-center ${p.customClass || ''}`} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, boxShadow: p.boxShadow }}>
                 <div className="flex items-center" style={{ gap: p.gap }}>
                   <div className="shrink-0 flex items-center justify-center" style={{ width: p.iconSize || '24px', height: p.iconSize || '24px' }}>
                     {(!isImage && Icon) ? (
@@ -491,7 +510,7 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || `block-${block.id}`} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, flexDirection: p.flexDir as any, boxShadow: p.boxShadow }} className={`flex items-center ${p.customClass || ''}`}>
+              <div id={p.customId || getBlockId(block.id)} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, flexDirection: p.flexDir as any, boxShadow: p.boxShadow }} className={`flex items-center ${p.customClass || ''}`}>
                 <div className="shrink-0" style={{ width: p.imageWidth }}>
                   {p.image ? <img src={imageBoxSrc} alt={p.title} className="w-full h-auto" style={{ borderRadius: p.borderRadius }} /> : <div className="w-full h-32 bg-slate-100 rounded-xl" />}
                 </div>
@@ -558,7 +577,7 @@ function AccordionItem({ block }: { block: Block }) {
     <React.Fragment>
       {styles}
       <div
-        id={`block-${block.id}`}
+        id={getBlockId(block.id)}
         className="overflow-hidden mb-1"
         style={{
           borderStyle: 'solid',

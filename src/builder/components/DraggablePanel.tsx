@@ -130,18 +130,18 @@ export const DraggablePanel: React.FC<DraggablePanelProps> = ({
         zIndex: 9999,
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
       }}
-      className="bg-white border border-gray-300 rounded-lg overflow-hidden flex flex-col"
+      className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden flex flex-col"
     >
       {/* Header / Drag Handle */}
       <div
-        className="drag-handle flex items-center justify-between p-2 bg-gray-100 cursor-move border-b select-none"
+        className="drag-handle flex items-center justify-between p-2 bg-slate-900 cursor-move border-b border-slate-700 select-none"
         onMouseDown={handleMouseDown}
       >
-        <span className="text-xs font-semibold truncate">{title}</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 truncate">{title}</span>
         <div className="flex gap-1 ml-2">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-xs text-gray-500 hover:text-gray-700 w-5 h-5 flex items-center justify-center rounded hover:bg-gray-200"
+            className="text-xs text-slate-400 hover:text-slate-200 w-5 h-5 flex items-center justify-center rounded hover:bg-slate-800"
             title={isCollapsed ? 'Expand' : 'Collapse'}
           >
             {isCollapsed ? '□' : '—'}
@@ -149,7 +149,7 @@ export const DraggablePanel: React.FC<DraggablePanelProps> = ({
           {onClose && (
             <button 
               onClick={onClose} 
-              className="text-xs text-gray-500 hover:text-gray-700 w-5 h-5 flex items-center justify-center rounded hover:bg-gray-200"
+              className="text-xs text-slate-400 hover:text-slate-200 w-5 h-5 flex items-center justify-center rounded hover:bg-slate-800"
               title="Close"
             >
               ✕
@@ -162,13 +162,13 @@ export const DraggablePanel: React.FC<DraggablePanelProps> = ({
       {!isCollapsed && (
         <div className="flex-1 overflow-hidden relative">
           {children}
-          
+           
           {/* Resize handle */}
           <div
             className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
             onMouseDown={handleResizeMouseDown}
             style={{
-              background: 'linear-gradient(135deg, transparent 50%, #9ca3af 50%)',
+              background: 'linear-gradient(135deg, transparent 50%, #475569 50%)',
             }}
             title="Resize panel"
           />

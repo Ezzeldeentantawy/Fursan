@@ -119,7 +119,10 @@ export function updateNodeProps(tree: BuilderNode, id: string, props: Record<str
 
   function updateInTree(current: BuilderNode): BuilderNode {
     if (current.id === id) {
+      console.log('[treeUtils] Before merge - current.props:', current.props);
+      console.log('[treeUtils] Props to merge:', props);
       current.props = { ...current.props, ...props };
+      console.log('[treeUtils] After merge - current.props:', current.props);
       return current;
     }
 

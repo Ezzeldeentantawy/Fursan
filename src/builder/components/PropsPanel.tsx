@@ -17,11 +17,11 @@ export const PropsPanel: React.FC = () => {
 
   if (!selectedId || !selectedNode || !elementDef) {
     return (
-      <div className="w-[300px] bg-gray-50 border-l border-gray-200 h-full overflow-y-auto">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">Properties</h2>
+      <div className="w-[300px] bg-slate-900 border-l border-slate-700 h-full overflow-y-auto">
+        <div className="p-4 border-b border-slate-700">
+          <h2 className="text-lg font-semibold text-white">Properties</h2>
         </div>
-        <div className="p-8 text-center text-gray-400">
+        <div className="p-8 text-center text-slate-400">
           <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
           </svg>
@@ -46,7 +46,7 @@ export const PropsPanel: React.FC = () => {
             type="text"
             value={value}
             onChange={(e) => handleChange(control.key, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         );
 
@@ -56,7 +56,7 @@ export const PropsPanel: React.FC = () => {
             value={value}
             onChange={(e) => handleChange(control.key, e.target.value)}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
           />
         );
 
@@ -66,7 +66,7 @@ export const PropsPanel: React.FC = () => {
             type="number"
             value={value}
             onChange={(e) => handleChange(control.key, parseFloat(e.target.value) || 0)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         );
 
@@ -77,13 +77,13 @@ export const PropsPanel: React.FC = () => {
               type="color"
               value={value}
               onChange={(e) => handleChange(control.key, e.target.value)}
-              className="w-10 h-10 border border-gray-300 rounded cursor-pointer"
+              className="w-10 h-10 border border-slate-800 rounded-lg cursor-pointer bg-slate-950/50"
             />
             <input
               type="text"
               value={value}
               onChange={(e) => handleChange(control.key, e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         );
@@ -95,7 +95,7 @@ export const PropsPanel: React.FC = () => {
           <select
             value={value}
             onChange={(e) => handleChange(control.key, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {isObjectOptions
               ? options.map((option: { label: string; value: string | number }) => (
@@ -119,7 +119,7 @@ export const PropsPanel: React.FC = () => {
             type="button"
             onClick={() => handleChange(control.key, !value)}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              value ? 'bg-blue-500' : 'bg-gray-300'
+              value ? 'bg-blue-500' : 'bg-slate-700'
             }`}
           >
             <span
@@ -137,13 +137,13 @@ export const PropsPanel: React.FC = () => {
           return (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-gray-600">HTML Code</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">HTML Code</label>
               </div>
               <textarea
                 value={value || ''}
                 onChange={(e) => handleChange(control.key, e.target.value)}
                 rows={12}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="<p>Enter HTML here...</p>"
               />
             </div>
@@ -153,7 +153,7 @@ export const PropsPanel: React.FC = () => {
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-gray-600">{control.label}</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{control.label}</label>
             </div>
             <RichTextEditor
               value={value}
@@ -170,10 +170,10 @@ export const PropsPanel: React.FC = () => {
               value={value}
               onChange={(e) => handleChange(control.key, e.target.value)}
               placeholder="Enter image URL..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {value && (
-              <div className="mt-2 border border-gray-200 rounded-md overflow-hidden">
+              <div className="mt-2 border border-slate-800 rounded-xl overflow-hidden">
                 <img
                   src={value}
                   alt="Preview"
@@ -188,15 +188,15 @@ export const PropsPanel: React.FC = () => {
         );
 
       default:
-        return <div>Unknown control type: {control.type}</div>;
+        return <div className="text-slate-400">Unknown control type: {control.type}</div>;
     }
   };
 
   return (
-    <div className="w-[300px] bg-gray-50 border-l border-gray-200 h-full overflow-y-auto">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800">Properties</h2>
-        <p className="text-xs text-gray-500 mt-1">
+    <div className="w-[300px] bg-slate-900 border-l border-slate-700 text-white h-full overflow-y-auto">
+      <div className="p-4 border-b border-slate-700">
+        <h2 className="text-lg font-semibold text-white">Properties</h2>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-1">
           {elementDef.label} ({selectedNode.type})
         </p>
       </div>
@@ -206,7 +206,7 @@ export const PropsPanel: React.FC = () => {
           .filter((control: any) => !control.responsiveOnly)
           .map((control: any) => (
             <div key={control.key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">
                 {control.label}
               </label>
               {renderControl(control)}
@@ -215,7 +215,7 @@ export const PropsPanel: React.FC = () => {
       </div>
 
       {/* Responsive Panel */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-slate-700">
         <ResponsivePanel
           responsive={selectedNode?.props?.responsive}
           onChange={(responsive) => handleChange('responsive', responsive)}
@@ -223,8 +223,8 @@ export const PropsPanel: React.FC = () => {
         />
       </div>
 
-      <div className="p-4 border-t border-gray-200">
-        <p className="text-xs text-gray-400">ID: {selectedNode.id}</p>
+      <div className="p-4 border-t border-slate-700">
+        <p className="text-xs text-slate-400">ID: {selectedNode.id}</p>
       </div>
     </div>
   );

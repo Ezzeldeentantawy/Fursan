@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Type, AlignLeft, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor } from 'lucide-react';
 
 // ============= HELPER FUNCTIONS =============
@@ -54,7 +54,7 @@ export const breakpoints: BreakpointConfig[] = [
     icon: Tablet,
     width: '768px',
     minWidth: 768,
-    maxWidth: 1023
+    maxWidth: 1024
   },
   {
     key: 'md',
@@ -492,7 +492,7 @@ export const elementDefinitions: Record<string, any> = {
 
 export const createElementNode = (elementType: string) => {
   const node = {
-    id: `${elementType}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: `block-${elementType}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     type: elementType,
     props: {
       ...elementDefinitions[elementType].defaults
@@ -519,196 +519,101 @@ export const findComponentDefinition = (elementType: string) => {
 
 // ============= RESPONSIVE STYLE FUNCTIONS =============
 
-export const generateResponsiveStyles = (blockId: string, responsiveConfig: any) => {
-  if (!responsiveConfig) return null;
+export function generateResponsiveStyles(blockId: string, responsive: Record<string, any> | undefined): React.ReactElement | null {
+  if (!responsive) {
+    return null;
+  }
 
-  const buildStylesForBreakpoint = (breakpointProps: any) => {
-    if (!breakpointProps || Object.keys(breakpointProps).length === 0) return "";
-
-    let styles = "";
-    Object.entries(breakpointProps).forEach(([propKey, propValue]) => {
-      if (!propValue) return;
-
-      let cssProp = propKey;
-      // Handle content/desc prefix normalization
-      if (propKey.startsWith('content')) {
-        cssProp = propKey.replace('content', '').charAt(0).toLowerCase() + propKey.replace('content', '').slice(1);
-      } else if (propKey.startsWith('desc')) {
-        cssProp = propKey.replace('desc', '').charAt(0).toLowerCase() + propKey.replace('desc', '').slice(1);
-      }
-
-      let cssRule = "";
-      switch (cssProp) {
-        case 'fontSize':
-          cssRule = `font-size: ${propValue} !important; `;
-          break;
-        case 'fontWeight':
-          cssRule = `font-weight: ${propValue} !important; `;
-          break;
-        case 'textAlign':
-          cssRule = `text-align: ${propValue} !important; `;
-          break;
-        case 'lineHeight':
-          cssRule = `line-height: ${propValue} !important; `;
-          break;
-        case 'letterSpacing':
-          cssRule = `letter-spacing: ${propValue} !important; `;
-          break;
-        case 'maxWidth':
-          cssRule = `max-width: ${propValue} !important; `;
-          break;
-        case 'display':
-          cssRule = `display: ${propValue} !important; `;
-          break;
-        case 'flexDir':
-          cssRule = `flex-direction: ${propValue} !important; `;
-          break;
-        case 'flexWrap':
-          cssRule = `flex-wrap: ${propValue} !important; `;
-          break;
-        case 'gridCols':
-          cssRule = `grid-template-columns: repeat(${propValue}, minmax(0, 1fr)) !important; `;
-          break;
-        case 'gridRows':
-          cssRule = `grid-template-rows: repeat(${propValue}, minmax(0, 1fr)) !important; `;
-          break;
-        case 'gap':
-          cssRule = `gap: ${propValue} !important; `;
-          break;
-        case 'items': {
-          let alignValue = propValue;
-          if (propValue === 'start') alignValue = 'flex-start';
-          else if (propValue === 'center') alignValue = 'center';
-          else if (propValue === 'end') alignValue = 'flex-end';
-          else if (propValue === 'stretch') alignValue = 'stretch';
-          else if (propValue === 'baseline') alignValue = 'baseline';
-          cssRule = `align-items: ${alignValue} !important; `;
-          break;
-        }
-        case 'justify': {
-          let justifyValue = propValue;
-          if (propValue === 'start') justifyValue = 'flex-start';
-          else if (propValue === 'center') justifyValue = 'center';
-          else if (propValue === 'end') justifyValue = 'flex-end';
-          else if (propValue === 'between') justifyValue = 'space-between';
-          else if (propValue === 'around') justifyValue = 'space-around';
-          else if (propValue === 'evenly') justifyValue = 'space-evenly';
-          cssRule = `justify-content: ${justifyValue} !important; `;
-          break;
-        }
-        case 'width':
-          cssRule = `width: ${propValue} !important; `;
-          break;
-        case 'maxWidthC':
-          cssRule = `max-width: ${propValue} !important; `;
-          break;
-        case 'colSpan':
-          cssRule = `grid-column: span ${propValue} / span ${propValue} !important; `;
-          break;
-        case 'pt':
-          cssRule = `padding-top: ${propValue} !important; `;
-          break;
-        case 'pr':
-          cssRule = `padding-right: ${propValue} !important; `;
-          break;
-        case 'pb':
-          cssRule = `padding-bottom: ${propValue} !important; `;
-          break;
-        case 'pl':
-          cssRule = `padding-left: ${propValue} !important; `;
-          break;
-        case 'mt':
-          cssRule = `margin-top: ${propValue} !important; `;
-          break;
-        case 'mr':
-          cssRule = `margin-right: ${propValue} !important; `;
-          break;
-        case 'mb':
-          cssRule = `margin-bottom: ${propValue} !important; `;
-          break;
-        case 'ml':
-          cssRule = `margin-left: ${propValue} !important; `;
-          break;
-        case 'boxShadow':
-          cssRule = `box-shadow: ${propValue} !important; `;
-          break;
-        case 'zIndex':
-          cssRule = `z-index: ${propValue} !important; position: relative !important; `;
-          break;
-        case 'visibility':
-          cssRule = `display: ${propValue === 'hidden' ? 'none' : propValue} !important; `;
-          break;
-        case 'rounded':
-          cssRule = `border-radius: ${propValue} !important; `;
-          break;
-        case 'overflow':
-          cssRule = `overflow: ${propValue} !important; `;
-          break;
-        case 'textTransform':
-          cssRule = `text-transform: ${propValue} !important; `;
-          break;
-        case 'wordSpacing':
-          cssRule = `word-spacing: ${propValue} !important; `;
-          break;
-        case 'height':
-          cssRule = `height: ${propValue} !important; `;
-          break;
-        case 'minWidth':
-          cssRule = `min-width: ${propValue} !important; `;
-          break;
-        case 'minHeight':
-          cssRule = `min-height: ${propValue} !important; `;
-          break;
-        case 'maxHeight':
-          cssRule = `max-height: ${propValue} !important; `;
-          break;
-        default:
-          cssRule = `${cssProp}: ${propValue} !important; `;
-      }
-      styles += cssRule;
-    });
-    return styles;
+  let css = '';
+   
+  // Breakpoint media queries - defined in mobile-first order
+  const bpMap: Record<string, { minWidth: string; maxWidth: string | null }> = { 
+    base: { minWidth: '', maxWidth: '767px' },         // Mobile: 0-767px
+    sm: { minWidth: '768px', maxWidth: '1023px' },    // Tablet: 768-1023px
+    md: { minWidth: '1024px', maxWidth: '' },          // Desktop: 1024px+
   };
-
-  let cssText = "";
-  const blockSelector = `#block-${blockId}`;
-
-  // Process breakpoints in order: base → sm → md
-  // Each gets its own media query based on the breakpoints array
-
-  breakpoints.forEach((breakpoint) => {
-    const breakpointProps = responsiveConfig[breakpoint.key];
-    if (!breakpointProps || Object.keys(breakpointProps).length === 0) return;
-
-    const styles = buildStylesForBreakpoint(breakpointProps);
-    if (!styles) return;
-
-    // Generate media query based on breakpoint's minWidth and maxWidth
-    let mediaQuery = "";
-    const { minWidth, maxWidth } = breakpoint;
-
-    if (minWidth === 0 && maxWidth !== null) {
-      // Mobile (base): 0 to maxWidth
-      mediaQuery = `@media (max-width: ${maxWidth}px)`;
-    } else if (minWidth > 0 && maxWidth !== null) {
-      // Tablet (sm): minWidth to maxWidth
-      mediaQuery = `@media (min-width: ${minWidth}px) and (max-width: ${maxWidth}px)`;
-    } else if (minWidth > 0 && maxWidth === null) {
-      // Desktop (md): minWidth and up
-      mediaQuery = `@media (min-width: ${minWidth}px)`;
-    }
-
-    if (mediaQuery) {
-      cssText += `${mediaQuery} { ${blockSelector} { ${styles} } }\n`;
+  
+  // ✅ Iterate in correct mobile-first order: base, sm, md
+  const breakpointOrder: Breakpoint[] = ['base', 'sm', 'md'];
+  
+  breakpointOrder.forEach((bp) => {
+    const props = responsive[bp];
+    if (!props || Object.keys(props).length === 0) return;
+    
+    const bpConfig = bpMap[bp];
+    if (!bpConfig) return;
+    
+    // ✅ Accumulate ALL rules for this breakpoint
+    let allRules = '';
+    
+    Object.entries(props).forEach(([key, val]) => {
+      if (!val) return;
+      
+      let rule = '';
+      // Map props to CSS properties
+      if (key === 'fontSize') rule = `font-size: ${val} !important; `;
+      if (key === 'fontWeight') rule = `font-weight: ${val} !important; `;
+      if (key === 'textAlign') rule = `text-align: ${val} !important; `;
+      if (key === 'lineHeight') rule = `line-height: ${val} !important; `;
+      if (key === 'letterSpacing') rule = `letter-spacing: ${val} !important; `;
+      if (key === 'width') rule = `width: ${val} !important; `;
+      if (key === 'height') rule = `height: ${val} !important; `;
+      if (key === 'minWidth') rule = `min-width: ${val} !important; `;
+      if (key === 'minHeight') rule = `min-height: ${val} !important; `;
+      if (key === 'maxWidth') rule = `max-width: ${val} !important; `;
+      if (key === 'maxHeight') rule = `max-height: ${val} !important; `;
+      if (key === 'padding') rule = `padding: ${val} !important; `;
+      if (key === 'margin') rule = `margin: ${val} !important; `;
+      if (key === 'pt') rule = `padding-top: ${val} !important; `;
+      if (key === 'pr') rule = `padding-right: ${val} !important; `;
+      if (key === 'pb') rule = `padding-bottom: ${val} !important; `;
+      if (key === 'pl') rule = `padding-left: ${val} !important; `;
+      if (key === 'mt') rule = `margin-top: ${val} !important; `;
+      if (key === 'mr') rule = `margin-right: ${val} !important; `;
+      if (key === 'mb') rule = `margin-bottom: ${val} !important; `;
+      if (key === 'ml') rule = `margin-left: ${val} !important; `;
+       if (key === 'display') rule = `display: ${val} !important; `;
+       if (key === 'flexDirection' || key === 'flexDir') rule = `flex-direction: ${val} !important; `;
+       if (key === 'flexWrap') rule = `flex-wrap: ${val} !important; `;
+       if (key === 'justifyContent' || key === 'justify') rule = `justify-content: ${val} !important; `;
+       if (key === 'alignItems' || key === 'items') rule = `align-items: ${val} !important; `;
+      if (key === 'gap') rule = `gap: ${val} !important; `;
+      if (key === 'boxShadow') rule = `box-shadow: ${val} !important; `;
+      if (key === 'zIndex') rule = `z-index: ${val} !important; position: relative !important; `;
+      if (key === 'visibility') rule = `display: ${val === 'hidden' ? 'none' : val} !important; `;
+      if (key === 'borderRadius') rule = `border-radius: ${val} !important; `;
+      if (key === 'overflow') rule = `overflow: ${val} !important; `;
+      if (key === 'textTransform') rule = `text-transform: ${val} !important; `;
+      if (key === 'wordSpacing') rule = `word-spacing: ${val} !important; `;
+      
+      if (rule) {
+        allRules += rule; // ✅ Accumulate ALL rules
+      }
+    });
+    
+    // ✅ Create ONE CSS rule for this breakpoint with ALL properties
+    if (allRules) {
+      let mediaQuery = '';
+      if (bpConfig.minWidth && bpConfig.maxWidth) {
+        mediaQuery = `@media (min-width: ${bpConfig.minWidth}) and (max-width: ${bpConfig.maxWidth}) { #${blockId} { ${allRules} } }\n`;
+      } else if (bpConfig.minWidth) {
+        mediaQuery = `@media (min-width: ${bpConfig.minWidth}) { #${blockId} { ${allRules} } }\n`;
+      } else if (bpConfig.maxWidth) {
+        mediaQuery = `@media (max-width: ${bpConfig.maxWidth}) { #${blockId} { ${allRules} } }\n`;
+      } else {
+        // md (desktop) - no media query
+        mediaQuery = `#${blockId} { ${allRules} }\n`;
+      }
+      css += mediaQuery;
     }
   });
 
-  if (!cssText) return null;
-
-  return React.createElement('style', {
-    dangerouslySetInnerHTML: { __html: cssText }
-  });
-};
+  if (!css) {
+    return null;
+  }
+  
+  return <style dangerouslySetInnerHTML={{ __html: css }} />;
+}
 
 export const extractTypographyStyles = (props: any, prefix = '') => ({
   fontSize: props[prefix + 'fontSize'] || undefined,
@@ -791,7 +696,7 @@ export const mergeResponsiveStyles = (responsiveConfig: any, activeBreakpoint: s
 
 export const resetNodeIds = (node: any) => ({
   ...node,
-  id: `${node.type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  id: `block-${node.type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
   children: (node.children || []).map(resetNodeIds)
 });
 
@@ -859,9 +764,9 @@ export const HeadingComponent: React.FC<any> = (props) => {
   const alignClass = getTextAlignmentClass(align);
 
   return (
-    <div id={customId || `block-wrap-${id}`} className={`${alignClass} ${customClass || ''}`}>
+    <div id={customId || `${id}-wrap`} className={`${alignClass} ${customClass || ''}`}>
       <Tag
-        id={`block-${id}`}
+        id={id}
         className={`font-black ${(!fontSize) ? (sizes[levelNum] || 'text-3xl') : ''}`}
         style={{
           color: color || '#000000',
@@ -904,9 +809,9 @@ export const TextComponent: React.FC<any> = (props) => {
   const alignClass = getTextAlignmentClass(align);
 
   return (
-    <div id={customId || `block-wrap-${id}`} className={`${alignClass} ${customClass || ''}`}>
+    <div id={customId || `${id}-wrap`} className={`${alignClass} ${customClass || ''}`}>
       <div 
-        id={`block-${id}`}
+        id={id}
         className="prose max-w-none leading-relaxed"
         style={{
           color: color || '#333333',
@@ -950,7 +855,7 @@ export const ButtonComponent: React.FC<any> = (props) => {
   const alignClass = getTextAlignmentClass(align);
   
   const hoverStyle = `
-    #block-${id}:hover {
+    #${id}:hover {
       background-color: ${hoverBg || bgColor || 'initial'} !important;
       color: ${hoverColor || textColor || 'initial'} !important;
       border-color: ${hoverBorderColor || borderColor || 'initial'} !important;
@@ -963,9 +868,9 @@ export const ButtonComponent: React.FC<any> = (props) => {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />
-      <div id={customId || `block-wrap-${id}`} className={`${alignClass} ${customClass || ''}`}>
+      <div id={customId || `${id}-wrap`} className={`${alignClass} ${customClass || ''}`}>
         <a
-          id={`block-${id}`}
+          id={id}
           href={url || href || '#'}
           className={`inline-flex items-center gap-2 font-bold transition-all duration-200 ${sizeMap[size || 'md']} rounded-xl`}
           style={{
@@ -993,12 +898,40 @@ export const ButtonComponent: React.FC<any> = (props) => {
 
 // Container Component - SIMPLIFIED & ROBUST
 export const ContainerComponent: React.FC<any> = (props) => {
+  // ============= SYSTEMATIC DEBUG: RENDER COUNTER =============
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+
+  console.log(`[ContainerComponent] ========== RENDER #${renderCount.current} ==========`);
+  console.log('[ContainerComponent] props at render #' + renderCount.current + ':', {
+    flexDirection: props.flexDirection,
+    flexDir: props.flexDir,
+    direction: props.direction,
+    justifyContent: props.justifyContent,
+    justify: props.justify,
+    alignItems: props.alignItems,
+    items: props.items,
+    align: props.align,
+    id: props.id,
+  });
+
+  // ✅ Destructure everything EXCEPT flexDirection, justifyContent, alignItems, margin props
   const {
-    bgColor, bgImage, bgSize, width, height, minWidth, minHeight, maxWidth, maxHeight, 
-    borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap, 
+    bgColor, bgImage, bgSize, width, height, minWidth, minHeight, maxWidth, maxHeight,
+    borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap,
     children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display, flexDir, items,
-    bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl,
-  } = props;
+    bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl, dropZone,
+    margin, marginTop, marginRight, marginBottom, marginLeft,
+    } = props;
+
+  // ✅ READ DIRECTLY FROM PROPS (not from destructuring):
+  const flexDirFromProps = props.flexDirection;
+  const justifyContentFromProps = props.justifyContent;
+  const alignItemsFromProps = props.alignItems;
+
+  // ✅ Keep ONLY these 2 logs:
+  console.log('[ContainerComponent] flexDirFromProps:', flexDirFromProps);
+  console.log('[ContainerComponent] props.flexDirection:', props.flexDirection);
 
   // Map alignment values
   const mapJustify = (j: string): string => {
@@ -1010,7 +943,7 @@ export const ContainerComponent: React.FC<any> = (props) => {
     if (j === 'evenly') return 'space-evenly';
     return j || 'flex-start';
   };
-  
+
   const mapAlign = (a: string): string => {
     if (!a || a === 'stretch') return 'stretch';
     if (a === 'start') return 'flex-start';
@@ -1019,15 +952,15 @@ export const ContainerComponent: React.FC<any> = (props) => {
     if (a === 'baseline') return 'baseline';
     return a || 'stretch';
   };
-  
+
   // Build background
   let bg = bgColor || 'transparent';
   const bw = borderWidth ? (isNaN(Number(borderWidth)) ? borderWidth : `${borderWidth}px`) : undefined;
-  
+
   if (bgImage) {
     bg = `url(${cleanUrl(bgImage)}) center / ${bgSize ?? 'cover'} no-repeat`;
   }
-  
+
   // Handle gradient
   if (bgGradient) {
     const direction = bgGradientDirection || '180deg';
@@ -1040,26 +973,38 @@ export const ContainerComponent: React.FC<any> = (props) => {
       bg = `${bg}, url(${cleanUrl(bgImage)}) center / ${bgSize ?? 'cover'} no-repeat`;
     }
   }
-  
+
   const containerStyle: React.CSSProperties = {
-    minHeight: minHeight || undefined, 
-    minWidth: minWidth || undefined, 
-    maxWidth: maxWidth || undefined, 
+    minHeight: minHeight || undefined,
+    minWidth: minWidth || undefined,
+    maxWidth: maxWidth || undefined,
     maxHeight: maxHeight || undefined,
-    width: width || '100%', 
-    height: height || 'auto', 
-    borderRadius: borderRadius || undefined, 
+    width: width || '100%',
+    height: height || 'auto',
+    borderRadius: borderRadius || undefined,
     padding: padding || '16px',
+    margin: margin || undefined,
+    marginTop: marginTop || undefined,
+    marginRight: marginRight || undefined,
+    marginBottom: marginBottom || undefined,
+    marginLeft: marginLeft || undefined,
     flexWrap: flexWrap as any || undefined,
     textAlign: textAlign as any || undefined,
     borderWidth: bw || undefined,
     borderColor: borderColor || undefined,
     borderStyle: borderStyle || (bw && bw !== '0px' ? 'solid' : 'none'),
     background: bg,
-    display: display || 'flex', 
-    flexDirection: flexDir || direction || 'column',
-    justifyContent: mapJustify(justify),
-    alignItems: mapAlign(items || align),
+    display: display || 'flex',
+
+    // ✅ USE DIRECT READS:
+    flexDirection: flexDirFromProps || flexDir || direction || 'column',
+
+    // ✅ USE DIRECT READS:
+    justifyContent: mapJustify(justifyContentFromProps || justify),
+
+    // ✅ USE DIRECT READS:
+    alignItems: mapAlign(alignItemsFromProps || items || align),
+
     gap: gap || '16px',
     boxShadow: boxShadow || undefined,
     zIndex: zIndex || undefined,
@@ -1070,14 +1015,25 @@ export const ContainerComponent: React.FC<any> = (props) => {
   const Tag = (tag === 'a' && linkUrl) ? 'a' : tag || 'div';
   const linkProps = (tag === 'a' && linkUrl) ? { href: linkUrl } : {};
 
+  // ✅ FINAL CHECK DEBUG LOG
+  console.log('[ContainerComponent] FINAL CHECK before return:');
+  console.log('  containerStyle object:', containerStyle);
+  console.log('  containerStyle.flexDirection:', containerStyle.flexDirection);
+  console.log('  containerStyle.justifyContent:', containerStyle.justifyContent);
+  console.log('  containerStyle.alignItems:', containerStyle.alignItems);
+  console.log('  JSON:', JSON.stringify(containerStyle));
+
   return (
-    <Tag 
-      id={`block-${id}`} 
-      style={containerStyle} 
+    <Tag
+      id={id}
+      style={containerStyle}
       className={`${customClass || ''}`}
       {...linkProps}
     >
       {children}
+
+      {/* Render drop zone inside container for DnD */}
+      {dropZone}
     </Tag>
   );
 };
@@ -1093,9 +1049,9 @@ export const ImageComponent: React.FC<any> = (props) => {
   const alignClass = align === 'center' ? 'items-center' : align === 'right' ? 'items-end' : 'items-start';
 
   return (
-    <div id={customId || `block-wrap-${id}`} className={`flex flex-col ${alignClass} ${customClass || ''}`}>
+    <div id={customId || `${id}-wrap`} className={`flex flex-col ${alignClass} ${customClass || ''}`}>
       <img 
-        id={`block-${id}`}
+        id={id}
         src={imageSrc || ''} 
         alt={alt || ''} 
         className="object-cover"
@@ -1115,7 +1071,7 @@ export const ImageComponent: React.FC<any> = (props) => {
 export const DividerComponent: React.FC<any> = (props) => {
   const { thickness, color, style: divStyle, padding, id, customClass, customId } = props;
   return (
-    <div id={customId || `block-${id}`} className={`${customClass || ''}`} style={{ paddingTop: padding, paddingBottom: padding }}>
+    <div id={customId || id} className={`${customClass || ''}`} style={{ paddingTop: padding, paddingBottom: padding }}>
       <hr style={{ borderColor: color || '#e5e7eb', borderWidth: thickness || '1px', borderStyle: divStyle || 'solid' }} />
     </div>
   );
@@ -1126,7 +1082,7 @@ export const SpacerComponent: React.FC<any> = (props) => {
   const { height, id, customClass, customId } = props;
   return (
     <div 
-      id={customId || `block-${id}`} 
+      id={customId || id} 
       style={{ height: height || 40 }} 
       className={customClass || ''}
       aria-label="Spacer"

@@ -31,16 +31,16 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({ element }) => 
       {...listeners}
       {...attributes}
       className={`
-        flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-md
-        cursor-grab hover:border-blue-400 hover:shadow-sm transition-all
+        flex items-center gap-2 p-3 bg-slate-800/50 border border-slate-700 rounded-xl
+        cursor-grab hover:border-slate-600 transition-all
         ${isDragging ? 'opacity-50 shadow-lg' : ''}
       `}
       style={style}
     >
-      <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center flex-shrink-0">
+      <div className="w-8 h-8 bg-slate-700 text-blue-400 rounded-lg flex items-center justify-center flex-shrink-0">
         {IconComponent && <IconComponent size={18} />}
       </div>
-      <span className="text-sm font-medium text-gray-700">{element.label}</span>
+      <span className="text-xs font-bold text-slate-300">{element.label}</span>
     </div>
   );
 };

@@ -59,13 +59,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
   const futureStatesArr = temporal.getState().futureStates;
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+    <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
       {/* Left Section */}
       <div className="flex items-center gap-4">
         <button
           type="button"
           onClick={handleBack}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -73,10 +73,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           Back
         </button>
 
-        <div className="h-6 w-px bg-gray-300" />
+        <div className="h-6 w-px bg-slate-300" />
 
         {pageTitle && (
-          <h1 className="text-lg font-semibold text-gray-800">{pageTitle}</h1>
+          <h1 className="text-lg font-semibold text-slate-800">{pageTitle}</h1>
         )}
       </div>
 
@@ -87,7 +87,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           type="button"
           onClick={handleUndo}
           disabled={pastStates.length === 0}
-          className="p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Undo"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,7 +99,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           type="button"
           onClick={handleRedo}
           disabled={futureStatesArr.length === 0}
-          className="p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Redo"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,28 +107,28 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           </svg>
         </button>
 
-        <div className="h-6 w-px bg-gray-300 mx-2" />
+        <div className="h-6 w-px bg-slate-300 mx-2" />
 
         {/* Preview Toggle */}
         <button
           type="button"
           onClick={handlePreviewToggle}
-          className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-colors ${
             isPreviewMode
               ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'text-gray-600 hover:bg-gray-100'
+              : 'text-slate-700 hover:bg-slate-100'
           }`}
         >
           {isPreviewMode ? 'Exit Preview' : 'Preview'}
         </button>
 
-        <div className="h-6 w-px bg-gray-300 mx-2" />
+        <div className="h-6 w-px bg-slate-300 mx-2" />
 
         {/* Export JSON */}
         <button
           type="button"
           onClick={handleExportJSON}
-          className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+          className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
           title="Export as JSON"
         >
           Export JSON
@@ -138,22 +138,22 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
         <button
           type="button"
           onClick={handleClear}
-          className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
+          className="px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
         >
           Clear
         </button>
 
-        <div className="h-6 w-px bg-gray-300 mx-2" />
+        <div className="h-6 w-px bg-slate-300 mx-2" />
 
         {/* Navigator Toggle */}
         {onToggleNavigator && (
           <button
             type="button"
             onClick={onToggleNavigator}
-            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-colors ${
               showNavigator
                 ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : 'text-gray-600 hover:bg-gray-100'
+                : 'text-slate-700 hover:bg-slate-100'
             }`}
             title="Toggle Layers Panel"
           >
@@ -166,7 +166,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           <button
             type="button"
             onClick={onToggleTemplates}
-            className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
             title="Browse Templates"
           >
             📋 Templates
@@ -180,7 +180,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           type="button"
           onClick={onSave}
           disabled={isSaving}
-          className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-4 py-2 bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isSaving ? (
             <>

@@ -62,13 +62,13 @@ export const ResponsivePanel: React.FC<ResponsivePanelProps> = ({ responsive = {
   };
 
   return (
-    <div className="border-t border-gray-200 pt-3 mt-3">
+    <div className="border-t border-slate-700 pt-3 mt-3">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-xs font-medium text-gray-600">Responsive Styles</div>
+        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Responsive Styles</div>
         {hasStyles(activeBreakpoint) && (
           <button
             onClick={handleResetBreakpoint}
-            className="text-xs text-red-500 hover:text-red-700 font-medium"
+            className="text-xs text-red-400 hover:text-red-300 font-medium"
             title="Reset all styles for this breakpoint"
           >
             Reset BP
@@ -84,15 +84,15 @@ export const ResponsivePanel: React.FC<ResponsivePanelProps> = ({ responsive = {
             <button
               key={bp.key}
               onClick={() => setActiveBreakpoint(bp.key)}
-              className={`flex-1 flex flex-col items-center py-2 px-1 text-xs rounded-md transition-all relative ${
+              className={`flex-1 flex flex-col items-center py-2 px-1 text-xs rounded-xl transition-all relative ${
                 activeBreakpoint === bp.key
                   ? 'bg-blue-500 text-white font-medium shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
               }`}
               title={`${bp.label} (${bp.width})`}
             >
               {getIcon(bp)}
-              <span className="text-[9px] mt-0.5 font-semibold">{bp.label}</span>
+              <span className="text-[9px] mt-0.5 font-bold">{bp.label}</span>
               {hasStylesForBp && (
                 <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-green-400" />
               )}
@@ -102,12 +102,12 @@ export const ResponsivePanel: React.FC<ResponsivePanelProps> = ({ responsive = {
       </div>
 
       {/* Active Breakpoint Info */}
-      <div className="mb-3 px-2 py-1.5 bg-gray-50 rounded-md">
+      <div className="mb-3 px-2 py-1.5 bg-slate-950/50 rounded-xl">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
             Editing: {breakpoints.find(bp => bp.key === activeBreakpoint)?.label}
           </span>
-          <span className="text-[10px] text-gray-400">
+          <span className="text-[10px] text-slate-400">
             {breakpoints.find(bp => bp.key === activeBreakpoint)?.width}
           </span>
         </div>
@@ -120,14 +120,14 @@ export const ResponsivePanel: React.FC<ResponsivePanelProps> = ({ responsive = {
             const value = activeBreakpointStyles[field.key] || '';
             return (
               <div key={field.key} className="flex items-center gap-2">
-                <label className="text-xs text-gray-600 w-24 flex-shrink-0" title={field.key}>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 w-24 flex-shrink-0" title={field.key}>
                   {field.label}:
                 </label>
                 {field.type === 'select' ? (
                   <select
                     value={value}
                     onChange={(e) => handlePropChange(field.key, e.target.value)}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    className="flex-1 px-2 py-1 text-[11px] font-bold text-white border border-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-slate-950/50"
                   >
                     <option value="">Default</option>
                     {(field.options || []).map((option: any) => {
@@ -146,22 +146,22 @@ export const ResponsivePanel: React.FC<ResponsivePanelProps> = ({ responsive = {
                     value={value}
                     onChange={(e) => handlePropChange(field.key, e.target.value)}
                     placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 px-2 py-1 text-[11px] font-bold text-white border border-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-slate-950/50"
                   />
                 )}
               </div>
             );
           })
         ) : (
-          <div className="text-xs text-gray-400 text-center py-4">
+          <div className="text-xs text-slate-400 text-center py-4">
             No responsive fields defined for this element.
           </div>
         )}
       </div>
 
       {/* Info about cascade */}
-      <div className="mt-3 p-2 bg-blue-50 rounded-md">
-        <p className="text-[10px] text-blue-600">
+      <div className="mt-3 p-2 bg-slate-950/50 rounded-xl">
+        <p className="text-[10px] text-blue-400">
           <strong>Note:</strong> Styles cascade from smaller to larger breakpoints. 
           Base styles apply to all sizes unless overridden.
         </p>

@@ -27,6 +27,7 @@ import { Navigator } from './components/Navigator';
 import { DraggablePanel } from './components/DraggablePanel';
 import { breakpoints, Breakpoint } from './DynamicPages';
 import { TemplatePicker } from './components/TemplatePicker';
+import { FloatingToolbar } from './components/FloatingToolbar';
 import pagesApi from '../api/pagesApi';
 import { createNode, isContainer } from './utils/nodeFactory';
 import { CONTAINER_TYPES } from './DynamicPages';
@@ -397,7 +398,7 @@ export const Builder: React.FC = () => {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="h-screen flex flex-col bg-gray-100">
+      <div className="h-screen flex flex-col bg-slate-100">
         <Toolbar
           pageTitle={pageTitle}
           onSave={handleSave}
@@ -408,18 +409,18 @@ export const Builder: React.FC = () => {
         />
         
         {/* Breakpoint Preview Bar */}
-        <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-center gap-2">
-          <span className="text-xs font-medium text-gray-500 mr-2">Preview:</span>
+        <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-center gap-2">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mr-2">Preview:</span>
           {breakpoints.map((bp) => {
             const Icon = bp.icon;
             return (
               <button
                 key={bp.key}
                 onClick={() => setActiveBp(bp.key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl transition-all ${
                   activeBp === bp.key
                     ? 'bg-blue-500 text-white font-medium shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
                 title={`${bp.label} (${bp.width})`}
               >
@@ -434,7 +435,7 @@ export const Builder: React.FC = () => {
         <div className="flex-1 flex overflow-hidden">
           <WidgetPanel />
           
-          <div className="flex-1 overflow-auto bg-gray-200">
+          <div className="flex-1 overflow-auto bg-slate-200">
             <CanvasInner activeBreakpoint={activeBp} />
           </div>
           
@@ -445,7 +446,10 @@ export const Builder: React.FC = () => {
       <DragOverlay>
         {renderDragOverlay()}
       </DragOverlay>
-      
+
+      {/* Floating Toolbar for selected element */}
+      <FloatingToolbar />
+       
         {/* Navigator Panel */}
         {showNavigator && (
           <DraggablePanel

@@ -27,10 +27,10 @@ export const WidgetPanel: React.FC = () => {
   };
 
   return (
-    <div className="w-[280px] bg-gray-50 border-r border-gray-200 h-full overflow-y-auto">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800">Widgets</h2>
-        <p className="text-xs text-gray-500 mt-1">Drag elements to the canvas</p>
+    <div className="w-[280px] bg-slate-900 border-r border-slate-700 h-full overflow-y-auto">
+      <div className="p-4 border-b border-slate-700">
+        <h2 className="text-lg font-semibold text-white">Widgets</h2>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mt-1">Drag elements to the canvas</p>
       </div>
 
       <div className="p-3">
@@ -45,7 +45,7 @@ export const WidgetPanel: React.FC = () => {
               <button
                 type="button"
                 onClick={() => toggleCategory(category)}
-                className="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                className="w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:bg-slate-800 rounded-md transition-colors"
               >
                 <span>{categoryLabels[category] || category}</span>
                 <svg

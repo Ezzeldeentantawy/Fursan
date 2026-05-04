@@ -14,7 +14,7 @@ export function createNode(type: string): BuilderNode {
     throw new Error(`Unknown element type: ${type}`);
   }
 
-  const id = crypto.randomUUID();
+  const id = `block-${crypto.randomUUID()}`;
   const node: BuilderNode = {
     id,
     type,

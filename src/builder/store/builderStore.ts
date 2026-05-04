@@ -53,7 +53,8 @@ export const useBuilderStore = create<BuilderState>()(
       selectedId: null,
       isPreviewMode: false,
       
-      select: (id) => set({ selectedId: id }),
+       select: (id) => set({ selectedId: id }),
+       selectElement: (id) => set({ selectedId: id }),
       
       addNode: (parentId, node) => set((state) => {
         // Check if node with this ID already exists in the tree
@@ -79,9 +80,16 @@ export const useBuilderStore = create<BuilderState>()(
         tree: treeUtils.reorderNode(state.tree, activeId, overId),
       })),
       
-      updateProps: (id, props) => set((state) => ({
-        tree: treeUtils.updateNodeProps(state.tree, id, props),
-      })),
+      updateProps: (id, props) => {
+        console.log('[BuilderStore] updateProps called with id:', id);
+        console.log('[BuilderStore] props to merge:', props);
+        console.log('[BuilderStore] props.responsive:', props.responsive);
+        return set((state) => {
+          const newTree = treeUtils.updateNodeProps(state.tree, id, props);
+          console.log('[BuilderStore] After update, node props:', findNode(newTree, id)?.props);
+          return { tree: newTree };
+        });
+      },
       
       deleteNode: (id) => set((state) => ({
         tree: treeUtils.removeNode(state.tree, id),
