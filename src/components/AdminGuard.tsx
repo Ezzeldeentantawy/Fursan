@@ -1,27 +1,22 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./isLoggedIn";
 
 const AdminGuard = () => {
     const { user, loading } = useAuth();
-    const location = useLocation();
-
+    
     if (loading) {
         return <div>Verifying Permissions...</div>;
     }
-
-    // If no user, redirect to login but save the current location 
-    // so we can send them back after they log in.
+    
     if (!user) {
-        return <Navigate to="/login" state={{ from: location }} replace />;
+        return <Navigate to="/login" replace />;
     }
-
-    // Authorization: Check if the user has the 'admin' role
-    // Match this with your Laravel 'role:admin' middleware logic
+    
+    // Check if user has admin role
     if (user.role !== 'admin') {
-        return <Navigate to="/" state={{ error: "You don't have permission to access this page" }} replace />;
+        return <Navigate to="/unauthorized" replace />;
     }
-
-    // If everything is fine, render the child routes
+    
     return <Outlet />;
 };
 

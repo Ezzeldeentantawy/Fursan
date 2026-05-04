@@ -56,10 +56,21 @@ const PagesList: React.FC = () => {
   };
 
   const handlePreview = (page: any) => {
-    // Construct preview URL based on site domain and page slug
+    const origin = window.location.origin;
+    const base = import.meta.env.BASE_URL || '/';
+    const normalizedBase = base.endsWith('/') ? base : base + '/';
+    
     const siteDomain = page.site?.domain || 'default';
+    const isDefaultSite = page.site?.is_default || false;
     const slug = page.slug || page.id;
-    const previewUrl = `/${siteDomain}/${slug}`;
+    
+    let previewUrl;
+    if (isDefaultSite) {
+      previewUrl = `${origin}${normalizedBase}${slug}`;
+    } else {
+      previewUrl = `${origin}${normalizedBase}${siteDomain}/${slug}`;
+    }
+    
     window.open(previewUrl, '_blank');
   };
 
@@ -76,12 +87,12 @@ const PagesList: React.FC = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-slate-950 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-              <p className="mt-4 text-gray-600">Loading pages...</p>
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+              <p className="mt-4 text-slate-400">Loading pages...</p>
             </div>
           </div>
         </div>
@@ -90,11 +101,11 @@ const PagesList: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Pages Management</h1>
+          <h1 className="text-3xl font-bold text-white">Pages Management</h1>
           <button
             onClick={() => navigate('/admin/pages/new')}
             className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -108,7 +119,7 @@ const PagesList: React.FC = () => {
 
         {/* Error state */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-900/20 border border-red-800 text-red-300 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Error loading pages</p>
             <p className="text-sm mt-1">{error}</p>
             <button 
@@ -122,12 +133,12 @@ const PagesList: React.FC = () => {
 
         {/* Pages Table */}
         {!error && (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-slate-900 shadow rounded-lg overflow-hidden">
             {pages.length === 0 ? (
               // Empty state
               <div className="text-center py-12 px-4">
                 <svg 
-                  className="mx-auto h-12 w-12 text-gray-400" 
+                  className="mx-auto h-12 w-12 text-slate-500" 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -139,12 +150,12 @@ const PagesList: React.FC = () => {
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
                   />
                 </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No pages yet</h3>
-                <p className="mt-1 text-sm text-gray-500">Get started by creating a new page.</p>
+                <h3 className="mt-2 text-sm font-medium text-white">No pages yet</h3>
+                <p className="mt-1 text-sm text-slate-400">Get started by creating a new page.</p>
                 <div className="mt-6">
                   <button
                     onClick={() => navigate('/admin/pages/new')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -155,57 +166,57 @@ const PagesList: React.FC = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-slate-700">
+                  <thead className="bg-slate-800">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                         ID
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                         Title
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                         Slug
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                         Site
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                         Created Date
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-slate-900 divide-y divide-slate-700">
                     {pages.map((page) => (
-                      <tr key={page.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <tr key={page.id} className="hover:bg-slate-800 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                           {page.id}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <button
                             onClick={() => handleEdit(page.id)}
-                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
+                            className="text-sm font-medium text-blue-400 hover:text-blue-400 hover:underline text-left"
                           >
                             {page.title || 'Untitled'}
                           </button>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           {page.slug || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           {page.site?.name || page.site_id || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           {formatDate(page.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end gap-2">
                             <button
                               onClick={() => handleEdit(page.id)}
-                              className="text-blue-600 hover:text-blue-800 transition-colors"
+                              className="text-blue-400 hover:text-blue-400 transition-colors"
                               title="Edit"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +225,7 @@ const PagesList: React.FC = () => {
                             </button>
                             <button
                               onClick={() => handlePreview(page)}
-                              className="text-green-600 hover:text-green-800 transition-colors"
+                              className="text-green-400 hover:text-green-400 transition-colors"
                               title="Preview"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -225,11 +236,11 @@ const PagesList: React.FC = () => {
                             <button
                               onClick={() => handleDelete(page.id, page.title || 'Untitled')}
                               disabled={deleteLoading === page.id}
-                              className="text-red-600 hover:text-red-800 transition-colors disabled:opacity-50"
+                              className="text-red-400 hover:text-red-400 transition-colors disabled:opacity-50"
                               title="Delete"
                             >
                               {deleteLoading === page.id ? (
-                                <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-red-600 border-r-transparent"></div>
+                                <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-red-400 border-r-transparent"></div>
                               ) : (
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

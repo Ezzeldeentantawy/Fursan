@@ -168,8 +168,12 @@ const PageRenderer: React.FC = () => {
           return;
         }
 
+        // Determine which site to use for the API call
+        // If no siteDomain in URL, we're on the default site (no site param needed)
+        const siteToUse = siteDomain || undefined;
+
         const slugToFetch = pageSlug || 'home';
-        const res = await pagesApi.getBySlug(slugToFetch, lang);
+        const res = await pagesApi.getBySlug(slugToFetch, lang, siteToUse);
 
         let pageData = res.data.data || res.data;
 

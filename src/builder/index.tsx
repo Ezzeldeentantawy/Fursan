@@ -57,6 +57,9 @@ export const Builder: React.FC = () => {
   const resetTree = useBuilderStore((state) => state.resetTree);
   
   const [pageTitle, setPageTitle] = useState<string>('');
+  const [siteDomain, setSiteDomain] = useState<string>('');
+  const [pageSlug, setPageSlug] = useState<string>('');
+  const [isDefaultSite, setIsDefaultSite] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -115,9 +118,12 @@ export const Builder: React.FC = () => {
         }
         
         const pageData = response.data?.data || response.data;
-        
-        if (pageData) {
-          setPageTitle(pageData.title || '');
+          
+          if (pageData) {
+            setPageTitle(pageData.title || '');
+            setSiteDomain(pageData.site?.domain || 'default');
+            setPageSlug(pageData.slug || pageData.id || '');
+            setIsDefaultSite(pageData.site?.is_default || false);
           
           // Try to load from content.elements (new format)
           if (pageData.content && pageData.content.elements) {
@@ -583,6 +589,9 @@ export const Builder: React.FC = () => {
       <div className="h-screen flex flex-col bg-slate-100">
         <Toolbar
           pageTitle={pageTitle}
+          siteDomain={siteDomain}
+          pageSlug={pageSlug}
+          isDefaultSite={isDefaultSite}
           onSave={handleSave}
           isSaving={isSaving}
           onToggleNavigator={() => setShowNavigator(!showNavigator)}

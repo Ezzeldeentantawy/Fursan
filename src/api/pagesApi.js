@@ -40,8 +40,15 @@ export const pagesApi = {
 
   /** GET /api/v1/render/:slug
    * This is for the PageRenderer / DynamicPage frontend
+   * @param {string} slug - Page slug
+   * @param {string} lang - Language code
+   * @param {string|null} site - Optional site domain (null for default site)
    */
-  getBySlug: (slug, lang = 'en') => api.get(`${BASE_PUBLIC}render/${slug}`, { params: { lang } }),
+  getBySlug: (slug, lang = 'en', site = null) => {
+    const params = { lang };
+    if (site) params.site = site;
+    return api.get(`${BASE_PUBLIC}render/${slug}`, { params });
+  },
 
   setHomepage: (id) => api.patch(`${BASE}/${id}/set-home`),
 

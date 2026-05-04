@@ -1,9 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { ExternalLink } from 'lucide-react';
 import { useBuilderStore } from '../store/builderStore';
 
 interface ToolbarProps {
   pageTitle?: string;
+  siteDomain?: string;
+  pageSlug?: string;
+  isDefaultSite?: boolean;
   onSave: () => void;
   isSaving: boolean;
   onToggleNavigator?: () => void;
@@ -11,14 +14,9 @@ interface ToolbarProps {
   onToggleTemplates?: () => void;
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, onToggleNavigator, showNavigator, onToggleTemplates }) => {
-  const isPreviewMode = useBuilderStore((state) => state.isPreviewMode);
-  const setPreviewMode = useBuilderStore((state) => state.setPreviewMode);
-  const resetTree = useBuilderStore((state) => state.resetTree);
+export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlug, isDefaultSite = false, onSave, isSaving, onToggleNavigator, showNavigator, onToggleTemplates }) => {
   const temporal = useBuilderStore.temporal;
   const tree = useBuilderStore((state) => state.tree);
-
-  const navigate = useNavigate();
 
   const handleUndo = () => {
     temporal.getState().undo();
@@ -26,10 +24,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
 
   const handleRedo = () => {
     temporal.getState().redo();
-  };
-
-  const handlePreviewToggle = () => {
-    setPreviewMode(!isPreviewMode);
   };
 
   const handleExportJSON = () => {
@@ -45,38 +39,32 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
     URL.revokeObjectURL(url);
   };
 
-  const handleClear = () => {
-    if (window.confirm('Are you sure you want to clear the entire page? This cannot be undone.')) {
-      resetTree();
+  // Construct preview URL
+  const getPreviewUrl = () => {
+    if (!pageSlug) return '#';
+    
+    const origin = window.location.origin; // http://localhost, http://360.era, etc.
+    const base = import.meta.env.BASE_URL || '/'; // /react.fursan/
+    const normalizedBase = base.endsWith('/') ? base : base + '/';
+    const normalizedSlug = pageSlug?.startsWith('/') ? pageSlug.slice(1) : pageSlug;
+    
+    // If this is the default site, don't include siteDomain in URL
+    if (isDefaultSite) {
+      return `${origin}${normalizedBase}${normalizedSlug}`;
+    } else {
+      return `${origin}${normalizedBase}${siteDomain}/${normalizedSlug}`;
     }
-  };
-
-  const handleBack = () => {
-    navigate(-1);
   };
 
   const pastStates = temporal.getState().pastStates;
   const futureStatesArr = temporal.getState().futureStates;
 
   return (
-    <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+    <div className="bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
       {/* Left Section */}
       <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back
-        </button>
-
-        <div className="h-6 w-px bg-slate-300" />
-
         {pageTitle && (
-          <h1 className="text-lg font-semibold text-slate-800">{pageTitle}</h1>
+          <h1 className="text-lg font-semibold text-white">{pageTitle}</h1>
         )}
       </div>
 
@@ -87,7 +75,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           type="button"
           onClick={handleUndo}
           disabled={pastStates.length === 0}
-          className="p-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 text-slate-300 hover:bg-slate-800 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Undo"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,7 +87,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           type="button"
           onClick={handleRedo}
           disabled={futureStatesArr.length === 0}
-          className="p-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 text-slate-300 hover:bg-slate-800 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Redo"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,43 +95,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           </svg>
         </button>
 
-        <div className="h-6 w-px bg-slate-300 mx-2" />
-
-        {/* Preview Toggle */}
-        <button
-          type="button"
-          onClick={handlePreviewToggle}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-colors ${
-            isPreviewMode
-              ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          {isPreviewMode ? 'Exit Preview' : 'Preview'}
-        </button>
-
-        <div className="h-6 w-px bg-slate-300 mx-2" />
+        <div className="h-6 w-px bg-slate-700 mx-2" />
 
         {/* Export JSON */}
         <button
           type="button"
           onClick={handleExportJSON}
-          className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+          className="px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 rounded-xl transition-colors"
           title="Export as JSON"
         >
           Export JSON
         </button>
 
-        {/* Clear */}
-        <button
-          type="button"
-          onClick={handleClear}
-          className="px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-        >
-          Clear
-        </button>
-
-        <div className="h-6 w-px bg-slate-300 mx-2" />
+        <div className="h-6 w-px bg-slate-700 mx-2" />
 
         {/* Navigator Toggle */}
         {onToggleNavigator && (
@@ -153,7 +117,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
             className={`px-4 py-2 text-xs font-bold rounded-xl transition-colors ${
               showNavigator
                 ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : 'text-slate-700 hover:bg-slate-100'
+                : 'text-slate-300 hover:bg-slate-800'
             }`}
             title="Toggle Layers Panel"
           >
@@ -166,7 +130,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
           <button
             type="button"
             onClick={onToggleTemplates}
-            className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+            className="px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 rounded-xl transition-colors"
             title="Browse Templates"
           >
             📋 Templates
@@ -174,8 +138,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, onSave, isSaving, o
         )}
       </div>
 
-      {/* Right Section - Save */}
+      {/* Right Section - Preview and Save */}
       <div className="flex items-center gap-2">
+        {/* Preview button - links to page URL */}
+        {pageSlug && (
+          <a
+            href={getPreviewUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2"
+          >
+            <ExternalLink size={14} />
+            Preview
+          </a>
+        )}
+
         <button
           type="button"
           onClick={onSave}
