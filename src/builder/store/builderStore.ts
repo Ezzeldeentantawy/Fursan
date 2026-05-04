@@ -7,10 +7,13 @@ interface BuilderState {
   tree: BuilderNode;
   selectedId: string | null;
   isPreviewMode: boolean;
+  activeDragId: string | null;
+  activeDragType: string | null;
+  overContainerId: string | null;
   
   // Actions
   select: (id: string | null) => void;
-  addNode: (parentId: string, node: BuilderNode) => void;
+  addNode: (parentId: string, node: BuilderNode, index?: number) => void;
   moveNode: (activeId: string, overId: string) => void;
   updateProps: (id: string, props: Record<string, any>) => void;
   deleteNode: (id: string) => void;
@@ -18,6 +21,9 @@ interface BuilderState {
   setTree: (tree: BuilderNode) => void;
   setPreviewMode: (mode: boolean) => void;
   resetTree: () => void;
+  setActiveDragId: (id: string | null) => void;
+  setActiveDragType: (type: string | null) => void;
+  setOverContainerId: (id: string | null) => void;
 }
 
 const defaultTree: BuilderNode = { 
@@ -52,29 +58,41 @@ export const useBuilderStore = create<BuilderState>()(
       tree: defaultTree,
       selectedId: null,
       isPreviewMode: false,
+      activeDragId: null,
+      activeDragType: null,
+      overContainerId: null,
       
        select: (id) => set({ selectedId: id }),
        selectElement: (id) => set({ selectedId: id }),
+       setActiveDragId: (id) => set({ activeDragId: id }),
+       setActiveDragType: (type) => set({ activeDragType: type }),
+       setOverContainerId: (id) => set({ overContainerId: id }),
       
-      addNode: (parentId, node) => set((state) => {
-        // Check if node with this ID already exists in the tree
-        const nodeExists = (tree: BuilderNode, id: string): boolean => {
-          if (tree.id === id) return true;
-          if (tree.children) {
-            return tree.children.some(child => nodeExists(child, id));
-          }
-          return false;
-        };
-        
-        if (nodeExists(state.tree, node.id)) {
-          console.warn('[BuilderStore] Node with ID already exists, generating new ID:', node.id);
-          node.id = crypto.randomUUID();
-        }
-        
-        return {
-          tree: treeUtils.insertNode(state.tree, parentId, node),
-        };
-      }),
+       addNode: (parentId, node, index) => {
+         console.log('[BuilderStore] addNode called with parentId:', parentId, 'node:', node, 'index:', index);
+         
+         return set((state) => {
+           // Check if node with this ID already exists in the tree
+           const nodeExists = (tree: BuilderNode, id: string): boolean => {
+             if (tree.id === id) return true;
+             if (tree.children) {
+               return tree.children.some(child => nodeExists(child, id));
+             }
+             return false;
+           };
+           
+           if (nodeExists(state.tree, node.id)) {
+             console.warn('[BuilderStore] Node with ID already exists, generating new ID:', node.id);
+             node.id = crypto.randomUUID();
+           }
+           
+           const newTree = treeUtils.insertNode(state.tree, parentId, node, index);
+           
+           return {
+             tree: newTree,
+           };
+         });
+       },
       
       moveNode: (activeId, overId) => set((state) => ({
         tree: treeUtils.reorderNode(state.tree, activeId, overId),

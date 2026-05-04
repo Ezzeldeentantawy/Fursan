@@ -3,6 +3,55 @@ import { ElementDefinition, ELEMENTS, ELEMENTS_BY_TYPE, ELEMENTS_BY_CATEGORY, CO
 import { BuilderNode } from '../utils/nodeFactory';
 
 /**
+ * Comprehensive propMap: Maps short-form props to their React (camelCase) and CSS (kebab-case) equivalents
+ * Used for converting responsive config props to valid styles
+ */
+export const propMap: Record<string, { react: string; css: string }> = {
+  // Short-form to React prop / CSS property mappings
+  'flexDir': { react: 'flexDirection', css: 'flex-direction' },
+  'justify': { react: 'justifyContent', css: 'justify-content' },
+  'items': { react: 'alignItems', css: 'align-items' },
+  'pt': { react: 'paddingTop', css: 'padding-top' },
+  'pr': { react: 'paddingRight', css: 'padding-right' },
+  'pb': { react: 'paddingBottom', css: 'padding-bottom' },
+  'pl': { react: 'paddingLeft', css: 'padding-left' },
+  'mt': { react: 'marginTop', css: 'margin-top' },
+  'mr': { react: 'marginRight', css: 'margin-right' },
+  'mb': { react: 'marginBottom', css: 'margin-bottom' },
+  'ml': { react: 'marginLeft', css: 'margin-left' },
+  'rounded': { react: 'borderRadius', css: 'border-radius' },
+  'maxWidthC': { react: 'maxWidth', css: 'max-width' },
+  
+  // Full-form mappings (pass through)
+  'fontSize': { react: 'fontSize', css: 'font-size' },
+  'fontWeight': { react: 'fontWeight', css: 'font-weight' },
+  'textAlign': { react: 'textAlign', css: 'text-align' },
+  'textTransform': { react: 'textTransform', css: 'text-transform' },
+  'lineHeight': { react: 'lineHeight', css: 'line-height' },
+  'letterSpacing': { react: 'letterSpacing', css: 'letter-spacing' },
+  'wordSpacing': { react: 'wordSpacing', css: 'word-spacing' },
+  'width': { react: 'width', css: 'width' },
+  'height': { react: 'height', css: 'height' },
+  'minWidth': { react: 'minWidth', css: 'min-width' },
+  'minHeight': { react: 'minHeight', css: 'min-height' },
+  'maxWidth': { react: 'maxWidth', css: 'max-width' },
+  'maxHeight': { react: 'maxHeight', css: 'max-height' },
+  'padding': { react: 'padding', css: 'padding' },
+  'margin': { react: 'margin', css: 'margin' },
+  'display': { react: 'display', css: 'display' },
+  'flexDirection': { react: 'flexDirection', css: 'flex-direction' },
+  'flexWrap': { react: 'flexWrap', css: 'flex-wrap' },
+  'justifyContent': { react: 'justifyContent', css: 'justify-content' },
+  'alignItems': { react: 'alignItems', css: 'align-items' },
+  'gap': { react: 'gap', css: 'gap' },
+  'boxShadow': { react: 'boxShadow', css: 'box-shadow' },
+  'zIndex': { react: 'zIndex', css: 'z-index' },
+  'visibility': { react: 'visibility', css: 'visibility' },
+  'borderRadius': { react: 'borderRadius', css: 'border-radius' },
+  'overflow': { react: 'overflow', css: 'overflow' },
+};
+
+/**
  * Get component by element type
  */
 export function getComponent(type: string): React.FC<any> | null {
@@ -25,14 +74,12 @@ export function isContainerType(type: string): boolean {
  * @param node - The builder node to render
  * @param children - Optional children to pass to the component
  * @param dndProps - Optional DnD props to inject (ref, style, className, onClick, onContextMenu)
- * @param dropZone - Optional drop zone element to pass to container components
  * @param activeBreakpoint - Which breakpoint is active in preview (for direct style application)
  */
 export function renderNode(
   node: BuilderNode, 
   children?: React.ReactNode, 
   dndProps?: any,
-  dropZone?: React.ReactNode,
   activeBreakpoint?: string  // NEW: which breakpoint is active in preview
 ): React.ReactElement | null {
   const Component = getComponent(node.type);
@@ -55,65 +102,22 @@ export function renderNode(
   }
 
   // Create the element props
-  let elementProps: any = { ...node.props, id: node.id, key: node.id };
+  let elementProps: any = { ...node.props, id: node.id, key: node.id, 'data-node-id': node.id };
   
   // ✅ NEW: Apply responsive styles directly based on activeBreakpoint
   if (activeBreakpoint && node.props?.responsive) {
     const bpStyles = node.props.responsive[activeBreakpoint];
     
     if (bpStyles) {
-      // Apply responsive styles directly to elementProps
+      // Apply responsive styles directly to elementProps using the comprehensive propMap
       Object.entries(bpStyles).forEach(([key, val]) => {
         if (!val) return;
         
-        // Map CSS property names to React prop names
-        // Includes both full-form and short-form keys from responsive data
-        const propMap: Record<string, string> = {
-          // Existing full-form mappings
-          'fontSize': 'fontSize',
-          'fontWeight': 'fontWeight',
-          'textAlign': 'textAlign',
-          'lineHeight': 'lineHeight',
-          'letterSpacing': 'letterSpacing',
-          'width': 'width',
-          'height': 'height',
-          'minWidth': 'minWidth',
-          'minHeight': 'minHeight',
-          'maxWidth': 'maxWidth',
-          'maxHeight': 'maxHeight',
-          'padding': 'padding',
-          'margin': 'margin',
-          'pt': 'paddingTop',
-          'pr': 'paddingRight',
-          'pb': 'paddingBottom',
-          'pl': 'paddingLeft',
-          'mt': 'marginTop',
-          'mr': 'marginRight',
-          'mb': 'marginBottom',
-          'ml': 'marginLeft',
-          'display': 'display',
-          'flexDirection': 'flexDirection',
-          'flexWrap': 'flexWrap',
-          'justifyContent': 'justifyContent',
-          'alignItems': 'alignItems',
-          'gap': 'gap',
-          'boxShadow': 'boxShadow',
-          'zIndex': 'zIndex',
-          'visibility': 'visibility',
-          'borderRadius': 'borderRadius',
-          'overflow': 'overflow',
-          'textTransform': 'textTransform',
-          'wordSpacing': 'wordSpacing',
-          
-          // ✅ SHORT FORM MAPPINGS (from responsive data in DynamicPages.tsx)
-          'flexDir': 'flexDirection',        // ← Maps short form to React prop
-          'justify': 'justifyContent',       // ← Maps short form to React prop
-          'items': 'alignItems',             // ← Maps short form to React prop
-        };
+        // Use the comprehensive propMap from above
+        const mapping = propMap[key];
         
-        const reactProp = propMap[key];
-        
-        if (reactProp && val) {
+        if (mapping && val) {
+          const reactProp = mapping.react;
           elementProps[reactProp] = val;
           
           // ✅ ALSO set the original short form prop name for backward compatibility
@@ -136,26 +140,75 @@ export function renderNode(
     }
   }
   
-  // Pass dropZone as a prop if provided and node is a container
-  if (dropZone && CONTAINER_TYPES.includes(node.type)) {
-    elementProps.dropZone = dropZone;
+  // ✅ Pass activeBreakpoint to component so it can use mergeResponsiveStyles
+  if (activeBreakpoint) {
+    elementProps.activeBreakpoint = activeBreakpoint;
   }
 
-  // Create the element
-  let element = React.createElement(Component, elementProps, children);
+  // Declare element variable
+  let element: React.ReactElement | null = null;
   
-  // If DnD props provided, clone element and inject props
+  // If DnD props provided, wrap with a div that has id, ref, and all DnD attributes
+  // This guarantees the DOM element has the correct id for document.getElementById
+  // Using display:contents makes the wrapper "transparent" to CSS layout
   if (dndProps) {
-    const mergedStyle = { ...(element.props.style || {}), ...(dndProps.style || {}) };
-    const mergedClassName = [element.props.className, dndProps.className].filter(Boolean).join(' ');
+    // Create the inner element with just its own props (no DnD props)
+    // BUT: pass the DnD className to the inner element so visual indicators (borders, rings) are visible
+    const innerProps: any = {
+      ...elementProps,
+      // Merge DnD visual classes into the inner element's className
+      className: [dndProps.className, elementProps.className].filter(Boolean).join(' '),
+    };
     
-    element = React.cloneElement(element, {
+    delete innerProps.key;
+    
+    // Create inner element without DnD props
+    const innerElement = React.createElement(Component, innerProps, children);
+    
+    // Wrap with a div that has ALL DnD props for proper drag-and-drop behavior
+    // This ensures:
+    // 1. document.getElementById(node.id) finds the element
+    // 2. Drag event listeners are on the correct element
+    // NOTE: Using display:contents to make wrapper transparent to layout
+    // For getBoundingClientRect() to work, we need to ensure the wrapper has dimensions
+    // We'll use a special data attribute to find the actual content element
+    const wrapperProps: any = {
+      id: node.id,
+      'data-node-id': node.id,
+      'data-wrapper': 'true',
       ref: dndProps.ref,
-      style: mergedStyle,
-      className: mergedClassName,
-      onClick: dndProps.onClick,
-      onContextMenu: dndProps.onContextMenu,
-    });
+      style: { display: 'contents' }, // Transparent to layout
+      // Spread all DnD-related props onto the wrapper
+      ...dndProps.attributes,
+      ...dndProps.listeners,
+      // Merge styles and classNames
+      className: [dndProps.className, innerProps.className].filter(Boolean).join(' '),
+    };
+    
+    // Merge styles from dndProps and innerProps
+    const mergedStyle = {
+      ...(wrapperProps.style || {}),
+      ...(innerProps.style || {}),
+      ...(dndProps.style || {}),
+    };
+    wrapperProps.style = mergedStyle;
+    
+    // Handle onClick - call both dndProps.onClick and inner element's onClick
+    wrapperProps.onClick = (e: any) => {
+      if (dndProps.onClick) dndProps.onClick(e);
+      if (innerProps.onClick) innerProps.onClick(e);
+    };
+    
+    // Handle onContextMenu
+    wrapperProps.onContextMenu = (e: any) => {
+      if (dndProps.onContextMenu) dndProps.onContextMenu(e);
+      if (innerProps.onContextMenu) innerProps.onContextMenu(e);
+    };
+    
+    element = React.createElement('div', wrapperProps, innerElement);
+  } else {
+    // No DnD props, create element normally
+    element = React.createElement(Component, elementProps, children);
   }
   
   return element;

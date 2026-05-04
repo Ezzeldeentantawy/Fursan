@@ -12,6 +12,7 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  DragOverEvent,
   PointerSensor,
   KeyboardSensor,
   useSensor,
@@ -30,8 +31,20 @@ import { TemplatePicker } from './components/TemplatePicker';
 import { FloatingToolbar } from './components/FloatingToolbar';
 import pagesApi from '../api/pagesApi';
 import { createNode, isContainer } from './utils/nodeFactory';
-import { CONTAINER_TYPES } from './DynamicPages';
+import { CONTAINER_TYPES, ELEMENTS_BY_TYPE } from './DynamicPages';
 import type { BuilderNode } from './utils/nodeFactory';
+import { findNode, findParentNode } from './utils/treeUtils';
+
+// Store subscription for debugging tree updates (outside component)
+if (typeof window !== 'undefined') {
+  useBuilderStore.subscribe(
+    (state) => state.tree,
+    (tree, prevTree) => {
+      console.log('[Store] Tree changed, children count:', tree.children?.length);
+      console.log('[Store] Prev children count:', prevTree.children?.length);
+    }
+  );
+}
 
 export const Builder: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +64,7 @@ export const Builder: React.FC = () => {
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [activeDragType, setActiveDragType] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [dragPointerPosition, setDragPointerPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Breakpoint state for preview
   const [activeBp, setActiveBp] = useState<Breakpoint>('md');
@@ -201,76 +215,237 @@ export const Builder: React.FC = () => {
     };
   }, [id, setTree, resetTree]);
 
+  // Track mouse position during drag
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (activeDragId) {
+        setDragPointerPosition({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    if (activeDragId) {
+      document.addEventListener('pointermove', handlePointerMove);
+    }
+
+    return () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+    };
+  }, [activeDragId]);
+
   // Drag handlers
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     setActiveDragId(active.id as string);
+    useBuilderStore.getState().setActiveDragId(active.id as string);
     const fromPanel = active.data.current?.fromPanel;
     if (fromPanel) {
       setActiveDragType(active.data.current?.type);
+      useBuilderStore.getState().setActiveDragType(active.data.current?.type);
     } else {
       setActiveDragType(null);
+      useBuilderStore.getState().setActiveDragType(null);
+    }
+    // Initialize drag pointer position
+    const startEvent = event.activatorEvent as PointerEvent;
+    if (startEvent) {
+      setDragPointerPosition({ x: startEvent.clientX, y: startEvent.clientY });
     }
   };
 
-  const handleDragOver = (event: DragEndEvent) => {
+  const handleDragOver = (event: DragOverEvent) => {
     const { over } = event;
     if (over) {
       setOverId(over.id as string);
     }
+    
+    // Use mouse position to find which container the cursor is over
+    // This works for ALL containers including empty ones (no collision needed)
+    if (dragPointerPosition) {
+      const { x, y } = dragPointerPosition;
+      const elements = document.elementsFromPoint(x, y);
+      
+      // Walk through elements under cursor, find the deepest container
+      let foundContainerId: string | null = null;
+      for (const el of elements) {
+        // Check element itself
+        const nodeId = el.getAttribute('data-node-id');
+        if (nodeId) {
+          const node = findNode(useBuilderStore.getState().tree, nodeId);
+          if (node && CONTAINER_TYPES.includes(node.type)) {
+            foundContainerId = nodeId;
+            break;
+          }
+        }
+        // Walk up parent chain to find container
+        let parent: Element | null = el.parentElement;
+        while (parent) {
+          const parentNodeId = parent.getAttribute('data-node-id');
+          if (parentNodeId) {
+            const node = findNode(useBuilderStore.getState().tree, parentNodeId);
+            if (node && CONTAINER_TYPES.includes(node.type)) {
+              foundContainerId = parentNodeId;
+              break;
+            }
+          }
+          parent = parent.parentElement;
+        }
+        if (foundContainerId) break;
+      }
+      
+      useBuilderStore.getState().setOverContainerId(foundContainerId);
+    }
   };
 
-  const findNearestContainer = (targetId: string, node: BuilderNode): string | null => {
-    const actualId = targetId.startsWith('droppable-') ? targetId.replace('droppable-', '') : targetId;
+  /**
+   * Calculate the correct drop index within a container based on mouse position
+   * FIX for Issue 2: Insert at correct position instead of always at the bottom
+   */
+  const calculateDropIndexInContainer = (containerId: string, mouseY: number): number => {
+    // Get the container's children from the tree (source of truth)
+    const currentTree = useBuilderStore.getState().tree;
+    const containerNode = findNode(currentTree, containerId);
     
-    if (node.id === actualId && CONTAINER_TYPES.includes(node.type)) {
-      return node.id;
+    if (!containerNode || !containerNode.children || containerNode.children.length === 0) {
+      return 0; // Empty container, insert at 0
     }
+    
+    const children = containerNode.children;
+    
+    // Find the child that the mouse is closest to
+    let closestIndex = children.length; // Default: insert at end
+    let closestDistance = Infinity;
 
-    if (node.children) {
-      for (const child of node.children) {
-        if (child.id === actualId && CONTAINER_TYPES.includes(child.type)) {
-          return child.id;
+    children.forEach((child, index) => {
+      // Find the DOM element by ID (the wrapper div with display:contents)
+      const childElement = document.getElementById(child.id);
+      if (!childElement) return;
+      
+      // With display:contents, getBoundingClientRect() might return zero dimensions
+      // We need to find the first child element that has actual dimensions
+      let targetElement: Element | null = childElement;
+      
+      // If the wrapper has no dimensions, try to find the first child with dimensions
+      const rect = childElement.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) {
+        // Find the first child element that has dimensions
+        const childrenWithDimensions = childElement.querySelectorAll('*');
+        for (let i = 0; i < childrenWithDimensions.length; i++) {
+          const childRect = childrenWithDimensions[i].getBoundingClientRect();
+          if (childRect.width > 0 || childRect.height > 0) {
+            targetElement = childrenWithDimensions[i];
+            break;
+          }
         }
-        const found = findNearestContainer(targetId, child);
-        if (found) return found;
       }
-    }
+      
+      const targetRect = targetElement.getBoundingClientRect();
+      
+      // Skip elements with zero dimensions (e.g., during drag, hidden elements)
+      if (targetRect.width === 0 && targetRect.height === 0) return;
+      
+      const distance = Math.abs(mouseY - targetRect.top - targetRect.height / 2);
+      
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        // If mouse is above the middle of this child, insert before it
+        // If mouse is below the middle, insert after it
+        if (mouseY < targetRect.top + targetRect.height / 2) {
+          closestIndex = index;
+        } else {
+          closestIndex = index + 1;
+        }
+      }
+    });
 
-    return null;
+    return closestIndex;
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveDragId(null);
-    setActiveDragType(null);
-    setOverId(null);
-
-    if (!over) return;
-
-    const activeId = active.id as string;
-    const fromPanel = active.data.current?.fromPanel;
-
-    if (fromPanel) {
-      const elementType = active.data.current?.type;
-      if (!elementType) return;
-
-      const newNode = createNode(elementType);
-      const targetId = findNearestContainer(over.id as string, tree);
+    try {
+      const { active, over } = event;
       
-      if (targetId) {
-        addNode(targetId, newNode);
+      setActiveDragId(null);
+      setActiveDragType(null);
+      setOverId(null);
+      setDragPointerPosition(null);
+      useBuilderStore.getState().setActiveDragId(null);
+      useBuilderStore.getState().setActiveDragType(null);
+      useBuilderStore.getState().setOverContainerId(null);
+
+      if (!over) {
+        return;
+      }
+
+      const activeId = active.id as string;
+      const fromPanel = active.data.current?.fromPanel;
+
+      // Get the drop target ID
+      const overId = over.id as string;
+      
+      // Get fresh tree state to avoid stale closure
+      const currentTree = useBuilderStore.getState().tree;
+      
+      // Check if dropping over a container
+      const isOverContainer = over.data.current?.isContainer || overId === 'root' || CONTAINER_TYPES.includes(findNode(currentTree, overId)?.type || '');
+
+      if (fromPanel) {
+        const elementType = active.data.current?.type;
+        if (!elementType) {
+          return;
+        }
+
+        const newNode = createNode(elementType);
+        
+        // Handle dropzone-{parentId}-{index} IDs (dashed drop targets between elements)
+        // parentId itself contains dashes (e.g. block-uuid), so split from the right
+        if (overId.startsWith('dropzone-')) {
+          const withoutPrefix = overId.slice('dropzone-'.length);
+          const lastDash = withoutPrefix.lastIndexOf('-');
+          const insertIndex = parseInt(withoutPrefix.slice(lastDash + 1), 10);
+          const parentId = withoutPrefix.slice(0, lastDash);
+          console.log('[handleDragEnd] Dropping on dropzone, parent:', parentId, 'index:', insertIndex);
+          addNode(parentId, newNode, insertIndex);
+          return;
+        }
+        
+        if (isOverContainer) {
+          // FIX Issue 2: Calculate correct drop index within container based on mouse position
+          // Use the tracked pointer position
+          const mouseY = dragPointerPosition?.y || 0;
+          
+          const dropIndex = calculateDropIndexInContainer(overId, mouseY);
+          
+          if (dropIndex >= 0) {
+            console.log('[handleDragEnd] Adding to container:', overId, 'at index:', dropIndex);
+            addNode(overId, newNode, dropIndex);
+          } else {
+            // Fallback: add to end
+            console.log('[handleDragEnd] Adding to container:', overId, 'at end');
+            addNode(overId, newNode);
+          }
+        } else {
+          // Dropping on an existing element - find parent and insert AFTER the target
+          const { parent, index } = findParentNode(currentTree, overId);
+          
+          if (parent && index !== -1) {
+            // Insert AFTER the target element (index + 1)
+            const insertIndex = index + 1;
+            console.log('[handleDragEnd] Inserting at index:', insertIndex, 'in parent:', parent.id);
+            addNode(parent.id, newNode, insertIndex);
+          } else {
+            // Fallback: add to root
+            console.log('[handleDragEnd] Fallback: adding to root');
+            addNode('root', newNode);
+          }
+        }
       } else {
-        // Fallback: add to root if it's a container
-        if (CONTAINER_TYPES.includes(tree.type)) {
-          addNode(tree.id, newNode);
+        // Reorder existing node
+        if (activeId !== overId) {
+          moveNode(activeId, overId);
         }
       }
-    } else {
-      // Reorder existing node
-      if (activeId !== over.id) {
-        moveNode(activeId, over.id as string);
-      }
+    } catch (error) {
+      console.error('[handleDragEnd] ERROR:', error);
     }
   };
 
@@ -363,9 +538,13 @@ export const Builder: React.FC = () => {
   const renderDragOverlay = () => {
     if (!activeDragId) return null;
     if (activeDragType) {
+      // Find the element definition to get the label and icon
+      const elementDef = ELEMENTS_BY_TYPE[activeDragType];
+      const IconComponent = elementDef?.icon;
       return (
-        <div className="bg-white border-2 border-blue-400 rounded-md p-3 shadow-lg opacity-90">
-          Adding: {activeDragType}
+        <div className="flex items-center gap-2 bg-slate-800 border-2 border-blue-400 rounded-xl p-3 shadow-lg opacity-90">
+          {IconComponent && <IconComponent size={18} className="text-blue-400" />}
+          <span className="text-xs font-bold text-slate-300">Add: {activeDragType}</span>
         </div>
       );
     }
@@ -396,7 +575,10 @@ export const Builder: React.FC = () => {
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
+      onDragEnd={(event) => {
+        console.log('[DndContext] onDragEnd fired!');
+        handleDragEnd(event);
+      }}
     >
       <div className="h-screen flex flex-col bg-slate-100">
         <Toolbar

@@ -89,9 +89,9 @@ export const BLOCK_CATALOG: Record<BlockType, BlockDef> = {
     label: 'Container', description: 'Flex/grid wrapper — add any blocks inside',
     category: 'layout', emoji: '⬜',
     defaults: {
-      bgColor: 'transparent', bgImage: '', bgSize: 'cover', width: '', height: '',
+      bgColor: '', bgImage: '', bgSize: 'cover', width: '', height: '',
       minWidth: '', minHeight: '', maxWidth: '', maxHeight: '', borderRadius: '',
-      borderWidth: '0px', borderColor: '#e2e8f0', borderStyle: 'none',
+      borderWidth: '', borderColor: '', borderStyle: '',
       ...COMMON_DEFAULTS
     },
     fields: [

@@ -50,8 +50,15 @@ export function findParentNode(
 
 /**
  * Insert a node into a parent's children array
+ * @param tree - The tree to insert into
+ * @param parentId - The ID of the parent node
+ * @param node - The node to insert
+ * @param index - Optional index to insert at (undefined = append to end)
  */
-export function insertNode(tree: BuilderNode, parentId: string, node: BuilderNode): BuilderNode {
+export function insertNode(tree: BuilderNode, parentId: string, node: BuilderNode, index?: number): BuilderNode {
+  console.log('[treeUtils.insertNode] Called with parentId:', parentId, 'index:', index);
+  console.log('[treeUtils.insertNode] Node to insert:', node);
+  
   // Deep clone the tree
   const newTree = JSON.parse(JSON.stringify(tree));
 
@@ -60,7 +67,13 @@ export function insertNode(tree: BuilderNode, parentId: string, node: BuilderNod
     if (!newTree.children) {
       newTree.children = [];
     }
-    newTree.children.push(node);
+    if (index !== undefined && index >= 0 && index <= newTree.children.length) {
+      newTree.children.splice(index, 0, node);
+      console.log('[treeUtils.insertNode] Inserted at index', index, 'in root');
+    } else {
+      newTree.children.push(node);
+      console.log('[treeUtils.insertNode] Pushed to end of root');
+    }
     return newTree;
   }
 
@@ -76,7 +89,13 @@ export function insertNode(tree: BuilderNode, parentId: string, node: BuilderNod
       if (!current.children) {
         current.children = [];
       }
-      current.children.push(node);
+      if (index !== undefined && index >= 0 && index <= current.children.length) {
+        current.children.splice(index, 0, node);
+        console.log('[treeUtils.insertNode] Inserted at index', index, 'in parent');
+      } else {
+        current.children.push(node);
+        console.log('[treeUtils.insertNode] Pushed to end of parent');
+      }
       inserted = true;
       return current;
     }
@@ -89,6 +108,11 @@ export function insertNode(tree: BuilderNode, parentId: string, node: BuilderNod
   }
 
   insertIntoParent(newTree);
+  
+  if (!inserted) {
+    console.warn('[treeUtils.insertNode] WARNING: Node was NOT inserted! parentId not found:', parentId);
+  }
+  
   return newTree;
 }
 
@@ -148,30 +172,36 @@ export function reorderNode(tree: BuilderNode, activeId: string, overId: string)
 
   // Deep clone the tree
   const newTree = JSON.parse(JSON.stringify(tree));
-
+  
   // Find the active node and its parent
   const { parent: activeParent, index: activeIndex } = findParentNode(newTree, activeId);
   
   if (!activeParent || activeIndex === -1) {
     return tree; // Active node not found
   }
-
+  
   // Extract the active node
   const activeNode = activeParent.children[activeIndex];
-  activeParent.children.splice(activeIndex, 1);
-
-  // Find the over node and its parent
+  
+  // Find the over node and its parent BEFORE removing the active node
   const { parent: overParent, index: overIndex } = findParentNode(newTree, overId);
-
+  
   if (!overParent || overIndex === -1) {
-    // Over node not found, put it back
-    activeParent.children.splice(activeIndex, 0, activeNode);
-    return tree;
+    return tree; // Over node not found
   }
-
-  // Insert at the over position
-  overParent.children.splice(overIndex, 0, activeNode);
-
+  
+  // Now remove the active node
+  activeParent.children.splice(activeIndex, 1);
+  
+  // Adjust overIndex if active was before over in the same parent
+  let adjustedOverIndex = overIndex;
+  if (activeParent === overParent && activeIndex < overIndex) {
+    adjustedOverIndex = overIndex - 1;
+  }
+  
+  // Insert at the adjusted over position
+  overParent.children.splice(adjustedOverIndex, 0, activeNode);
+  
   return newTree;
 }
 

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Type, AlignLeft, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor } from 'lucide-react';
+import { propMap } from './registry/componentRegistry';
 
 // ============= HELPER FUNCTIONS =============
 
@@ -349,7 +350,7 @@ export const elementDefinitions: Record<string, any> = {
     category: 'layout',
     defaults: {
       ...defaultResponsiveProps,
-      bgColor: 'transparent',
+      bgColor: '',
       bgImage: '',
       bgSize: 'cover',
       width: '',
@@ -359,18 +360,18 @@ export const elementDefinitions: Record<string, any> = {
       maxWidth: '',
       maxHeight: '',
       borderRadius: '',
-      borderWidth: '0px',
-      borderColor: '#e2e8f0',
-      borderStyle: 'none',
-      padding: '16px',
-      direction: 'column',
-      align: 'stretch',
-      items: 'stretch',
-      justify: 'flex-start',
-      gap: '16px',
+      borderWidth: '',
+      borderColor: '',
+      borderStyle: '',
+      padding: '',
+      direction: '',
+      align: '',
+      items: '',
+      justify: '',
+      gap: '',
       flexWrap: '',
       textAlign: '',
-      display: 'flex',
+      display: '',
       flexDir: '',
       bgGradient: false,
       bgGradientDirection: '180deg',
@@ -543,48 +544,29 @@ export function generateResponsiveStyles(blockId: string, responsive: Record<str
     const bpConfig = bpMap[bp];
     if (!bpConfig) return;
     
-    // ✅ Accumulate ALL rules for this breakpoint
+    // ✅ Accumulate ALL rules for this breakpoint using propMap
     let allRules = '';
     
     Object.entries(props).forEach(([key, val]) => {
       if (!val) return;
       
-      let rule = '';
-      // Map props to CSS properties
-      if (key === 'fontSize') rule = `font-size: ${val} !important; `;
-      if (key === 'fontWeight') rule = `font-weight: ${val} !important; `;
-      if (key === 'textAlign') rule = `text-align: ${val} !important; `;
-      if (key === 'lineHeight') rule = `line-height: ${val} !important; `;
-      if (key === 'letterSpacing') rule = `letter-spacing: ${val} !important; `;
-      if (key === 'width') rule = `width: ${val} !important; `;
-      if (key === 'height') rule = `height: ${val} !important; `;
-      if (key === 'minWidth') rule = `min-width: ${val} !important; `;
-      if (key === 'minHeight') rule = `min-height: ${val} !important; `;
-      if (key === 'maxWidth') rule = `max-width: ${val} !important; `;
-      if (key === 'maxHeight') rule = `max-height: ${val} !important; `;
-      if (key === 'padding') rule = `padding: ${val} !important; `;
-      if (key === 'margin') rule = `margin: ${val} !important; `;
-      if (key === 'pt') rule = `padding-top: ${val} !important; `;
-      if (key === 'pr') rule = `padding-right: ${val} !important; `;
-      if (key === 'pb') rule = `padding-bottom: ${val} !important; `;
-      if (key === 'pl') rule = `padding-left: ${val} !important; `;
-      if (key === 'mt') rule = `margin-top: ${val} !important; `;
-      if (key === 'mr') rule = `margin-right: ${val} !important; `;
-      if (key === 'mb') rule = `margin-bottom: ${val} !important; `;
-      if (key === 'ml') rule = `margin-left: ${val} !important; `;
-       if (key === 'display') rule = `display: ${val} !important; `;
-       if (key === 'flexDirection' || key === 'flexDir') rule = `flex-direction: ${val} !important; `;
-       if (key === 'flexWrap') rule = `flex-wrap: ${val} !important; `;
-       if (key === 'justifyContent' || key === 'justify') rule = `justify-content: ${val} !important; `;
-       if (key === 'alignItems' || key === 'items') rule = `align-items: ${val} !important; `;
-      if (key === 'gap') rule = `gap: ${val} !important; `;
-      if (key === 'boxShadow') rule = `box-shadow: ${val} !important; `;
-      if (key === 'zIndex') rule = `z-index: ${val} !important; position: relative !important; `;
-      if (key === 'visibility') rule = `display: ${val === 'hidden' ? 'none' : val} !important; `;
-      if (key === 'borderRadius') rule = `border-radius: ${val} !important; `;
-      if (key === 'overflow') rule = `overflow: ${val} !important; `;
-      if (key === 'textTransform') rule = `text-transform: ${val} !important; `;
-      if (key === 'wordSpacing') rule = `word-spacing: ${val} !important; `;
+      // Use the comprehensive propMap to convert short-form to CSS property
+      const mapping = propMap[key];
+      if (!mapping) return;
+      
+      const cssProp = mapping.css;
+      let rule = `${cssProp}: ${val} !important; `;
+      
+      // Special handling for zIndex which also needs position
+      if (key === 'zIndex') {
+        rule += `position: relative !important; `;
+      }
+      
+      // Special handling for visibility
+      if (key === 'visibility') {
+        const displayVal = val === 'hidden' ? 'none' : val;
+        rule = `display: ${displayVal} !important; `;
+      }
       
       if (rule) {
         allRules += rule; // ✅ Accumulate ALL rules
@@ -643,15 +625,28 @@ export const cssPropertyMap = {
   maxWidth: 'maxWidth',
   maxHeight: 'maxHeight',
   maxWidthC: 'maxWidth',
+  // Padding short-forms
   pt: 'paddingTop',
   pr: 'paddingRight',
   pb: 'paddingBottom',
   pl: 'paddingLeft',
+  paddingTop: 'paddingTop',
+  paddingRight: 'paddingRight',
+  paddingBottom: 'paddingBottom',
+  paddingLeft: 'paddingLeft',
+  padding: 'padding',
+  // Margin short-forms
   mt: 'marginTop',
   mr: 'marginRight',
   mb: 'marginBottom',
   ml: 'marginLeft',
+  marginTop: 'marginTop',
+  marginRight: 'marginRight',
+  marginBottom: 'marginBottom',
+  marginLeft: 'marginLeft',
+  margin: 'margin',
   rounded: 'borderRadius',
+  borderRadius: 'borderRadius',
   overflow: 'overflow',
   textTransform: 'textTransform',
   wordSpacing: 'wordSpacing',
@@ -898,40 +893,24 @@ export const ButtonComponent: React.FC<any> = (props) => {
 
 // Container Component - SIMPLIFIED & ROBUST
 export const ContainerComponent: React.FC<any> = (props) => {
-  // ============= SYSTEMATIC DEBUG: RENDER COUNTER =============
-  const renderCount = useRef(0);
-  renderCount.current += 1;
-
-  console.log(`[ContainerComponent] ========== RENDER #${renderCount.current} ==========`);
-  console.log('[ContainerComponent] props at render #' + renderCount.current + ':', {
-    flexDirection: props.flexDirection,
-    flexDir: props.flexDir,
-    direction: props.direction,
-    justifyContent: props.justifyContent,
-    justify: props.justify,
-    alignItems: props.alignItems,
-    items: props.items,
-    align: props.align,
-    id: props.id,
-  });
-
   // ✅ Destructure everything EXCEPT flexDirection, justifyContent, alignItems, margin props
-  const {
-    bgColor, bgImage, bgSize, width, height, minWidth, minHeight, maxWidth, maxHeight,
-    borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap,
-    children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display, flexDir, items,
-    bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl, dropZone,
-    margin, marginTop, marginRight, marginBottom, marginLeft,
-    } = props;
+    const {
+      bgColor, bgImage, bgSize, width, height, minWidth, minHeight, maxWidth, maxHeight,
+      borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap,
+      children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display, flexDir, items,
+      bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl,
+      margin, marginTop, marginRight, marginBottom, marginLeft, activeBreakpoint, className: dndClassName
+      } = props;
 
   // ✅ READ DIRECTLY FROM PROPS (not from destructuring):
   const flexDirFromProps = props.flexDirection;
   const justifyContentFromProps = props.justifyContent;
   const alignItemsFromProps = props.alignItems;
 
-  // ✅ Keep ONLY these 2 logs:
-  console.log('[ContainerComponent] flexDirFromProps:', flexDirFromProps);
-  console.log('[ContainerComponent] props.flexDirection:', props.flexDirection);
+  // ✅ MERGE RESPONSIVE STYLES for builder preview
+  // Use activeBreakpoint from props (passed by renderNode), default to 'md' for preview
+  const bp = activeBreakpoint || 'md';
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, bp);
 
   // Map alignment values
   const mapJustify = (j: string): string => {
@@ -974,15 +953,17 @@ export const ContainerComponent: React.FC<any> = (props) => {
     }
   }
 
+  // ✅ BUILD containerStyle - start with base props, then merge responsive styles
   const containerStyle: React.CSSProperties = {
+    // Base props (only if explicitly set)
     minHeight: minHeight || undefined,
     minWidth: minWidth || undefined,
     maxWidth: maxWidth || undefined,
     maxHeight: maxHeight || undefined,
-    width: width || '100%',
-    height: height || 'auto',
+    width: width || undefined,
+    height: height || undefined,
     borderRadius: borderRadius || undefined,
-    padding: padding || '16px',
+    padding: padding || undefined,
     margin: margin || undefined,
     marginTop: marginTop || undefined,
     marginRight: marginRight || undefined,
@@ -992,49 +973,55 @@ export const ContainerComponent: React.FC<any> = (props) => {
     textAlign: textAlign as any || undefined,
     borderWidth: bw || undefined,
     borderColor: borderColor || undefined,
-    borderStyle: borderStyle || (bw && bw !== '0px' ? 'solid' : 'none'),
-    background: bg,
-    display: display || 'flex',
-
-    // ✅ USE DIRECT READS:
-    flexDirection: flexDirFromProps || flexDir || direction || 'column',
-
-    // ✅ USE DIRECT READS:
-    justifyContent: mapJustify(justifyContentFromProps || justify),
-
-    // ✅ USE DIRECT READS:
-    alignItems: mapAlign(alignItemsFromProps || items || align),
-
-    gap: gap || '16px',
+    borderStyle: borderStyle || (bw && bw !== '0px' ? 'solid' : undefined),
+    background: bg || undefined,
+    display: display || undefined,
+    gap: gap || undefined,
     boxShadow: boxShadow || undefined,
     zIndex: zIndex || undefined,
     position: (zIndex || zIndex === 0) ? 'relative' : undefined,
   };
 
+  // ✅ Apply flexDirection: check responsive first, then props
+  containerStyle.flexDirection = (responsiveStyles.flexDirection as any) || flexDirFromProps || flexDir || direction || undefined;
+
+  // ✅ Apply justifyContent: check responsive first, then props
+  containerStyle.justifyContent = (responsiveStyles.justifyContent as any) || justifyContentFromProps || justify || undefined;
+
+  // ✅ Apply alignItems: check responsive first, then props
+  containerStyle.alignItems = (responsiveStyles.alignItems as any) || alignItemsFromProps || items || align || undefined;
+
+  // ✅ Merge all other responsive styles (padding, margin, gap, etc.)
+  // This ensures responsive values override base props
+  Object.keys(responsiveStyles).forEach(key => {
+    const value = responsiveStyles[key];
+    if (value !== undefined && value !== '') {
+      (containerStyle as any)[key] = value;
+    }
+  });
+
   // Handle tag and link
   const Tag = (tag === 'a' && linkUrl) ? 'a' : tag || 'div';
   const linkProps = (tag === 'a' && linkUrl) ? { href: linkUrl } : {};
 
-  // ✅ FINAL CHECK DEBUG LOG
-  console.log('[ContainerComponent] FINAL CHECK before return:');
-  console.log('  containerStyle object:', containerStyle);
-  console.log('  containerStyle.flexDirection:', containerStyle.flexDirection);
-  console.log('  containerStyle.justifyContent:', containerStyle.justifyContent);
-  console.log('  containerStyle.alignItems:', containerStyle.alignItems);
-  console.log('  JSON:', JSON.stringify(containerStyle));
+  // ✅ Generate responsive styles as <style> tags for builder preview
+  const responsiveStylesElement = generateResponsiveStyles(id, responsive);
 
   return (
-    <Tag
-      id={id}
-      style={containerStyle}
-      className={`${customClass || ''}`}
-      {...linkProps}
-    >
-      {children}
-
-      {/* Render drop zone inside container for DnD */}
-      {dropZone}
-    </Tag>
+    <>
+      {/* Render responsive styles */}
+      {responsiveStylesElement}
+      
+      <Tag
+        id={id}
+        data-node-id={id}
+        style={containerStyle}
+        className={`${dndClassName || ''} ${customClass || ''}`.trim()}
+        {...linkProps}
+      >
+        {children}
+      </Tag>
+    </>
   );
 };
 

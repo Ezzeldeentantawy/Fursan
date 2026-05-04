@@ -7,20 +7,13 @@ interface DraggableWidgetProps {
 }
 
 export const DraggableWidget: React.FC<DraggableWidgetProps> = ({ element }) => {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `widget-${element.type}`,
     data: {
       fromPanel: true,
       type: element.type,
     },
   });
-
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 999,
-      }
-    : undefined;
 
   // Get the icon component
   const IconComponent = element.icon;
@@ -35,7 +28,6 @@ export const DraggableWidget: React.FC<DraggableWidgetProps> = ({ element }) => 
         cursor-grab hover:border-slate-600 transition-all
         ${isDragging ? 'opacity-50 shadow-lg' : ''}
       `}
-      style={style}
     >
       <div className="w-8 h-8 bg-slate-700 text-blue-400 rounded-lg flex items-center justify-center flex-shrink-0">
         {IconComponent && <IconComponent size={18} />}

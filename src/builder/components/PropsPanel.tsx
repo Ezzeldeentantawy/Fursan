@@ -71,18 +71,21 @@ export const PropsPanel: React.FC = () => {
         );
 
       case 'color':
+        // Handle 'transparent' or other non-hex values for the color input
+        const colorInputValue = (value && value !== 'transparent' && /^#[0-9A-Fa-f]{6}$/.test(value)) ? value : '#000000';
         return (
           <div className="flex items-center gap-2">
             <input
               type="color"
-              value={value}
+              value={colorInputValue}
               onChange={(e) => handleChange(control.key, e.target.value)}
               className="w-10 h-10 border border-slate-800 rounded-lg cursor-pointer bg-slate-950/50"
             />
             <input
               type="text"
-              value={value}
+              value={value || ''}
               onChange={(e) => handleChange(control.key, e.target.value)}
+              placeholder="e.g., #ff0000 or transparent"
               className="flex-1 px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-[11px] font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

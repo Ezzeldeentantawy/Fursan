@@ -9,6 +9,7 @@ import {
 } from './admin/Pages/Builder/blockTypes';
 import { WIDGETS } from '../widgets';
 import { breakpoints } from '../builder/DynamicPages';
+import { propMap } from '../builder/registry/componentRegistry';
 
 const pagesApi = basePagesApi as any;
 
@@ -62,45 +63,35 @@ function generateResponsiveStyles(blockId: string, responsive: Record<string, Re
         cleanKey = key.replace('desc', '').charAt(0).toLowerCase() + key.replace('desc', '').slice(1);
       }
 
-      let rule = '';
-      if (cleanKey === 'fontSize') rule = `font-size: ${val} !important; `;
-      if (cleanKey === 'fontWeight') rule = `font-weight: ${val} !important; `;
-      if (cleanKey === 'textAlign') rule = `text-align: ${val} !important; `;
-      if (cleanKey === 'lineHeight') rule = `line-height: ${val} !important; `;
-      if (cleanKey === 'letterSpacing') rule = `letter-spacing: ${val} !important; `;
-      if (cleanKey === 'maxWidth') rule = `max-width: ${val} !important; `;
-      if (cleanKey === 'display') rule = `display: ${val} !important; `;
-      if (cleanKey === 'flexDir') rule = `flex-direction: ${val} !important; `;
-      if (cleanKey === 'flexWrap') rule = `flex-wrap: ${val} !important; `;
-      if (cleanKey === 'gridCols') rule = `grid-template-columns: repeat(${val}, minmax(0, 1fr)) !important; `;
-      if (cleanKey === 'gridRows') rule = `grid-template-rows: repeat(${val}, minmax(0, 1fr)) !important; `;
-      if (cleanKey === 'gap') rule = `gap: ${val} !important; `;
-      if (cleanKey === 'items') rule = `align-items: ${val} !important; `;
-      if (cleanKey === 'justify') rule = `justify-content: ${val} !important; `;
-      if (cleanKey === 'width') rule = `width: ${val} !important; `;
-      if (cleanKey === 'maxWidthC') rule = `max-width: ${val} !important; `;
-      if (cleanKey === 'colSpan') rule = `grid-column: span ${val} / span ${val} !important; `;
-      if (cleanKey === 'pt') rule = `padding-top: ${val} !important; `;
-      if (cleanKey === 'pr') rule = `padding-right: ${val} !important; `;
-      if (cleanKey === 'pb') rule = `padding-bottom: ${val} !important; `;
-      if (cleanKey === 'pl') rule = `padding-left: ${val} !important; `;
-      if (cleanKey === 'mt') rule = `margin-top: ${val} !important; `;
-      if (cleanKey === 'mr') rule = `margin-right: ${val} !important; `;
-      if (cleanKey === 'mb') rule = `margin-bottom: ${val} !important; `;
-      if (cleanKey === 'ml') rule = `margin-left: ${val} !important; `;
-      if (cleanKey === 'boxShadow') rule = `box-shadow: ${val} !important; `;
-      if (cleanKey === 'zIndex') rule = `z-index: ${val} !important; position: relative !important; `;
-      if (cleanKey === 'visibility') rule = `display: ${val === 'hidden' ? 'none' : val} !important; `;
-      if (cleanKey === 'rounded') rule = `border-radius: ${val} !important; `;
-      if (cleanKey === 'overflow') rule = `overflow: ${val} !important; `;
-      if (cleanKey === 'textTransform') rule = `text-transform: ${val} !important; `;
-      if (cleanKey === 'wordSpacing') rule = `word-spacing: ${val} !important; `;
-      if (cleanKey === 'height') rule = `height: ${val} !important; `;
-      if (cleanKey === 'minWidth') rule = `min-width: ${val} !important; `;
-      if (cleanKey === 'minHeight') rule = `min-height: ${val} !important; `;
-      if (cleanKey === 'maxHeight') rule = `max-height: ${val} !important; `;
-      if (cleanKey === 'flexWrap') rule = `flex-wrap: ${val} !important; `;
+      // Use the comprehensive propMap to convert short-form to CSS property
+      const mapping = propMap[cleanKey];
+      if (!mapping) return;
       
+      const cssProp = mapping.css;
+      let rule = `${cssProp}: ${val} !important; `;
+      
+      // Special handling for zIndex which also needs position
+      if (cleanKey === 'zIndex') {
+        rule += `position: relative !important; `;
+      }
+      
+      // Special handling for visibility
+      if (cleanKey === 'visibility') {
+        const displayVal = val === 'hidden' ? 'none' : val;
+        rule = `display: ${displayVal} !important; `;
+      }
+      
+      // Special handling for grid properties
+      if (cleanKey === 'gridCols') {
+        rule = `grid-template-columns: repeat(${val}, minmax(0, 1fr)) !important; `;
+      }
+      if (cleanKey === 'gridRows') {
+        rule = `grid-template-rows: repeat(${val}, minmax(0, 1fr)) !important; `;
+      }
+      if (cleanKey === 'colSpan') {
+        rule = `grid-column: span ${val} / span ${val} !important; `;
+      }
+
       if (rule) {
         allRules += rule; // ✅ Accumulate ALL rules
       }
@@ -318,18 +309,27 @@ const PageRenderer: React.FC = () => {
           const styles = generateResponsiveStyles(block.id, p.responsive);
           const bw = p.borderWidth ? (isNaN(Number(p.borderWidth)) ? p.borderWidth : `${p.borderWidth}px`) : undefined;
           // Clean background image URL if present
-          const bgImageUrl = p.bgImage ? `url(${cleanUrl(p.bgImage)}) center / ${p.bgSize ?? 'cover'} no-repeat` : (p.bgColor || 'transparent');
+          const bgImageUrl = p.bgImage ? `url(${cleanUrl(p.bgImage)}) center / ${p.bgSize ?? 'cover'} no-repeat` : (p.bgColor || undefined);
           const containerStyle: React.CSSProperties = {
-            minHeight: p.minHeight, minWidth: p.minWidth, maxWidth: p.maxWidth, maxHeight: p.maxHeight,
-            width: p.width, height: p.height, borderRadius: p.borderRadius, padding: p.padding,
-            flexWrap: p.flexWrap as any,
-            textAlign: p.textAlign as any,
-            borderWidth: bw,
-            borderColor: p.borderColor,
-            borderStyle: p.borderStyle || (bw && bw !== '0px' ? 'solid' : 'none'),
-            background: bgImageUrl, display: 'flex', flexDirection: 'column',
-            boxShadow: p.boxShadow,
-            zIndex: p.zIndex, position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined
+            minHeight: p.minHeight || undefined, 
+            minWidth: p.minWidth || undefined, 
+            maxWidth: p.maxWidth || undefined, 
+            maxHeight: p.maxHeight || undefined,
+            width: p.width || undefined, 
+            height: p.height || undefined, 
+            borderRadius: p.borderRadius || undefined, 
+            padding: p.padding || undefined,
+            flexWrap: p.flexWrap as any || undefined,
+            textAlign: p.textAlign as any || undefined,
+            borderWidth: bw || undefined,
+            borderColor: p.borderColor || undefined,
+            borderStyle: p.borderStyle || (bw && bw !== '0px' ? 'solid' : undefined),
+            background: bgImageUrl,
+            display: p.display || undefined,
+            flexDirection: p.flexDirection || p.flexDir || undefined,
+            boxShadow: p.boxShadow || undefined,
+            zIndex: p.zIndex || undefined, 
+            position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined
           };
           return (
             <>
