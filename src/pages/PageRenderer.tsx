@@ -417,20 +417,20 @@ const PageRenderer: React.FC = () => {
             display: p.display || undefined,
             flexDirection: p.flexDirection || p.flexDir || undefined,
             boxShadow: p.boxShadow || undefined,
-            zIndex: p.zIndex || undefined, 
-            position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined
+            zIndex: p.zIndex ?? undefined, 
+            position: (p.zIndex ?? null) !== null ? 'relative' : undefined
           };
           return (
             <>
-              {styles}
-              <div id={getBlockId(block.id)} style={containerStyle} className={`${p.customClass || ''}`}>
-                {(block.children ?? []).map(renderBlock)}
-              </div>
-            </>
+                {styles}
+                <div id={getBlockId(block.id)} style={containerStyle} className={`${p.customClass || ''}`}>
+                  {(block.children ?? []).map(renderBlock)}
+                </div>
+              </>
           );
         }
         case 'hero': return (
-          <section key={block.id} id={p.customId || getBlockId(block.id)} style={{ background: p.bgColor, color: p.textColor, minHeight: p.minHeight, boxShadow: p.boxShadow, zIndex: p.zIndex, position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined }} className={`w-full flex flex-col items-${p.align === 'center' ? 'center' : p.align === 'right' ? 'end' : 'start'} justify-center px-12 py-16 ${p.customClass || ''}`}>
+          <section key={block.id} id={p.customId || getBlockId(block.id)} style={{ background: p.bgColor, color: p.textColor, minHeight: p.minHeight, boxShadow: p.boxShadow, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }} className={`w-full flex flex-col items-${p.align === 'center' ? 'center' : p.align === 'right' ? 'end' : 'start'} justify-center px-12 py-16 ${p.customClass || ''}`}>
             <h1 className={`text-4xl font-black mb-4 max-w-3xl ${alignClass(p.align)}`}>{p.title}</h1>
             <p className="text-lg opacity-80 mb-8 max-w-xl">{p.subtitle}</p>
             {p.ctaText && <a href={p.ctaUrl} className="bg-white text-slate-900 font-bold px-8 py-4 rounded-xl text-sm hover:shadow-lg transition transform hover:scale-105">{p.ctaText}</a>}
@@ -464,8 +464,8 @@ const PageRenderer: React.FC = () => {
                     borderStyle: (p.borderWidth && p.borderWidth !== '0px') ? 'solid' : 'none',
                     textAlign: p.textAlign as any,
                     boxShadow: p.boxShadow,
-                    zIndex: p.zIndex,
-                    position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined,
+                    zIndex: p.zIndex ?? undefined,
+                    position: (p.zIndex ?? null) !== null ? 'relative' : undefined,
                     ...typo,
                   }}
                   dangerouslySetInnerHTML={{ __html: p.text || '' }}
@@ -480,9 +480,9 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
-                <div id={getBlockId(block.id)} className="prose max-w-none leading-relaxed" style={{ color: p.color, textDecoration: p.textDecoration, opacity: p.opacity ?? 1, minHeight: p.minHeight || undefined, boxShadow: p.boxShadow, textAlign: p.textAlign as any, zIndex: p.zIndex, position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined, ...typo }} dangerouslySetInnerHTML={{ __html: p.html }} />
-              </div>
+                <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
+                  <div id={getBlockId(block.id)} className="prose max-w-none leading-relaxed" style={{ color: p.color, textDecoration: p.textDecoration, opacity: p.opacity ?? 1, minHeight: p.minHeight || undefined, boxShadow: p.boxShadow, textAlign: p.textAlign as any, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined, ...typo }} dangerouslySetInnerHTML={{ __html: p.html }} />
+                </div>
             </React.Fragment>
           );
         }
@@ -497,8 +497,8 @@ const PageRenderer: React.FC = () => {
                 <img id={getBlockId(block.id)} src={imageSrc} alt={p.alt} style={{
                   borderRadius: p.borderRadius,
                   boxShadow: p.boxShadow,
-                  zIndex: p.zIndex,
-                  position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined
+                  zIndex: p.zIndex ?? undefined,
+                  position: (p.zIndex ?? null) !== null ? 'relative' : undefined
                 }} className="object-cover" />
                 {p.caption && <p className="text-xs text-slate-400 mt-2 italic">{p.caption}</p>}
               </div>
@@ -539,8 +539,8 @@ const PageRenderer: React.FC = () => {
                     padding: p.padding,
                     justifyContent: 'center',
                     boxShadow: p.boxShadow,
-                    zIndex: p.zIndex,
-                    position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined,
+                    zIndex: p.zIndex ?? undefined,
+                    position: (p.zIndex ?? null) !== null ? 'relative' : undefined,
                     ...getTypoStyles(p)
                   }}
                 >
@@ -616,7 +616,7 @@ const PageRenderer: React.FC = () => {
           const WidgetComponent = p.widgetName && WIDGETS[p.widgetName] ? WIDGETS[p.widgetName] : null;
           return (
             <React.Fragment key={block.id}>
-              <div id={p.customId || `block-wrap-${block.id}`} className={p.customClass || ''} style={{ zIndex: p.zIndex, position: (p.zIndex || p.zIndex === 0) ? 'relative' : undefined, boxShadow: p.boxShadow }}>
+              <div id={p.customId || `block-wrap-${block.id}`} className={p.customClass || ''} style={{ zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined, boxShadow: p.boxShadow }}>
                 {WidgetComponent ? <WidgetComponent {...p} lang={lang} /> : (
                   <div className="p-4 bg-yellow-100 text-yellow-800 rounded">
                     Widget "{p.widgetName}" not found

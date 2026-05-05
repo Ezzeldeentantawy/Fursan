@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Type, AlignLeft, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor } from 'lucide-react';
 import { propMap } from './registry/componentRegistry';
 
@@ -208,7 +208,7 @@ export interface ControlDef {
   label: string;
   tab: 'content' | 'alignment' | 'design';
   group?: string;
-  type: 'text' | 'richtext' | 'select' | 'color' | 'slider' | 'toggle' | 'number' | 'spacing' | 'border' | 'shadow' | 'font' | 'image';
+  type: 'text' | 'richtext' | 'select' | 'color' | 'slider' | 'toggle' | 'number' | 'spacing' | 'border' | 'shadow' | 'font' | 'image' | 'buttonGroup' | 'background' | 'fontWeight' | 'opacity' | 'layerOrder' | 'overflow' | 'objectFit' | 'dividerStyle' | 'htmlTag' | 'colorPicker' | 'imageFit' | 'gap' | 'spacerHeight' | 'headingLevel' | 'link' | 'iconPicker' | 'textTransform' | 'textDecoration' | 'hoverEffects' | 'filters' | 'sizing' | 'textAlign';
   unit?: string;
   responsive?: boolean;
   default?: any;
@@ -217,6 +217,10 @@ export interface ControlDef {
   max?: number;
   step?: number;
   placeholder?: string;
+  linkedSides?: boolean;    // For spacing controls
+  multiLayer?: boolean;     // For shadow controls
+  tabs?: string[];          // For background tabs
+  iconMap?: Record<string, string>; // For buttonGroup icon mapping
 }
 
 export const elementDefinitions: Record<string, any> = {
@@ -742,6 +746,456 @@ export const elementDefinitions: Record<string, any> = {
     ],
     get component() { return ImageComponent; },
   },
+  // ============= NEW ELEMENTS =============
+  listItem: {
+    type: 'listItem',
+    label: 'List Item',
+    icon: Type,
+    category: 'content',
+    defaults: {
+      text: 'List item text',
+      icon: null,
+      iconType: 'lucide',
+      iconSize: '24px',
+      iconColor: null,
+      textColor: '#000000',
+      bgColor: null,
+      borderRadius: '0px',
+      borderWidth: '0px',
+      borderColor: '#e2e8f0',
+      borderStyle: 'none',
+      boxShadow: null,
+      gap: '8px',
+      padding: '8px',
+      customClass: null,
+      customId: null,
+      responsive: { md: {}, sm: {}, base: {} },
+    },
+    controls: [
+      { id: 'text', label: 'Text', tab: 'content', group: 'Content', type: 'text', responsive: false, default: 'List item text' },
+      { id: 'icon', label: 'Icon', tab: 'content', group: 'Icon', type: 'iconPicker', responsive: false, default: null },
+      { id: 'iconType', label: 'Icon Type', tab: 'content', group: 'Icon', type: 'select', responsive: false, default: 'lucide', options: [{ label: 'Lucide', value: 'lucide' }, { label: 'Image', value: 'image' }] },
+      { id: 'iconSize', label: 'Icon Size', tab: 'content', group: 'Icon', type: 'text', unit: 'px', responsive: false, default: '24px' },
+      { id: 'iconColor', label: 'Icon Color', tab: 'content', group: 'Icon', type: 'color', responsive: false, default: null },
+      { id: 'textColor', label: 'Text Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#000000' },
+      { id: 'bgColor', label: 'Background Color', tab: 'design', group: 'Background', type: 'color', responsive: false, default: null },
+      { id: 'borderRadius', label: 'Border Radius', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '0px' },
+      { id: 'borderWidth', label: 'Border Width', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '0px' },
+      { id: 'borderColor', label: 'Border Color', tab: 'design', group: 'Border', type: 'color', responsive: false, default: '#e2e8f0' },
+      { id: 'borderStyle', label: 'Border Style', tab: 'design', group: 'Border', type: 'select', responsive: false, default: 'none', options: [{ label: 'None', value: 'none' }, { label: 'Solid', value: 'solid' }, { label: 'Dashed', value: 'dashed' }, { label: 'Dotted', value: 'dotted' }] },
+      { id: 'boxShadow', label: 'Box Shadow', tab: 'design', group: 'Effects', type: 'text', responsive: false, default: null },
+      { id: 'gap', label: 'Gap', tab: 'design', group: 'Layout', type: 'text', unit: 'px', responsive: false, default: '8px' },
+      { id: 'padding', label: 'Padding', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: false, default: '8px' },
+      { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'pt', label: 'Padding Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pr', label: 'Padding Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pb', label: 'Padding Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pl', label: 'Padding Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mt', label: 'Margin Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mr', label: 'Margin Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mb', label: 'Margin Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'ml', label: 'Margin Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+    ],
+    get component() { return ListItemComponent; },
+  },
+  iconElement: {
+    type: 'iconElement',
+    label: 'Icon',
+    icon: Type,
+    category: 'media',
+    defaults: {
+      source: 'lucide',
+      icon: null,
+      reactIcon: null,
+      imageUrl: null,
+      iconSize: '32px',
+      iconColor: null,
+      bgColor: null,
+      borderRadius: '0px',
+      padding: '8px',
+      boxShadow: null,
+      linkUrl: null,
+      customClass: null,
+      customId: null,
+      responsive: { md: {}, sm: {}, base: {} },
+    },
+    controls: [
+      { id: 'source', label: 'Source', tab: 'content', group: 'Content', type: 'select', responsive: false, default: 'lucide', options: [{ label: 'Lucide', value: 'lucide' }, { label: 'React Icons', value: 'react' }, { label: 'Image', value: 'image' }] },
+      { id: 'icon', label: 'Icon', tab: 'content', group: 'Content', type: 'iconPicker', responsive: false, default: null },
+      { id: 'reactIcon', label: 'React Icon Name', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'imageUrl', label: 'Image URL', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'iconSize', label: 'Icon Size', tab: 'content', group: 'Content', type: 'text', unit: 'px', responsive: false, default: '32px' },
+      { id: 'iconColor', label: 'Icon Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: null },
+      { id: 'bgColor', label: 'Background Color', tab: 'design', group: 'Background', type: 'color', responsive: false, default: null },
+      { id: 'borderRadius', label: 'Border Radius', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '0px' },
+      { id: 'padding', label: 'Padding', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: false, default: '8px' },
+      { id: 'boxShadow', label: 'Box Shadow', tab: 'design', group: 'Effects', type: 'text', responsive: false, default: null },
+      { id: 'linkUrl', label: 'Link URL', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'pt', label: 'Padding Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pr', label: 'Padding Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pb', label: 'Padding Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pl', label: 'Padding Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mt', label: 'Margin Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mr', label: 'Margin Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mb', label: 'Margin Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'ml', label: 'Margin Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+    ],
+    get component() { return IconElementComponent; },
+  },
+  nestedTimeline: {
+    type: 'nestedTimeline',
+    label: 'Nested Timeline',
+    icon: Type,
+    category: 'content',
+    defaults: {
+      phases: [],
+      bgColor: null,
+      padding: '64px 16px',
+      lineWidth: '1px',
+      lineColor: '#fca5a5',
+      milestoneSize: '80px',
+      milestoneBorderColor: '#fca5a5',
+      milestoneColor: '#f87171',
+      phaseIconSize: '64px',
+      phaseIconColor: '#334155',
+      phaseTitleSize: '36px',
+      phaseTitleColor: '#1e293b',
+      phaseDescSize: '18px',
+      phaseDescColor: '#64748b',
+      subStepsIconSize: '380px',
+      subStepsIconColor: '#fca5a5',
+      connectorDotSize: '20px',
+      connectorDotBorder: '#fca5a5',
+      stepTitleSize: '16px',
+      stepTitleColor: '#f87171',
+      stepDescSize: '17px',
+      stepDescColor: '#64748b',
+      customClass: null,
+      customId: null,
+      responsive: { md: {}, sm: {}, base: {} },
+    },
+    controls: [
+      { id: 'phases', label: 'Phases (JSON)', tab: 'content', group: 'Content', type: 'text', responsive: false, default: '[]' },
+      { id: 'bgColor', label: 'Background Color', tab: 'design', group: 'Background', type: 'color', responsive: false, default: null },
+      { id: 'padding', label: 'Padding', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: false, default: '64px 16px' },
+      { id: 'lineWidth', label: 'Line Width', tab: 'design', group: 'Timeline', type: 'text', unit: 'px', responsive: false, default: '1px' },
+      { id: 'lineColor', label: 'Line Color', tab: 'design', group: 'Timeline', type: 'color', responsive: false, default: '#fca5a5' },
+      { id: 'milestoneSize', label: 'Milestone Size', tab: 'design', group: 'Timeline', type: 'text', unit: 'px', responsive: false, default: '80px' },
+      { id: 'milestoneBorderColor', label: 'Milestone Border', tab: 'design', group: 'Timeline', type: 'color', responsive: false, default: '#fca5a5' },
+      { id: 'milestoneColor', label: 'Milestone Color', tab: 'design', group: 'Timeline', type: 'color', responsive: false, default: '#f87171' },
+      { id: 'phaseIconSize', label: 'Phase Icon Size', tab: 'design', group: 'Timeline', type: 'text', unit: 'px', responsive: false, default: '64px' },
+      { id: 'phaseIconColor', label: 'Phase Icon Color', tab: 'design', group: 'Timeline', type: 'color', responsive: false, default: '#334155' },
+      { id: 'phaseTitleSize', label: 'Phase Title Size', tab: 'design', group: 'Typography', type: 'text', unit: 'px', responsive: false, default: '36px' },
+      { id: 'phaseTitleColor', label: 'Phase Title Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#1e293b' },
+      { id: 'phaseDescSize', label: 'Phase Desc Size', tab: 'design', group: 'Typography', type: 'text', unit: 'px', responsive: false, default: '18px' },
+      { id: 'phaseDescColor', label: 'Phase Desc Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#64748b' },
+      { id: 'subStepsIconSize', label: 'Sub Steps Icon Size', tab: 'design', group: 'Timeline', type: 'text', unit: 'px', responsive: false, default: '380px' },
+      { id: 'subStepsIconColor', label: 'Sub Steps Icon Color', tab: 'design', group: 'Timeline', type: 'color', responsive: false, default: '#fca5a5' },
+      { id: 'connectorDotSize', label: 'Connector Dot Size', tab: 'design', group: 'Timeline', type: 'text', unit: 'px', responsive: false, default: '20px' },
+      { id: 'connectorDotBorder', label: 'Connector Dot Border', tab: 'design', group: 'Timeline', type: 'color', responsive: false, default: '#fca5a5' },
+      { id: 'stepTitleSize', label: 'Step Title Size', tab: 'design', group: 'Typography', type: 'text', unit: 'px', responsive: false, default: '16px' },
+      { id: 'stepTitleColor', label: 'Step Title Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#f87171' },
+      { id: 'stepDescSize', label: 'Step Desc Size', tab: 'design', group: 'Typography', type: 'text', unit: 'px', responsive: false, default: '17px' },
+      { id: 'stepDescColor', label: 'Step Desc Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#64748b' },
+      { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'pt', label: 'Padding Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pr', label: 'Padding Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pb', label: 'Padding Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pl', label: 'Padding Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mt', label: 'Margin Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mr', label: 'Margin Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mb', label: 'Margin Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'ml', label: 'Margin Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+    ],
+    get component() { return NestedTimelineComponent; },
+  },
+  imageBox: {
+    type: 'imageBox',
+    label: 'Image Box',
+    icon: Image,
+    category: 'media',
+    defaults: {
+      image: null,
+      title: 'Image Box Title',
+      text: 'Description text here',
+      titleLevel: '4',
+      textColor: '#000000',
+      imageWidth: '120px',
+      flexDir: 'row',
+      gap: '12px',
+      bgColor: null,
+      borderRadius: '0px',
+      borderWidth: '0px',
+      borderColor: '#e2e8f0',
+      borderStyle: 'none',
+      boxShadow: null,
+      padding: '16px',
+      customClass: null,
+      customId: null,
+      responsive: { md: { fontSize: null, lineHeight: null }, sm: {}, base: {} },
+    },
+    controls: [
+      { id: 'image', label: 'Image', tab: 'content', group: 'Content', type: 'image', responsive: false, default: null },
+      { id: 'title', label: 'Title', tab: 'content', group: 'Content', type: 'text', responsive: false, default: 'Image Box Title' },
+      { id: 'text', label: 'Description', tab: 'content', group: 'Content', type: 'text', responsive: false, default: 'Description text here' },
+      { id: 'titleLevel', label: 'Title Level', tab: 'content', group: 'Content', type: 'select', responsive: false, default: '4', options: [{ label: 'H1', value: '1' }, { label: 'H2', value: '2' }, { label: 'H3', value: '3' }, { label: 'H4', value: '4' }, { label: 'H5', value: '5' }, { label: 'H6', value: '6' }] },
+      { id: 'textColor', label: 'Text Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#000000' },
+      { id: 'imageWidth', label: 'Image Width', tab: 'design', group: 'Image', type: 'text', unit: 'px', responsive: false, default: '120px' },
+      { id: 'flexDir', label: 'Direction', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'row', options: [{ label: 'Row', value: 'row' }, { label: 'Row Reverse', value: 'row-reverse' }, { label: 'Column', value: 'column' }, { label: 'Column Reverse', value: 'column-reverse' }] },
+      { id: 'gap', label: 'Gap', tab: 'alignment', group: 'Layout', type: 'text', unit: 'px', responsive: false, default: '12px' },
+      { id: 'bgColor', label: 'Background Color', tab: 'design', group: 'Background', type: 'color', responsive: false, default: null },
+      { id: 'borderRadius', label: 'Border Radius', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '0px' },
+      { id: 'borderWidth', label: 'Border Width', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '0px' },
+      { id: 'borderColor', label: 'Border Color', tab: 'design', group: 'Border', type: 'color', responsive: false, default: '#e2e8f0' },
+      { id: 'borderStyle', label: 'Border Style', tab: 'design', group: 'Border', type: 'select', responsive: false, default: 'none', options: [{ label: 'None', value: 'none' }, { label: 'Solid', value: 'solid' }, { label: 'Dashed', value: 'dashed' }, { label: 'Dotted', value: 'dotted' }] },
+      { id: 'boxShadow', label: 'Box Shadow', tab: 'design', group: 'Effects', type: 'text', responsive: false, default: null },
+      { id: 'padding', label: 'Padding', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: false, default: '16px' },
+      { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'fontSize', label: 'Title Font Size', tab: 'design', group: 'Typography', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'lineHeight', label: 'Title Line Height', tab: 'design', group: 'Typography', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pt', label: 'Padding Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pr', label: 'Padding Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pb', label: 'Padding Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pl', label: 'Padding Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mt', label: 'Margin Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mr', label: 'Margin Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mb', label: 'Margin Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'ml', label: 'Margin Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+    ],
+    get component() { return ImageBoxComponent; },
+  },
+  accordionItem: {
+    type: 'accordionItem',
+    label: 'Accordion',
+    icon: Type,
+    category: 'content',
+    defaults: {
+      title: 'Accordion Title',
+      text: 'Accordion content goes here',
+      icon: null,
+      iconSize: '16px',
+      iconColor: null,
+      iconWidth: '24px',
+      iconHeight: '24px',
+      titleBgColor: '#f8fafc',
+      titleTextColor: '#1e293b',
+      titlePadding: '12px 16px',
+      contentBgColor: '#ffffff',
+      contentTextColor: '#334155',
+      padding: '16px',
+      borderTopWidth: '1px',
+      borderRightWidth: '1px',
+      borderBottomWidth: '1px',
+      borderLeftWidth: '1px',
+      borderColor: '#e2e8f0',
+      borderRadius: '0px',
+      width: null,
+      height: null,
+      textAlign: 'left',
+      boxShadow: null,
+      customClass: null,
+      customId: null,
+      responsive: { md: {}, sm: {}, base: {} },
+    },
+    controls: [
+      { id: 'title', label: 'Title', tab: 'content', group: 'Content', type: 'text', responsive: false, default: 'Accordion Title' },
+      { id: 'text', label: 'Content', tab: 'content', group: 'Content', type: 'text', responsive: false, default: 'Accordion content goes here' },
+      { id: 'icon', label: 'Icon', tab: 'content', group: 'Icon', type: 'iconPicker', responsive: false, default: null },
+      { id: 'iconSize', label: 'Icon Size', tab: 'content', group: 'Icon', type: 'text', unit: 'px', responsive: false, default: '16px' },
+      { id: 'iconColor', label: 'Icon Color', tab: 'content', group: 'Icon', type: 'color', responsive: false, default: null },
+      { id: 'iconWidth', label: 'Icon Width', tab: 'content', group: 'Icon', type: 'text', unit: 'px', responsive: false, default: '24px' },
+      { id: 'iconHeight', label: 'Icon Height', tab: 'content', group: 'Icon', type: 'text', unit: 'px', responsive: false, default: '24px' },
+      { id: 'titleBgColor', label: 'Title BG', tab: 'design', group: 'Title', type: 'color', responsive: false, default: '#f8fafc' },
+      { id: 'titleTextColor', label: 'Title Text Color', tab: 'design', group: 'Title', type: 'color', responsive: false, default: '#1e293b' },
+      { id: 'titlePadding', label: 'Title Padding', tab: 'design', group: 'Title', type: 'text', unit: 'px', responsive: false, default: '12px 16px' },
+      { id: 'contentBgColor', label: 'Content BG', tab: 'design', group: 'Content', type: 'color', responsive: false, default: '#ffffff' },
+      { id: 'contentTextColor', label: 'Content Text Color', tab: 'design', group: 'Content', type: 'color', responsive: false, default: '#334155' },
+      { id: 'padding', label: 'Content Padding', tab: 'design', group: 'Content', type: 'text', unit: 'px', responsive: false, default: '16px' },
+      { id: 'borderTopWidth', label: 'Border Top', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '1px' },
+      { id: 'borderRightWidth', label: 'Border Right', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '1px' },
+      { id: 'borderBottomWidth', label: 'Border Bottom', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '1px' },
+      { id: 'borderLeftWidth', label: 'Border Left', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '1px' },
+      { id: 'borderColor', label: 'Border Color', tab: 'design', group: 'Border', type: 'color', responsive: false, default: '#e2e8f0' },
+      { id: 'borderRadius', label: 'Border Radius', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '0px' },
+      { id: 'width', label: 'Width', tab: 'design', group: 'Sizing', type: 'text', unit: 'px', responsive: false, default: null },
+      { id: 'height', label: 'Height', tab: 'design', group: 'Sizing', type: 'text', unit: 'px', responsive: false, default: null },
+      { id: 'textAlign', label: 'Text Align', tab: 'alignment', group: 'Alignment', type: 'select', responsive: true, default: 'left', options: [{ label: 'Left', value: 'left' }, { label: 'Center', value: 'center' }, { label: 'Right', value: 'right' }] },
+      { id: 'boxShadow', label: 'Box Shadow', tab: 'design', group: 'Effects', type: 'text', responsive: false, default: null },
+      { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'pt', label: 'Padding Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pr', label: 'Padding Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pb', label: 'Padding Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pl', label: 'Padding Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mt', label: 'Margin Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mr', label: 'Margin Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mb', label: 'Margin Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'ml', label: 'Margin Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+    ],
+    get component() { return AccordionItemComponent; },
+  },
+  widget: {
+    type: 'widget',
+    label: 'Widget',
+    icon: Box,
+    category: 'content',
+    defaults: {
+      widgetName: null,
+      customClass: null,
+      customId: null,
+      responsive: { md: {}, sm: {}, base: {} },
+    },
+    controls: [
+      { id: 'widgetName', label: 'Widget', tab: 'content', group: 'Content', type: 'select', responsive: false, default: null, options: [{ label: 'None', value: null }] },
+      { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'pt', label: 'Padding Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pr', label: 'Padding Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pb', label: 'Padding Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pl', label: 'Padding Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mt', label: 'Margin Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mr', label: 'Margin Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mb', label: 'Margin Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'ml', label: 'Margin Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+    ],
+    get component() { return WidgetComponent; },
+  },
+  counter: {
+    type: 'counter',
+    label: 'Counter',
+    icon: Type,
+    category: 'content',
+    defaults: {
+      value: '1000',
+      prefix: '',
+      suffix: '',
+      duration: 2,
+      numberColor: '#000000',
+      bgColor: null,
+      padding: '16px',
+      textAlign: 'center',
+      customClass: null,
+      customId: null,
+      responsive: { md: { fontSize: null, fontWeight: null }, sm: {}, base: {} },
+    },
+    controls: [
+      { id: 'value', label: 'Target Value', tab: 'content', group: 'Content', type: 'text', responsive: false, default: '1000' },
+      { id: 'prefix', label: 'Prefix', tab: 'content', group: 'Content', type: 'text', responsive: false, default: '' },
+      { id: 'suffix', label: 'Suffix', tab: 'content', group: 'Content', type: 'text', responsive: false, default: '' },
+      { id: 'duration', label: 'Duration (s)', tab: 'content', group: 'Content', type: 'number', min: 0.5, max: 10, step: 0.5, responsive: false, default: 2 },
+      { id: 'numberColor', label: 'Number Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#000000' },
+      { id: 'bgColor', label: 'Background Color', tab: 'design', group: 'Background', type: 'color', responsive: false, default: null },
+      { id: 'padding', label: 'Padding', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: false, default: '16px' },
+      { id: 'textAlign', label: 'Text Align', tab: 'alignment', group: 'Alignment', type: 'select', responsive: true, default: 'center', options: [{ label: 'Left', value: 'left' }, { label: 'Center', value: 'center' }, { label: 'Right', value: 'right' }] },
+      { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'fontSize', label: 'Font Size', tab: 'design', group: 'Typography', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'fontWeight', label: 'Font Weight', tab: 'design', group: 'Typography', type: 'text', responsive: true, default: null },
+      { id: 'pt', label: 'Padding Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pr', label: 'Padding Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pb', label: 'Padding Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pl', label: 'Padding Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mt', label: 'Margin Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mr', label: 'Margin Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mb', label: 'Margin Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'ml', label: 'Margin Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+    ],
+    get component() { return CounterComponent; },
+  },
+  menu: {
+    type: 'menu',
+    label: 'Menu',
+    icon: Type,
+    category: 'content',
+    defaults: {
+      menuId: null,
+      bgColor: null,
+      textColor: '#000000',
+      hoverColor: '#3b82f6',
+      align: 'left',
+      menuDirection: 'horizontal',
+      gap: '24px',
+      customClass: null,
+      customId: null,
+      responsive: { md: {}, sm: {}, base: {} },
+    },
+    controls: [
+      { id: 'menuId', label: 'Menu', tab: 'content', group: 'Content', type: 'select', responsive: false, default: null, options: [{ label: 'None', value: null }] },
+      { id: 'bgColor', label: 'Background Color', tab: 'design', group: 'Background', type: 'color', responsive: false, default: null },
+      { id: 'textColor', label: 'Text Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#000000' },
+      { id: 'hoverColor', label: 'Hover Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#3b82f6' },
+      { id: 'align', label: 'Alignment', tab: 'alignment', group: 'Alignment', type: 'select', responsive: true, default: 'left', options: [{ label: 'Left', value: 'left' }, { label: 'Center', value: 'center' }, { label: 'Right', value: 'right' }] },
+      { id: 'menuDirection', label: 'Direction', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'horizontal', options: [{ label: 'Horizontal', value: 'horizontal' }, { label: 'Vertical', value: 'vertical' }] },
+      { id: 'gap', label: 'Gap', tab: 'alignment', group: 'Layout', type: 'text', unit: 'px', responsive: false, default: '24px' },
+      { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'pt', label: 'Padding Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pr', label: 'Padding Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pb', label: 'Padding Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pl', label: 'Padding Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mt', label: 'Margin Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mr', label: 'Margin Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mb', label: 'Margin Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'ml', label: 'Margin Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+    ],
+    get component() { return MenuComponent; },
+  },
+  tabs: {
+    type: 'tabs',
+    label: 'Tabs',
+    icon: Type,
+    category: 'content',
+    defaults: {
+      tabs: [],
+      activeTab: 0,
+      tabBgColor: '#f8fafc',
+      tabTextColor: '#64748b',
+      activeTabBgColor: '#ffffff',
+      activeTabTextColor: '#1e293b',
+      contentBgColor: '#ffffff',
+      borderColor: '#e2e8f0',
+      borderRadius: '8px',
+      customClass: null,
+      customId: null,
+      responsive: { md: {}, sm: {}, base: {} },
+    },
+    controls: [
+      { id: 'tabs', label: 'Tabs (JSON)', tab: 'content', group: 'Content', type: 'text', responsive: false, default: '[]' },
+      { id: 'activeTab', label: 'Active Tab', tab: 'content', group: 'Content', type: 'number', min: 0, max: 20, step: 1, responsive: false, default: 0 },
+      { id: 'tabBgColor', label: 'Tab BG', tab: 'design', group: 'Tabs', type: 'color', responsive: false, default: '#f8fafc' },
+      { id: 'tabTextColor', label: 'Tab Text', tab: 'design', group: 'Tabs', type: 'color', responsive: false, default: '#64748b' },
+      { id: 'activeTabBgColor', label: 'Active Tab BG', tab: 'design', group: 'Tabs', type: 'color', responsive: false, default: '#ffffff' },
+      { id: 'activeTabTextColor', label: 'Active Tab Text', tab: 'design', group: 'Tabs', type: 'color', responsive: false, default: '#1e293b' },
+      { id: 'contentBgColor', label: 'Content BG', tab: 'design', group: 'Content', type: 'color', responsive: false, default: '#ffffff' },
+      { id: 'borderColor', label: 'Border Color', tab: 'design', group: 'Border', type: 'color', responsive: false, default: '#e2e8f0' },
+      { id: 'borderRadius', label: 'Border Radius', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '8px' },
+      { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
+      { id: 'pt', label: 'Padding Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pr', label: 'Padding Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pb', label: 'Padding Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'pl', label: 'Padding Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mt', label: 'Margin Top', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mr', label: 'Margin Right', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'mb', label: 'Margin Bottom', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'ml', label: 'Margin Left', tab: 'design', group: 'Spacing', type: 'text', unit: 'px', responsive: true, default: null },
+      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+    ],
+    get component() { return TabsComponent; },
+  },
 };
 
 // ============= ELEMENT FACTORY FUNCTIONS =============
@@ -1058,8 +1512,8 @@ export const HeadingComponent: React.FC<any> = (props) => {
           borderStyle: (borderWidth && borderWidth !== '0px') ? 'solid' : 'none',
           textAlign: alignment as any || undefined,
           boxShadow: boxShadow || undefined,
-          zIndex: zIndex || undefined,
-          position: (zIndex || zIndex === 0) ? 'relative' : undefined,
+          zIndex: zIndex ?? undefined,
+          position: (zIndex ?? null) !== null ? 'relative' : undefined,
           fontSize: fontSize || undefined,
           fontWeight: fontWeight || undefined,
           textTransform: (textTransform && textTransform !== 'none') ? textTransform : undefined,
@@ -1125,8 +1579,8 @@ export const TextComponent: React.FC<any> = (props) => {
           minHeight: minHeight || undefined,
           boxShadow: boxShadow || undefined,
           textAlign: alignment as any || undefined,
-          zIndex: zIndex || undefined,
-          position: (zIndex || zIndex === 0) ? 'relative' : undefined,
+          zIndex: zIndex ?? undefined,
+          position: (zIndex ?? null) !== null ? 'relative' : undefined,
           fontSize: fontSize || undefined,
           fontWeight: fontWeight || undefined,
           textTransform: (textTransform && textTransform !== 'none') ? textTransform : undefined,
@@ -1186,7 +1640,19 @@ export const ButtonComponent: React.FC<any> = (props) => {
   const btnDisabled = disabled || false;
   const btnFullWidth = fullWidth || false;
 
-  const Icon = btnIconName ? (require('lucide-react') as any)[btnIconName] : null;
+  // Dynamically load lucide icon
+  const [Icon, setIcon] = useState<any>(null);
+
+  useEffect(() => {
+    if (btnIconName) {
+      import('lucide-react').then((module) => {
+        const IconComponent = (module as any)[btnIconName];
+        setIcon(IconComponent || null);
+      });
+    } else {
+      setIcon(null);
+    }
+  }, [btnIconName]);
 
   // Use textAlign if available (responsive), fall back to align (legacy)
   const alignment = textAlign || align || undefined;
@@ -1219,8 +1685,8 @@ export const ButtonComponent: React.FC<any> = (props) => {
             padding: padding || undefined,
             justifyContent: 'center',
             boxShadow: boxShadow || undefined,
-            zIndex: zIndex || undefined,
-            position: (zIndex || zIndex === 0) ? 'relative' : undefined,
+            zIndex: zIndex ?? undefined,
+            position: (zIndex ?? null) !== null ? 'relative' : undefined,
             fontFamily: fontFamily || undefined,
             fontWeight: fontWeight || undefined,
             textTransform: (textTransform && textTransform !== 'none') ? textTransform : undefined,
@@ -1338,8 +1804,8 @@ export const ContainerComponent: React.FC<any> = (props) => {
     display: display || undefined,
     gap: gap || undefined,
     boxShadow: boxShadow || undefined,
-    zIndex: zIndex || undefined,
-    position: (zIndex || zIndex === 0) ? 'relative' : undefined,
+    zIndex: zIndex ?? undefined,
+    position: zIndex !== null && zIndex !== undefined ? 'relative' : undefined,
   };
 
   // ✅ Apply flexDirection: check responsive first (short-form key), then props
@@ -1448,8 +1914,8 @@ export const ImageComponent: React.FC<any> = (props) => {
       style={{
         borderRadius: borderRadius || undefined,
         boxShadow: boxShadow || undefined,
-        zIndex: zIndex || undefined,
-        position: (zIndex || zIndex === 0) ? 'relative' : undefined,
+        zIndex: zIndex ?? undefined,
+        position: (zIndex ?? null) !== null ? 'relative' : undefined,
         opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
         objectFit: objectFit || undefined,
         objectPosition: objectPosition || undefined,
@@ -1565,3 +2031,717 @@ export const SpacerComponent: React.FC<any> = (props) => {
     />
   );
 };
+
+// ============= NEW COMPONENTS =============
+
+// ListItem Component
+export const ListItemComponent: React.FC<any> = (props) => {
+  const {
+    text, icon, iconType, iconSize, iconColor, textColor, bgColor, borderRadius,
+    borderWidth, borderColor, borderStyle, boxShadow, gap, padding,
+    id, customClass, customId, responsive, activeBreakpoint,
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+  } = props;
+
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+
+  // Dynamically load lucide icon
+  const [LucideIcon, setLucideIcon] = useState<any>(null);
+
+  useEffect(() => {
+    if (iconType === 'lucide' && icon) {
+      import('lucide-react').then((module) => {
+        const IconComponent = (module as any)[icon];
+        setLucideIcon(IconComponent || null);
+      });
+    }
+  }, [iconType, icon]);
+
+  return (
+    <>
+      {generateResponsiveStyles(id, responsive)}
+      <div
+        id={customId || id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: gap || '8px',
+          padding: padding || '8px',
+          backgroundColor: bgColor || undefined,
+          borderRadius: borderRadius || undefined,
+          borderWidth: borderWidth || undefined,
+          borderColor: borderColor || undefined,
+          borderStyle: (borderWidth && borderWidth !== '0px') ? (borderStyle || 'solid') : 'none',
+          boxShadow: boxShadow || undefined,
+          color: textColor || '#000000',
+          opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+          paddingTop: pt || undefined,
+          paddingRight: pr || undefined,
+          paddingBottom: pb || undefined,
+          paddingLeft: pl || undefined,
+          marginTop: mt || undefined,
+          marginRight: mr || undefined,
+          marginBottom: mb || undefined,
+          marginLeft: ml || undefined,
+          ...responsiveStyles,
+        }}
+        className={customClass || ''}
+      >
+        {icon && (
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+            {iconType === 'lucide' && LucideIcon && (
+              <LucideIcon size={iconSize || '24px'} color={iconColor || undefined} />
+            )}
+            {iconType === 'image' && (
+              <img src={icon} alt="" style={{ width: iconSize || '24px', height: iconSize || '24px' }} />
+            )}
+          </span>
+        )}
+        <span>{text || 'List item text'}</span>
+      </div>
+    </>
+  );
+};
+
+// IconElement Component
+export const IconElementComponent: React.FC<any> = (props) => {
+  const {
+    source, icon, reactIcon, imageUrl, iconSize, iconColor, bgColor, borderRadius,
+    padding, boxShadow, linkUrl,
+    id, customClass, customId, responsive, activeBreakpoint,
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+  } = props;
+
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+
+  // Dynamically load lucide icon
+  const [LucideIcon, setLucideIcon] = useState<any>(null);
+
+  useEffect(() => {
+    if (source === 'lucide' && icon) {
+      import('lucide-react').then((module) => {
+        const IconComponent = (module as any)[icon];
+        setLucideIcon(IconComponent || null);
+      });
+    }
+  }, [source, icon]);
+
+  const iconContent = () => {
+    if (source === 'lucide' && LucideIcon) {
+      return <LucideIcon size={iconSize || '32px'} color={iconColor || undefined} />;
+    }
+    if (source === 'react' && reactIcon) {
+      return <span>{reactIcon}</span>;
+    }
+    if (source === 'image' && imageUrl) {
+      return <img src={imageUrl} alt="" style={{ width: iconSize || '32px', height: iconSize || '32px' }} />;
+    }
+    return null;
+  };
+
+  const wrapperStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: bgColor || undefined,
+    borderRadius: borderRadius || undefined,
+    padding: padding || '8px',
+    boxShadow: boxShadow || undefined,
+    opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+    paddingTop: pt || undefined,
+    paddingRight: pr || undefined,
+    paddingBottom: pb || undefined,
+    paddingLeft: pl || undefined,
+    marginTop: mt || undefined,
+    marginRight: mr || undefined,
+    marginBottom: mb || undefined,
+    marginLeft: ml || undefined,
+    ...responsiveStyles,
+  };
+
+  const content = (
+    <span
+      id={customId || id}
+      style={wrapperStyle}
+      className={customClass || ''}
+    >
+      {iconContent()}
+    </span>
+  );
+
+  if (linkUrl) {
+    return (
+      <>
+        {generateResponsiveStyles(id, responsive)}
+        <a href={linkUrl} style={{ textDecoration: 'none' }}>
+          {content}
+        </a>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {generateResponsiveStyles(id, responsive)}
+      {content}
+    </>
+  );
+};
+
+// NestedTimeline Component
+export const NestedTimelineComponent: React.FC<any> = (props) => {
+  const {
+    phases, bgColor, padding, lineWidth, lineColor, milestoneSize, milestoneBorderColor,
+    milestoneColor, phaseIconSize, phaseIconColor, phaseTitleSize, phaseTitleColor,
+    phaseDescSize, phaseDescColor, subStepsIconSize, subStepsIconColor, connectorDotSize,
+    connectorDotBorder, stepTitleSize, stepTitleColor, stepDescSize, stepDescColor,
+    id, customClass, customId, responsive, activeBreakpoint,
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+  } = props;
+
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+
+  let parsedPhases = [];
+  try {
+    parsedPhases = typeof phases === 'string' ? JSON.parse(phases) : (phases || []);
+  } catch (e) {
+    parsedPhases = [];
+  }
+
+  return (
+    <>
+      {generateResponsiveStyles(id, responsive)}
+      <div
+        id={customId || id}
+        style={{
+          backgroundColor: bgColor || undefined,
+          padding: padding || '64px 16px',
+          position: 'relative',
+          opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+          paddingTop: pt || undefined,
+          paddingRight: pr || undefined,
+          paddingBottom: pb || undefined,
+          paddingLeft: pl || undefined,
+          marginTop: mt || undefined,
+          marginRight: mr || undefined,
+          marginBottom: mb || undefined,
+          marginLeft: ml || undefined,
+          ...responsiveStyles,
+        }}
+        className={customClass || ''}
+      >
+        {parsedPhases.map((phase: any, index: number) => (
+          <div key={phase.id || index} style={{ marginBottom: '40px', position: 'relative' }}>
+            {/* Timeline line */}
+            <div style={{
+              position: 'absolute',
+              left: '50%',
+              top: 0,
+              bottom: 0,
+              width: lineWidth || '1px',
+              backgroundColor: lineColor || '#fca5a5',
+              transform: 'translateX(-50%)',
+            }} />
+            
+            {/* Milestone circle */}
+            <div style={{
+              width: milestoneSize || '80px',
+              height: milestoneSize || '80px',
+              borderRadius: '50%',
+              backgroundColor: milestoneColor || '#f87171',
+              border: `2px solid ${milestoneBorderColor || '#fca5a5'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+              position: 'relative',
+              zIndex: 1,
+              fontSize: phaseIconSize || '64px',
+              color: phaseIconColor || '#334155',
+            }}>
+              {phase.number || (index + 1)}
+            </div>
+
+            {/* Phase content */}
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h3 style={{
+                fontSize: phaseTitleSize || '36px',
+                color: phaseTitleColor || '#1e293b',
+                margin: '0 0 10px',
+              }}>
+                {phase.title || ''}
+              </h3>
+              <p style={{
+                fontSize: phaseDescSize || '18px',
+                color: phaseDescColor || '#64748b',
+                margin: 0,
+              }}>
+                {phase.content || ''}
+              </p>
+            </div>
+
+            {/* Sub steps */}
+            {phase.subSteps && phase.subSteps.length > 0 && (
+              <div style={{ marginTop: '20px' }}>
+                {phase.subSteps.map((step: any, stepIndex: number) => (
+                  <div key={stepIndex} style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    marginBottom: '16px',
+                    position: 'relative',
+                  }}>
+                    {/* Connector dot */}
+                    <div style={{
+                      width: connectorDotSize || '20px',
+                      height: connectorDotSize || '20px',
+                      borderRadius: '50%',
+                      border: `2px solid ${connectorDotBorder || '#fca5a5'}`,
+                      backgroundColor: 'white',
+                      flexShrink: 0,
+                      marginRight: '12px',
+                      marginTop: '4px',
+                    }} />
+                    <div>
+                      <h4 style={{
+                        fontSize: stepTitleSize || '16px',
+                        color: stepTitleColor || '#f87171',
+                        margin: '0 0 4px',
+                      }}>
+                        {step.title || ''}
+                      </h4>
+                      <p style={{
+                        fontSize: stepDescSize || '17px',
+                        color: stepDescColor || '#64748b',
+                        margin: 0,
+                      }}>
+                        {step.description || ''}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
+
+// ImageBox Component
+export const ImageBoxComponent: React.FC<any> = (props) => {
+  const {
+    image, title, text, titleLevel, textColor, imageWidth, flexDir, gap,
+    bgColor, borderRadius, borderWidth, borderColor, borderStyle, boxShadow, padding,
+    id, customClass, customId, responsive, activeBreakpoint,
+    fontSize, lineHeight,
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+  } = props;
+
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+
+  const TitleTag = `h${titleLevel || '4'}` as keyof JSX.IntrinsicElements;
+
+  return (
+    <>
+      {generateResponsiveStyles(id, responsive)}
+      <div
+        id={customId || id}
+        style={{
+          display: 'flex',
+          flexDirection: (flexDir as any) || 'row',
+          gap: gap || '12px',
+          backgroundColor: bgColor || undefined,
+          borderRadius: borderRadius || undefined,
+          borderWidth: borderWidth || undefined,
+          borderColor: borderColor || undefined,
+          borderStyle: (borderWidth && borderWidth !== '0px') ? (borderStyle || 'solid') : 'none',
+          boxShadow: boxShadow || undefined,
+          padding: padding || '16px',
+          color: textColor || '#000000',
+          opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+          paddingTop: pt || undefined,
+          paddingRight: pr || undefined,
+          paddingBottom: pb || undefined,
+          paddingLeft: pl || undefined,
+          marginTop: mt || undefined,
+          marginRight: mr || undefined,
+          marginBottom: mb || undefined,
+          marginLeft: ml || undefined,
+          ...responsiveStyles,
+        }}
+        className={customClass || ''}
+      >
+        {image && (
+          <img
+            src={image}
+            alt={title || 'Image Box'}
+            style={{ width: imageWidth || '120px', height: 'auto', objectFit: 'cover' }}
+          />
+        )}
+        <div>
+          <TitleTag style={{
+            fontSize: fontSize || undefined,
+            lineHeight: lineHeight || undefined,
+            margin: '0 0 8px',
+          }}>
+            {title || 'Image Box Title'}
+          </TitleTag>
+          <p style={{ margin: 0 }}>{text || 'Description text here'}</p>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// AccordionItem Component
+export const AccordionItemComponent: React.FC<any> = (props) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const {
+    title, text, icon, iconSize, iconColor, iconWidth, iconHeight,
+    titleBgColor, titleTextColor, titlePadding, contentBgColor, contentTextColor,
+    padding, borderTopWidth, borderRightWidth, borderBottomWidth, borderLeftWidth,
+    borderColor, borderRadius, width, height, textAlign, boxShadow,
+    id, customClass, customId, responsive, activeBreakpoint,
+    fontSize, lineHeight,
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+  } = props;
+
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+
+  // Dynamically load lucide icon
+  const [LucideIcon, setLucideIcon] = useState<any>(null);
+
+  useEffect(() => {
+    if (icon) {
+      import('lucide-react').then((module) => {
+        const IconComponent = (module as any)[icon];
+        setLucideIcon(IconComponent || null);
+      });
+    }
+  }, [icon]);
+
+  return (
+    <>
+      {generateResponsiveStyles(id, responsive)}
+      <div
+        id={customId || id}
+        style={{
+          width: width || undefined,
+          height: height || undefined,
+          borderRadius: borderRadius || undefined,
+          borderTopWidth: borderTopWidth || undefined,
+          borderRightWidth: borderRightWidth || undefined,
+          borderBottomWidth: borderBottomWidth || undefined,
+          borderLeftWidth: borderLeftWidth || undefined,
+          borderColor: borderColor || undefined,
+          borderStyle: 'solid',
+          overflow: 'hidden',
+          boxShadow: boxShadow || undefined,
+          opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+          paddingTop: pt || undefined,
+          paddingRight: pr || undefined,
+          paddingBottom: pb || undefined,
+          paddingLeft: pl || undefined,
+          marginTop: mt || undefined,
+          marginRight: mr || undefined,
+          marginBottom: mb || undefined,
+          marginLeft: ml || undefined,
+          ...responsiveStyles,
+        }}
+        className={customClass || ''}
+      >
+        {/* Accordion Header */}
+        <div
+          style={{
+            backgroundColor: titleBgColor || '#f8fafc',
+            color: titleTextColor || '#1e293b',
+            padding: titlePadding || '12px 16px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            textAlign: textAlign as any || undefined,
+          }}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {LucideIcon && (
+              <LucideIcon size={iconSize || '16px'} color={iconColor || undefined} />
+            )}
+            <span>{title || 'Accordion Title'}</span>
+          </span>
+          <span style={{ transition: 'transform 0.3s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+            ▼
+          </span>
+        </div>
+
+        {/* Accordion Content */}
+        {isOpen && (
+          <div
+            style={{
+              backgroundColor: contentBgColor || '#ffffff',
+              color: contentTextColor || '#334155',
+              padding: padding || '16px',
+              textAlign: textAlign as any || undefined,
+              fontSize: fontSize || undefined,
+              lineHeight: lineHeight || undefined,
+            }}
+          >
+            {text || 'Accordion content goes here'}
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+// Widget Component
+export const WidgetComponent: React.FC<any> = (props) => {
+  const {
+    widgetName,
+    id, customClass, customId, responsive, activeBreakpoint,
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+  } = props;
+
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+
+  return (
+    <>
+      {generateResponsiveStyles(id, responsive)}
+      <div
+        id={customId || id}
+        style={{
+          opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+          paddingTop: pt || undefined,
+          paddingRight: pr || undefined,
+          paddingBottom: pb || undefined,
+          paddingLeft: pl || undefined,
+          marginTop: mt || undefined,
+          marginRight: mr || undefined,
+          marginBottom: mb || undefined,
+          marginLeft: ml || undefined,
+          ...responsiveStyles,
+        }}
+        className={customClass || ''}
+      >
+        {widgetName ? (
+          <div>Widget: {widgetName}</div>
+        ) : (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
+            No widget selected
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+// Counter Component
+export const CounterComponent: React.FC<any> = (props) => {
+  const {
+    value, prefix, suffix, duration, numberColor, bgColor, padding, textAlign,
+    id, customClass, customId, responsive, activeBreakpoint,
+    fontSize, fontWeight,
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+  } = props;
+
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const target = parseInt(value) || 1000;
+    const durationMs = (duration || 2) * 1000;
+    const step = target / (durationMs / 16); // ~60fps
+    let current = 0;
+
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      setCount(Math.floor(current));
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [value, duration]);
+
+  return (
+    <>
+      {generateResponsiveStyles(id, responsive)}
+      <div
+        id={customId || id}
+        style={{
+          backgroundColor: bgColor || undefined,
+          padding: padding || '16px',
+          textAlign: (textAlign as any) || 'center',
+          opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+          paddingTop: pt || undefined,
+          paddingRight: pr || undefined,
+          paddingBottom: pb || undefined,
+          paddingLeft: pl || undefined,
+          marginTop: mt || undefined,
+          marginRight: mr || undefined,
+          marginBottom: mb || undefined,
+          marginLeft: ml || undefined,
+          ...responsiveStyles,
+        }}
+        className={customClass || ''}
+      >
+        <span style={{
+          color: numberColor || '#000000',
+          fontSize: fontSize || undefined,
+          fontWeight: fontWeight || undefined,
+        }}>
+          {prefix || ''}{count}{suffix || ''}
+        </span>
+      </div>
+    </>
+  );
+};
+
+// Menu Component
+export const MenuComponent: React.FC<any> = (props) => {
+  const {
+    menuId, bgColor, textColor, hoverColor, align, menuDirection, gap,
+    id, customClass, customId, responsive, activeBreakpoint,
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+  } = props;
+
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+
+  return (
+    <>
+      {generateResponsiveStyles(id, responsive)}
+      <nav
+        id={customId || id}
+        style={{
+          backgroundColor: bgColor || undefined,
+          textAlign: (align as any) || undefined,
+          opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+          paddingTop: pt || undefined,
+          paddingRight: pr || undefined,
+          paddingBottom: pb || undefined,
+          paddingLeft: pl || undefined,
+          marginTop: mt || undefined,
+          marginRight: mr || undefined,
+          marginBottom: mb || undefined,
+          marginLeft: ml || undefined,
+          ...responsiveStyles,
+        }}
+        className={customClass || ''}
+      >
+        {menuId ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: (menuDirection === 'vertical' ? 'column' : 'row') as any,
+            gap: gap || '24px',
+            justifyContent: (align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start') as any,
+            color: textColor || '#000000',
+          }}>
+            <div style={{ padding: '8px 0' }}>Menu: {menuId}</div>
+          </div>
+        ) : (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
+            No menu selected
+          </div>
+        )}
+      </nav>
+    </>
+  );
+};
+
+// Tabs Component
+export const TabsComponent: React.FC<any> = (props) => {
+  const [activeTab, setActiveTab] = useState(props.activeTab || 0);
+
+  const {
+    tabs, tabBgColor, tabTextColor, activeTabBgColor, activeTabTextColor,
+    contentBgColor, borderColor, borderRadius,
+    id, customClass, customId, responsive, activeBreakpoint,
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+  } = props;
+
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+
+  let parsedTabs = [];
+  try {
+    parsedTabs = typeof tabs === 'string' ? JSON.parse(tabs) : (tabs || []);
+  } catch (e) {
+    parsedTabs = [];
+  }
+
+  return (
+    <>
+      {generateResponsiveStyles(id, responsive)}
+      <div
+        id={customId || id}
+        style={{
+          borderRadius: borderRadius || '8px',
+          border: `1px solid ${borderColor || '#e2e8f0'}`,
+          overflow: 'hidden',
+          opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+          paddingTop: pt || undefined,
+          paddingRight: pr || undefined,
+          paddingBottom: pb || undefined,
+          paddingLeft: pl || undefined,
+          marginTop: mt || undefined,
+          marginRight: mr || undefined,
+          marginBottom: mb || undefined,
+          marginLeft: ml || undefined,
+          ...responsiveStyles,
+        }}
+        className={customClass || ''}
+      >
+        {/* Tab Navigation */}
+        <div style={{
+          display: 'flex',
+          backgroundColor: tabBgColor || '#f8fafc',
+          borderBottom: `1px solid ${borderColor || '#e2e8f0'}`,
+        }}>
+          {parsedTabs.map((tab: any, index: number) => (
+            <button
+              key={index}
+              onClick={() => setActiveTab(index)}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: activeTab === index ? (activeTabBgColor || '#ffffff') : 'transparent',
+                color: activeTab === index ? (activeTabTextColor || '#1e293b') : (tabTextColor || '#64748b'),
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: activeTab === index ? '600' : '400',
+                borderBottom: activeTab === index ? `2px solid ${activeTabTextColor || '#1e293b'}` : '2px solid transparent',
+              }}
+            >
+              {tab.title || `Tab ${index + 1}`}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div style={{
+          backgroundColor: contentBgColor || '#ffffff',
+          padding: '20px',
+        }}>
+          {parsedTabs[activeTab] && (
+            <div>{parsedTabs[activeTab].content || 'No content available'}</div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ============= EXPORT INDIVIDUAL ELEMENTS (UPDATED) =============
+
+export const ListItemElement = elementDefinitions.listItem;
+export const IconElement = elementDefinitions.iconElement;
+export const NestedTimelineElement = elementDefinitions.nestedTimeline;
+export const ImageBoxElement = elementDefinitions.imageBox;
+export const AccordionItemElement = elementDefinitions.accordionItem;
+export const WidgetElement = elementDefinitions.widget;
+export const CounterElement = elementDefinitions.counter;
+export const MenuElement = elementDefinitions.menu;
+export const TabsElement = elementDefinitions.tabs;

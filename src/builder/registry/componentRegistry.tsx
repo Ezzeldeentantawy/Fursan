@@ -207,10 +207,11 @@ export function renderNode(
       className: [dndProps.className, innerProps.className].filter(Boolean).join(' '),
     };
     
-    // Merge styles from dndProps and innerProps
+    // Merge styles from dndProps only - do NOT merge innerProps.style
+    // innerProps.style contains styles for the INNER element (e.g., zIndex, position)
+    // The wrapper has display:contents, and z-index doesn't work on display:contents
     const mergedStyle = {
       ...(wrapperProps.style || {}),
-      ...(innerProps.style || {}),
       ...(dndProps.style || {}),
     };
     wrapperProps.style = mergedStyle;
