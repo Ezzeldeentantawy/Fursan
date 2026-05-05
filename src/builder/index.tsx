@@ -110,7 +110,9 @@ export const Builder: React.FC = () => {
       isLoadingRef.current = true;
       setIsLoading(true);
       try {
+        console.log('[Builder] Loading page with id:', id);
         const response = await pagesApi.getOne(id);
+        console.log('[Builder] Page API response:', response);
         
         // Check if this request was cancelled (component unmounted or id changed)
         if (cancelled) {
@@ -118,6 +120,7 @@ export const Builder: React.FC = () => {
         }
         
         const pageData = response.data?.data || response.data;
+        console.log('[Builder] Page data received:', pageData);
           
           if (pageData) {
             setPageTitle(pageData.title || '');

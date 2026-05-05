@@ -43,15 +43,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // First check localStorage for user data (set during login)
             const storedUser = localStorage.getItem('user');
             if (storedUser) {
-                const userData = JSON.parse(storedUser);
-                setUser(userData);
-                setLoading(false);
-                return;
+                try {
+                    const userData = JSON.parse(storedUser);
+                    // Validate user data has required fields
+                    if (userData && userData.role) {
+                        console.log('[AuthContext] Loaded user from localStorage:', userData);
+                        setUser(userData);
+                        setLoading(false);
+                        return;
+                    } else {
+                        console.warn('[AuthContext] Invalid user data in localStorage, removing...');
+                        localStorage.removeItem('user');
+                    }
+                } catch (parseErr) {
+                    console.error('[AuthContext] Failed to parse user data:', parseErr);
+                    localStorage.removeItem('user');
+                }
             }
             
             // Otherwise check with API
+            console.log('[AuthContext] No valid user in localStorage, checking API...');
             const user = await authApi.checkAuth();
-            setUser(user);
+            if (user && user.role) {
+                setUser(user);
+                localStorage.setItem('user', JSON.stringify(user));
+            } else {
+                setUser(null);
+            }
             setError(null);
         } catch (err: any) {
             setUser(null);

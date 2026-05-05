@@ -7,7 +7,7 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const { user } = useAuth();
+    const { user, login: authLogin } = useAuth();
     
     if (user) {
         return <p>You are already logged in as {user.name}.</p>;
@@ -21,23 +21,50 @@ const Login = () => {
         try {
             const response = await authApi.login(email, password);
             
-            // Store user data in localStorage for role checks
-            if (response.user) {
-                // Handle JsonResource response: response.user.data contains the actual user object
-                const userData = response.user.data || response.user;
-                localStorage.setItem('user', JSON.stringify(userData));
+            console.log('[Login] Full response:', response);
+            
+            // auth.js login() returns res.data, which is: { message, user, redirect }
+            // The user field is a UserResource: { data: { user object } }
+            
+            let userData = null;
+            
+            // Extract user data from the response
+            if (response?.user?.data) {
+                // Structure: response.user.data = { id, name, email, role, ... }
+                userData = response.user.data;
+            } else if (response?.user) {
+                userData = response.user;
+            } else if (response?.data) {
+                userData = response.data;
+            } else {
+                userData = response;
+            }
+            
+            console.log('[Login] Extracted user data:', userData);
+            
+            if (userData && userData.role) {
+                // Use the auth context's login function to store user data
+                // This ensures AuthContext and localStorage are both updated
+                authLogin(userData);
+                
+                console.log('[Login] Called authLogin with:', userData);
                 
                 // Redirect based on role
                 if (userData.role === 'super_admin') {
+                    console.log('[Login] Redirecting to /admin (super_admin)');
                     window.location.href = '/admin';
                 } else {
+                    console.log('[Login] Redirecting to /admin/site (site_admin)');
                     window.location.href = '/admin/site';
                 }
             } else {
+                console.error('[Login] Invalid user data structure:', response);
+                setError('Login succeeded but received invalid user data. Please try again.');
                 window.location.reload();
             }
         } catch (error: any) {
-            console.error("Login failed:", error.response?.data || error.message);
+            console.error("[Login] Login failed:", error);
+            console.error("[Login] Error response:", error.response?.data);
             setError(error.response?.data?.message || "Login failed. Please check your credentials.");
         } finally {
             setLoading(false);
