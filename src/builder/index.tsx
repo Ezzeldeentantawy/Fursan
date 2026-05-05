@@ -25,9 +25,10 @@ import { CanvasInner } from './components/Canvas';
 import { Toolbar } from './components/Toolbar';
 import { Navigator } from './components/Navigator';
 import { DraggablePanel } from './components/DraggablePanel';
-import { breakpoints, Breakpoint } from './DynamicPages';
+import { breakpoints } from './DynamicPages';
 import { TemplatePicker } from './components/TemplatePicker';
 import { FloatingToolbar } from './components/FloatingToolbar';
+import { CustomCodeModal } from './components/CustomCodeModal';
 import pagesApi from '../api/pagesApi';
 import { createNode, isContainer } from './utils/nodeFactory';
 import { CONTAINER_TYPES, ELEMENTS_BY_TYPE } from './DynamicPages';
@@ -54,6 +55,8 @@ export const Builder: React.FC = () => {
   const addNode = useBuilderStore((state) => state.addNode);
   const moveNode = useBuilderStore((state) => state.moveNode);
   const resetTree = useBuilderStore((state) => state.resetTree);
+  const activeBp = useBuilderStore((state) => state.activeBp);
+  const setActiveBp = useBuilderStore((state) => state.setActiveBp);
   
   const [pageTitle, setPageTitle] = useState<string>('');
   const [siteDomain, setSiteDomain] = useState<string>('');
@@ -68,14 +71,14 @@ export const Builder: React.FC = () => {
   const [overId, setOverId] = useState<string | null>(null);
   const [dragPointerPosition, setDragPointerPosition] = useState<{ x: number; y: number } | null>(null);
 
-  // Breakpoint state for preview
-  const [activeBp, setActiveBp] = useState<Breakpoint>('md');
-
   // Navigator panel visibility
   const [showNavigator, setShowNavigator] = useState(false);
 
   // Template picker visibility
   const [showTemplates, setShowTemplates] = useState(false);
+
+  // Custom Code modal visibility
+  const [showCustomCodeModal, setShowCustomCodeModal] = useState(false);
 
   // Ref to prevent multiple simultaneous loads
   const isLoadingRef = useRef(false);
@@ -128,6 +131,14 @@ export const Builder: React.FC = () => {
             setIsDefaultSite(pageData.site?.is_default || false);
           
           // Try to load from content.elements (new format)
+          // NEW: Load customCss and customJs
+          if (pageData.content && pageData.content.customCss !== undefined) {
+            useBuilderStore.getState().setCustomCss(pageData.content.customCss || null);
+          }
+          if (pageData.content && pageData.content.customJs !== undefined) {
+            useBuilderStore.getState().setCustomJs(pageData.content.customJs || null);
+          }
+          
           if (pageData.content && pageData.content.elements) {
             let elements = pageData.content.elements;
             
@@ -239,6 +250,66 @@ export const Builder: React.FC = () => {
       document.removeEventListener('pointermove', handlePointerMove);
     };
   }, [activeDragId]);
+
+  // Apply Custom CSS to builder preview
+  const customCss = useBuilderStore((state) => state.customCss);
+  
+  useEffect(() => {
+    if (!customCss) {
+      // Remove custom CSS if it exists
+      const existingStyle = document.getElementById('builder-custom-css');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+      return;
+    }
+    
+    // Create or update a style element for custom CSS
+    let styleEl = document.getElementById('builder-custom-css');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'builder-custom-css';
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = customCss;
+    
+    return () => {
+      // Don't remove on cleanup - let the next effect handle it
+      // This prevents flickering when switching between pages
+    };
+  }, [customCss]);
+
+  // Apply Custom JS to builder preview
+  const customJs = useBuilderStore((state) => state.customJs);
+  
+  useEffect(() => {
+    if (!customJs) {
+      // Remove custom JS if it exists
+      const existingScript = document.getElementById('builder-custom-js');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      return;
+    }
+    
+    try {
+      // Remove old script if exists
+      const oldScript = document.getElementById('builder-custom-js');
+      if (oldScript) oldScript.remove();
+      
+      // Create and execute new script
+      const scriptEl = document.createElement('script');
+      scriptEl.id = 'builder-custom-js';
+      scriptEl.textContent = customJs;
+      document.body.appendChild(scriptEl);
+    } catch (error) {
+      console.error('[Builder] Custom JS error:', error);
+    }
+    
+    return () => {
+      // Don't remove on cleanup - let the next effect handle it
+    };
+  }, [customJs]);
 
   // Drag handlers
   const handleDragStart = (event: DragStartEvent) => {
@@ -483,7 +554,11 @@ export const Builder: React.FC = () => {
         console.warn(`[Builder] Removed ${elements.length - uniqueElements.length} duplicates before saving`);
       }
       
-      const contentData = { elements: uniqueElements };
+      const contentData = { 
+        elements: uniqueElements,
+        customCss: useBuilderStore.getState().customCss || null,
+        customJs: useBuilderStore.getState().customJs || null,
+      };
       
       await pagesApi.update(id, {
         content: JSON.stringify(contentData),
@@ -599,6 +674,7 @@ export const Builder: React.FC = () => {
           onToggleNavigator={() => setShowNavigator(!showNavigator)}
           showNavigator={showNavigator}
           onToggleTemplates={() => setShowTemplates(!showTemplates)}
+          onToggleCustomCode={() => setShowCustomCodeModal(true)}
         />
         
         {/* Breakpoint Preview Bar - Dark Theme */}
@@ -663,6 +739,12 @@ export const Builder: React.FC = () => {
             onDeleteTemplate={handleDeleteTemplate}
           />
         )}
+
+        {/* Custom Code Modal */}
+        <CustomCodeModal 
+          isOpen={showCustomCodeModal} 
+          onClose={() => setShowCustomCodeModal(false)} 
+        />
     </DndContext>
   );
 };

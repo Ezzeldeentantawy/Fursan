@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { Loader2 } from 'lucide-react';
@@ -327,6 +327,43 @@ const PageRenderer: React.FC = () => {
     }
   }, [page?.site?.favicon_url]);
 
+  // Inject custom CSS and JS from page content
+  const customJsCleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    // Cleanup previous custom JS if exists
+    if (customJsCleanupRef.current) {
+      customJsCleanupRef.current();
+      customJsCleanupRef.current = null;
+    }
+
+    if (!page?.content?.customJs && !page?.content_ar?.customJs) return;
+
+    const customJs = lang === 'ar' ? (page.content_ar?.customJs || page.content?.customJs) : page.content?.customJs;
+    
+    if (customJs) {
+      const script = document.createElement('script');
+      script.id = 'page-custom-js';
+      script.text = customJs;
+      document.body.appendChild(script);
+      
+      // Store cleanup function
+      customJsCleanupRef.current = () => {
+        const existingScript = document.getElementById('page-custom-js');
+        if (existingScript) {
+          existingScript.remove();
+        }
+      };
+    }
+
+    return () => {
+      if (customJsCleanupRef.current) {
+        customJsCleanupRef.current();
+        customJsCleanupRef.current = null;
+      }
+    };
+  }, [page, lang]);
+
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-4">
@@ -608,6 +645,15 @@ const PageRenderer: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Custom CSS injection */}
+      {(() => {
+        const activeContent = lang === 'ar' ? (page.content_ar || page.content) : page.content;
+        if (activeContent?.customCss) {
+          return <style dangerouslySetInnerHTML={{ __html: activeContent.customCss }} />;
+        }
+        return null;
+      })()}
 
       {/* Page Content - select content based on current language */}
       {(() => {

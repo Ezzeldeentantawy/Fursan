@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Code } from 'lucide-react';
 import { useBuilderStore } from '../store/builderStore';
 
 interface ToolbarProps {
@@ -12,9 +12,10 @@ interface ToolbarProps {
   onToggleNavigator?: () => void;
   showNavigator?: boolean;
   onToggleTemplates?: () => void;
+  onToggleCustomCode?: () => void;
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlug, isDefaultSite = false, onSave, isSaving, onToggleNavigator, showNavigator, onToggleTemplates }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlug, isDefaultSite = false, onSave, isSaving, onToggleNavigator, showNavigator, onToggleTemplates, onToggleCustomCode }) => {
   const temporal = useBuilderStore.temporal;
   const tree = useBuilderStore((state) => state.tree);
 
@@ -134,6 +135,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlu
             title="Browse Templates"
           >
             📋 Templates
+          </button>
+        )}
+
+        <div className="h-6 w-px bg-slate-700 mx-2" />
+
+        {/* Custom Code Toggle */}
+        {onToggleCustomCode && (
+          <button
+            type="button"
+            onClick={onToggleCustomCode}
+            className="px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-2"
+            title="Custom Code (CSS & JS)"
+          >
+            <Code size={14} />
+            Custom Code
           </button>
         )}
       </div>

@@ -1,10 +1,17 @@
 import React from 'react';
-import { ElementDefinition, ELEMENTS, ELEMENTS_BY_TYPE, ELEMENTS_BY_CATEGORY, CONTAINER_TYPES } from '../DynamicPages';
+import {
+  ElementDefinition, ELEMENTS, ELEMENTS_BY_TYPE, ELEMENTS_BY_CATEGORY, CONTAINER_TYPES,
+  mergeResponsiveStyles
+} from '../DynamicPages';
 import { BuilderNode } from '../utils/nodeFactory';
 
 /**
  * Comprehensive propMap: Maps short-form props to their React (camelCase) and CSS (kebab-case) equivalents
- * Used for converting responsive config props to valid styles
+ * Used for converting responsive config props to valid styles.
+ *
+ * This MUST stay in sync with cssPropertyMap in DynamicPages.tsx.
+ * propMap is used by renderNode (CSS generation and inline styles).
+ * cssPropertyMap in DynamicPages.tsx is used by generateResponsiveStyles (CSS output only).
  */
 export const propMap: Record<string, { react: string; css: string }> = {
   // Short-form to React prop / CSS property mappings
@@ -21,7 +28,7 @@ export const propMap: Record<string, { react: string; css: string }> = {
   'ml': { react: 'marginLeft', css: 'margin-left' },
   'rounded': { react: 'borderRadius', css: 'border-radius' },
   'maxWidthC': { react: 'maxWidth', css: 'max-width' },
-  
+
   // Full-form mappings (pass through)
   'fontSize': { react: 'fontSize', css: 'font-size' },
   'fontWeight': { react: 'fontWeight', css: 'font-weight' },
@@ -43,12 +50,24 @@ export const propMap: Record<string, { react: string; css: string }> = {
   'flexWrap': { react: 'flexWrap', css: 'flex-wrap' },
   'justifyContent': { react: 'justifyContent', css: 'justify-content' },
   'alignItems': { react: 'alignItems', css: 'align-items' },
+  'alignContent': { react: 'alignContent', css: 'align-content' },
   'gap': { react: 'gap', css: 'gap' },
+  'rowGap': { react: 'rowGap', css: 'row-gap' },
+  'columnGap': { react: 'columnGap', css: 'column-gap' },
   'boxShadow': { react: 'boxShadow', css: 'box-shadow' },
   'zIndex': { react: 'zIndex', css: 'z-index' },
   'visibility': { react: 'visibility', css: 'visibility' },
   'borderRadius': { react: 'borderRadius', css: 'border-radius' },
   'overflow': { react: 'overflow', css: 'overflow' },
+  // Spacer & Divider specific
+  'spacerHeight': { react: 'height', css: 'height' },
+  'dividerWidth': { react: 'width', css: 'width' },
+  'dividerThickness': { react: 'borderTopWidth', css: 'border-top-width' },
+  // Text columns
+  'columns': { react: 'columns', css: 'columns' },
+  // Per-item alignment overrides
+  'justifySelf': { react: 'justifySelf', css: 'justify-self' },
+  'alignSelf': { react: 'alignSelf', css: 'align-self' },
 };
 
 /**
@@ -104,40 +123,43 @@ export function renderNode(
   // Create the element props
   let elementProps: any = { ...node.props, id: node.id, key: node.id, 'data-node-id': node.id };
   
-  // ✅ NEW: Apply responsive styles directly based on activeBreakpoint
+  // ✅ Apply responsive styles with proper breakpoint inheritance (base → sm → md)
+  // Uses mergeResponsiveStyles so smaller breakpoints inherit from larger ones.
+  // This matches how ContainerComponent handles responsive styles internally.
   if (activeBreakpoint && node.props?.responsive) {
-    const bpStyles = node.props.responsive[activeBreakpoint];
+    const mergedStyles = mergeResponsiveStyles(node.props.responsive, activeBreakpoint);
     
-    if (bpStyles) {
-      // Apply responsive styles directly to elementProps using the comprehensive propMap
-      Object.entries(bpStyles).forEach(([key, val]) => {
-        if (!val) return;
+    // Apply merged responsive styles to elementProps
+    // mergedStyles now contains short-form keys (pt, mt, etc.) from mergeResponsiveStyles
+    Object.entries(mergedStyles).forEach(([key, val]) => {
+      if (!val) return;
+      
+      // Always set the short-form key (so components can destructure pt, mt, etc.)
+      elementProps[key] = val;
+      
+      // Also set the React camelCase prop (from propMap) for components that use camelCase
+      const mapping = propMap[key];
+      if (mapping) {
+        const reactProp = mapping.react;
+        elementProps[reactProp] = val;
         
-        // Use the comprehensive propMap from above
-        const mapping = propMap[key];
-        
-        if (mapping && val) {
-          const reactProp = mapping.react;
-          elementProps[reactProp] = val;
-          
-          // ✅ ALSO set the original short form prop name for backward compatibility
-          // This ensures components that read `flexDir` will also get the value
-          if (reactProp === 'flexDirection') {
-            elementProps['flexDir'] = val;
-          }
-          if (reactProp === 'justifyContent') {
-            elementProps['justify'] = val;
-          }
-          if (reactProp === 'alignItems') {
-            elementProps['items'] = val;
-            elementProps['align'] = val;  // For HeadingComponent which uses `align`
-          }
-          if (reactProp === 'textAlign') {
-            elementProps['align'] = val;  // For HeadingComponent/TextComponent which use `align`
-          }
+        // ✅ Set backward-compat aliases so components reading legacy short-form props also work
+        if (reactProp === 'flexDirection') {
+          elementProps['flexDir'] = val;
         }
-      });
-    }
+        if (reactProp === 'justifyContent') {
+          elementProps['justify'] = val;
+        }
+        if (reactProp === 'alignItems') {
+          elementProps['items'] = val;
+        }
+        // textAlign → align alias (HeadingComponent, TextComponent, ImageComponent use `align`)
+        if (reactProp === 'textAlign') {
+          elementProps['align'] = val;
+        }
+      }
+      // Note: If no mapping exists in propMap, the short-form key is already set above
+    });
   }
   
   // ✅ Pass activeBreakpoint to component so it can use mergeResponsiveStyles

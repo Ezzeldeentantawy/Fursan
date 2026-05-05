@@ -9,7 +9,7 @@ export interface BuilderNode {
 
 export function createNode(type: string): BuilderNode {
   const elementDef = ELEMENTS_BY_TYPE[type];
-  
+
   if (!elementDef) {
     throw new Error(`Unknown element type: ${type}`);
   }
@@ -18,7 +18,7 @@ export function createNode(type: string): BuilderNode {
   const node: BuilderNode = {
     id,
     type,
-    props: { ...elementDef.defaultProps },
+    props: JSON.parse(JSON.stringify(elementDef.defaults)),
   };
 
   // Add children array for container types

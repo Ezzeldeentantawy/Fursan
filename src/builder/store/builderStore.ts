@@ -3,6 +3,8 @@ import { temporal } from 'zundo';
 import type { BuilderNode } from '../utils/nodeFactory';
 import * as treeUtils from '../utils/treeUtils';
 
+export type Breakpoint = 'md' | 'sm' | 'base';
+
 interface BuilderState {
   tree: BuilderNode;
   selectedId: string | null;
@@ -10,7 +12,10 @@ interface BuilderState {
   activeDragId: string | null;
   activeDragType: string | null;
   overContainerId: string | null;
-  
+  activeBp: Breakpoint;
+  customCss: string | null;
+  customJs: string | null;
+
   // Actions
   select: (id: string | null) => void;
   selectElement: (id: string | null) => void;
@@ -25,6 +30,9 @@ interface BuilderState {
   setActiveDragId: (id: string | null) => void;
   setActiveDragType: (type: string | null) => void;
   setOverContainerId: (id: string | null) => void;
+  setActiveBp: (bp: Breakpoint) => void;
+  setCustomCss: (css: string | null) => void;
+  setCustomJs: (js: string | null) => void;
 }
 
 const defaultTree: BuilderNode = { 
@@ -59,16 +67,22 @@ export const useBuilderStore = create<BuilderState>()(
       tree: defaultTree,
       selectedId: null,
       isPreviewMode: false,
-      activeDragId: null,
-      activeDragType: null,
-      overContainerId: null,
-      
-       select: (id) => set({ selectedId: id }),
+      customCss: null,
+      customJs: null,
+       activeDragId: null,
+       activeDragType: null,
+       overContainerId: null,
+       activeBp: 'md',
+
+        select: (id) => set({ selectedId: id }),
        selectElement: (id) => set({ selectedId: id }),
        setActiveDragId: (id) => set({ activeDragId: id }),
        setActiveDragType: (type) => set({ activeDragType: type }),
        setOverContainerId: (id) => set({ overContainerId: id }),
-      
+       setActiveBp: (bp) => set({ activeBp: bp }),
+       setCustomCss: (css) => set({ customCss: css }),
+       setCustomJs: (js) => set({ customJs: js }),
+       
        addNode: (parentId, node, index) => {
          console.log('[BuilderStore] addNode called with parentId:', parentId, 'node:', node, 'index:', index);
          
@@ -141,10 +155,12 @@ export const useBuilderStore = create<BuilderState>()(
         set({ tree: dedupedTree });
       },
       setPreviewMode: (mode) => set({ isPreviewMode: mode }),
-      resetTree: () => set({ 
-        tree: JSON.parse(JSON.stringify(defaultTree)),
-        selectedId: null,
-      }),
+       resetTree: () => set({ 
+         tree: JSON.parse(JSON.stringify(defaultTree)),
+         selectedId: null,
+         customCss: null,
+         customJs: null,
+       }),
     }),
     {
       // Exclude selectedId and isPreviewMode from temporal state
