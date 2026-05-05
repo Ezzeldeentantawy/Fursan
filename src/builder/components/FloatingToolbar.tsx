@@ -85,7 +85,7 @@ export const FloatingToolbar: React.FC = () => {
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // The PropsPanel will automatically show the selected element's props
+    // The ElementSettings panel in the left sidebar shows the selected element's props
     // This button is mainly for visual feedback
   };
 

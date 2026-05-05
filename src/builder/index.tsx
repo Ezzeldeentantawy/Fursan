@@ -22,7 +22,6 @@ import {
 import { useBuilderStore } from './store/builderStore';
 import { WidgetPanel } from './components/WidgetPanel';
 import { CanvasInner } from './components/Canvas';
-import { PropsPanel } from './components/PropsPanel';
 import { Toolbar } from './components/Toolbar';
 import { Navigator } from './components/Navigator';
 import { DraggablePanel } from './components/DraggablePanel';
@@ -602,8 +601,8 @@ export const Builder: React.FC = () => {
           onToggleTemplates={() => setShowTemplates(!showTemplates)}
         />
         
-        {/* Breakpoint Preview Bar */}
-        <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-center gap-2">
+        {/* Breakpoint Preview Bar - Dark Theme */}
+        <div className="bg-slate-900 border-b border-slate-700 px-4 py-2 flex items-center justify-center gap-2">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mr-2">Preview:</span>
           {breakpoints.map((bp) => {
             const Icon = bp.icon;
@@ -614,7 +613,7 @@ export const Builder: React.FC = () => {
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl transition-all ${
                   activeBp === bp.key
                     ? 'bg-blue-500 text-white font-medium shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-300'
                 }`}
                 title={`${bp.label} (${bp.width})`}
               >
@@ -632,8 +631,6 @@ export const Builder: React.FC = () => {
           <div className="flex-1 overflow-auto bg-slate-200">
             <CanvasInner activeBreakpoint={activeBp} />
           </div>
-          
-          <PropsPanel />
         </div>
       </div>
 

@@ -13,6 +13,7 @@ interface BuilderState {
   
   // Actions
   select: (id: string | null) => void;
+  selectElement: (id: string | null) => void;
   addNode: (parentId: string, node: BuilderNode, index?: number) => void;
   moveNode: (activeId: string, overId: string) => void;
   updateProps: (id: string, props: Record<string, any>) => void;
