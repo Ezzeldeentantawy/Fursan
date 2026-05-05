@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pagesApi } from '../../../api/pagesApi';
+import { sitesApi } from '../../../api/sites';
 
 /**
  * PagesList Component
@@ -12,16 +13,35 @@ const PagesList: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+  const [sites, setSites] = useState<any[]>([]);
+  const [selectedSiteId, setSelectedSiteId] = useState<string>('');
 
   useEffect(() => {
-    fetchPages();
+    const init = async () => {
+      try {
+        // Fetch all sites
+        const sitesRes = await sitesApi.list();
+        const sitesData = sitesRes.data.data || sitesRes.data;
+        setSites(sitesData || []);
+        
+        // Fetch default site and set as default filter
+        const defaultRes = await sitesApi.getDefault();
+        const defaultSite = defaultRes.data.data || defaultRes.data;
+        if (defaultSite?.id) {
+          setSelectedSiteId(defaultSite.id.toString());
+        }
+      } catch (error) {
+        console.error('Failed to initialize:', error);
+      }
+    };
+    init();
   }, []);
 
   const fetchPages = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await pagesApi.getAll();
+      const res = await pagesApi.getAll('en', selectedSiteId || undefined);
       // Unwrap: Axios response -> JsonResource wrapper -> actual data
       const data = res.data.data || res.data;
       setPages(Array.isArray(data) ? data : []);
@@ -32,6 +52,11 @@ const PagesList: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Add useEffect to refetch when site changes
+  useEffect(() => {
+    fetchPages();
+  }, [selectedSiteId]);
 
   const handleDelete = async (id: number, title: string) => {
     if (!window.confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
@@ -60,12 +85,13 @@ const PagesList: React.FC = () => {
     const base = import.meta.env.BASE_URL || '/';
     const normalizedBase = base.endsWith('/') ? base : base + '/';
     
-    const siteDomain = page.site?.domain || 'default';
-    const isDefaultSite = page.site?.is_default || false;
+    // Use the new fields from PageResource
+    const siteDomain = page.site_domain || page.site?.domain || '';
+    const isDefaultSite = page.site_is_default || page.site?.is_default || false;
     const slug = page.slug || page.id;
     
     let previewUrl;
-    if (isDefaultSite) {
+    if (isDefaultSite || !siteDomain) {
       previewUrl = `${origin}${normalizedBase}${slug}`;
     } else {
       previewUrl = `${origin}${normalizedBase}${siteDomain}/${slug}`;
@@ -106,15 +132,32 @@ const PagesList: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-white">Pages Management</h1>
-          <button
-            onClick={() => navigate('/admin/pages/new')}
-            className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Create New Page
-          </button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-slate-400">Filter by Site:</label>
+              <select
+                value={selectedSiteId}
+                onChange={(e) => setSelectedSiteId(e.target.value)}
+                className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
+              >
+                <option value="">All Sites</option>
+                {sites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.name} {site.is_default ? '(Default)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={() => navigate('/admin/pages/new')}
+              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Create New Page
+            </button>
+          </div>
         </div>
 
         {/* Error state */}
@@ -206,9 +249,9 @@ const PagesList: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           {page.slug || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                          {page.site?.name || page.site_id || 'N/A'}
-                        </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                           {page.site_name || page.site?.name || 'N/A'}
+                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                           {formatDate(page.created_at)}
                         </td>

@@ -1,9 +1,30 @@
+import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import { useAuth } from '../../components/isLoggedIn';
+import { updateFavicon } from '../../utils/favicon';
+import { sitesApi } from '../../api/sites';
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
+
+  // Load default site favicon on mount for admin pages
+  useEffect(() => {
+    const loadDefaultSiteFavicon = async () => {
+      try {
+        const response = await sitesApi.getDefault();
+        // Unwrap JsonResource: response.data.data
+        const siteData = response.data?.data || response.data || response;
+        if (siteData?.favicon_url) {
+          updateFavicon(siteData.favicon_url);
+        }
+      } catch (error) {
+        console.error('Failed to load default site favicon:', error);
+      }
+    };
+
+    loadDefaultSiteFavicon();
+  }, []);
   
   return (
     <div className="flex h-screen bg-slate-950">

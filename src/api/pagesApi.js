@@ -18,7 +18,11 @@ const BASE_PUBLIC = '/api/v1/';
 
 export const pagesApi = {
   /** GET /api/v1/pages */
-  getAll: (lang = 'en') => api.get(BASE, { params: { lang } }),
+  getAll: (lang = 'en', siteId = null) => {
+    const params = { lang };
+    if (siteId) params.site_id = siteId;
+    return api.get(BASE, { params });
+  },
 
   /** GET /api/v1/pages/:id
    * Pass lang so Laravel returns the correct language version

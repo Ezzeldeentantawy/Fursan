@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Settings } from 'lucide-react';
 import { sitesApi } from '../../../api/sites';
+import SiteSettingsModal from '../../../components/admin/sites/SiteSettingsModal';
 
 const SitesList = () => {
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [settingsSite, setSettingsSite] = useState(null);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   useEffect(() => {
     loadSites();
@@ -13,7 +16,7 @@ const SitesList = () => {
 
   const loadSites = async () => {
     try {
-      const res = await sitesApi.list();
+      const res = await sitesApi.list({ include: 'favicon' });
       const data = res.data.data || res.data;
       setSites(data || []);
     } catch (error) {
@@ -40,6 +43,17 @@ const SitesList = () => {
     } catch (error) {
       console.error('Failed to toggle default:', error);
     }
+  };
+
+  const openSettingsModal = (site) => {
+    setSettingsSite(site);
+    setIsSettingsModalOpen(true);
+  };
+
+  const handleSettingsSave = () => {
+    setIsSettingsModalOpen(false);
+    setSettingsSite(null);
+    loadSites();
   };
 
   if (loading) return <div className="text-slate-300">Loading...</div>;
@@ -96,6 +110,13 @@ const SitesList = () => {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => openSettingsModal(site)}
+                      className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
+                      title="Site Settings"
+                    >
+                      <Settings size={14} />
+                    </button>
                     <Link
                       to={`/admin/sites/${site.id}/edit`}
                       className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
@@ -115,6 +136,16 @@ const SitesList = () => {
           </tbody>
         </table>
       </div>
+
+      <SiteSettingsModal
+        site={settingsSite}
+        isOpen={isSettingsModalOpen}
+        onClose={() => {
+          setIsSettingsModalOpen(false);
+          setSettingsSite(null);
+        }}
+        onSave={handleSettingsSave}
+      />
     </div>
   );
 };

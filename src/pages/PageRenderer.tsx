@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { pagesApi as basePagesApi } from '../api/pagesApi';
+import { updateFavicon } from '../utils/favicon';
 import {
   Block, BLOCK_CATALOG,
   Breakpoint
@@ -140,9 +141,12 @@ const getTypoStyles = (p: Record<string, any>, prefix: string = '') => ({
  * Fetches page data from the backend and renders blocks based on language
  *
  * Route handling:
- *   /                     -> home page (slug = "home")
- *   /:siteDomain          -> home page for that site (slug = "home")
+ *   /                     -> home page (slug = "home") for default site
+ *   /:siteDomain          -> Try as page slug for default site first, fallback to site domain home page
  *   /:siteDomain/:pageSlug -> specific page for that site
+ *
+ * The try-and-fallback approach handles the case where a URL segment could be
+ * either a site domain OR a page slug for the default site.
  */
 const PageRenderer: React.FC = () => {
   const { siteDomain, pageSlug } = useParams<{ siteDomain?: string; pageSlug?: string }>();
@@ -155,7 +159,7 @@ const PageRenderer: React.FC = () => {
   const RESERVED_WORDS = ['admin', 'login', 'register', 'employer', 'api', 'unauthorized'];
 
   useEffect(() => {
-    (async () => {
+    const loadPage = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -168,59 +172,106 @@ const PageRenderer: React.FC = () => {
           return;
         }
 
-        // Determine which site to use for the API call
-        // If no siteDomain in URL, we're on the default site (no site param needed)
-        const siteToUse = siteDomain || undefined;
+        let slugToFetch: string;
+        let siteToUse: string | undefined;
 
-        const slugToFetch = pageSlug || 'home';
+        if (!siteDomain) {
+          // No params - home page of default site
+          slugToFetch = 'home';
+          siteToUse = undefined;
+        } else if (pageSlug) {
+          // /siteDomain/pageSlug - it's a page in a specific site
+          slugToFetch = pageSlug;
+          siteToUse = siteDomain;
+        } else {
+          // /siteDomain - could be a site domain OR a page slug for default site
+          // Try it as a page slug first (for default site)
+          try {
+            const res = await pagesApi.getBySlug(siteDomain, lang);
+            let pageData = res.data.data || res.data;
+            
+            // --- Normalize content for the current language ---
+            const normalizeContent = (raw: any) => {
+              if (typeof raw === 'string') {
+                try { raw = JSON.parse(raw); } catch (e) { return { elements: [] }; }
+              }
+              if (raw && raw.elements && Array.isArray(raw.elements)) { return raw; }
+              if (Array.isArray(raw)) { return { elements: raw }; }
+              return { elements: [] };
+            };
+
+            if (pageData) { pageData.content = normalizeContent(pageData.content); }
+            if (pageData && pageData.content_ar !== undefined) { pageData.content_ar = normalizeContent(pageData.content_ar); }
+            setPage(pageData);
+
+            if (pageData?.lang) { setLang(pageData.lang); } else if (pageData?.language) { setLang(pageData.language); }
+
+            // SEO: Update document title
+            if (pageData?.meta_title) {
+              const pageTitle = lang === 'ar' ? pageData.meta_title_ar : pageData.meta_title;
+              document.title = pageTitle || pageData.meta_title;
+
+              // Meta description
+              const pageDesc = lang === 'ar' ? pageData.meta_description_ar : pageData.meta_description;
+              let metaDesc = document.querySelector('meta[name="description"]');
+              if (!metaDesc) { metaDesc = document.createElement('meta'); metaDesc.name = 'description'; document.head.appendChild(metaDesc); }
+              metaDesc.content = pageDesc || pageData.meta_description || '';
+            }
+
+            // Keywords
+            const keywordsData = pageData?.keywords;
+            const pageKeywords = lang === 'ar' ? keywordsData?.ar : keywordsData?.en;
+            if (pageKeywords && Array.isArray(pageKeywords) && pageKeywords.length > 0) {
+              let metaKeywords = document.querySelector('meta[name="keywords"]');
+              if (!metaKeywords) { metaKeywords = document.createElement('meta'); metaKeywords.name = 'keywords'; document.head.appendChild(metaKeywords); }
+              metaKeywords.content = pageKeywords.join(', ');
+            }
+
+            // Schema.org JSON-LD
+            const schemaData = pageData?.schema || pageData?.schema_data;
+            if (schemaData) {
+              const globalSchema = document.getElementById('seo-schema');
+              let mergedSchema = schemaData;
+              if (globalSchema) {
+                try { const globalData = JSON.parse(globalSchema.textContent || '{}'); mergedSchema = { ...globalData, ...schemaData }; } catch (e) {}
+              }
+              let schemaScript = document.getElementById('seo-schema');
+              if (!schemaScript) { schemaScript = document.createElement('script'); schemaScript.id = 'seo-schema'; schemaScript.type = 'application/ld+json'; document.head.appendChild(schemaScript); }
+              schemaScript.textContent = JSON.stringify(mergedSchema);
+            }
+
+            setLoading(false);
+            return; // Success! It was a page slug
+          } catch (error: any) {
+            // If 404, it might be a site domain - continue below
+            if (error.response?.status !== 404) {
+              throw error; // Re-throw if it's not a 404
+            }
+          }
+
+          // It's a site domain - get home page for that site
+          slugToFetch = 'home';
+          siteToUse = siteDomain;
+        }
+
         const res = await pagesApi.getBySlug(slugToFetch, lang, siteToUse);
-
         let pageData = res.data.data || res.data;
 
         // --- Normalize content for the current language ---
         const normalizeContent = (raw: any) => {
-          // Case 1: content is a JSON string (stored as JSON in database)
           if (typeof raw === 'string') {
-            try {
-              raw = JSON.parse(raw);
-            } catch (e) {
-              console.error('[PageRenderer] Content parse error:', e);
-              return { elements: [] };
-            }
+            try { raw = JSON.parse(raw); } catch (e) { return { elements: [] }; }
           }
-
-          // Case 2: content is already an object with elements array
-          if (raw && raw.elements && Array.isArray(raw.elements)) {
-            return raw;
-          }
-
-          // Case 3: content is a direct array (old format)
-          if (Array.isArray(raw)) {
-            return { elements: raw };
-          }
-
-          // Case 4: unknown / null / empty
+          if (raw && raw.elements && Array.isArray(raw.elements)) { return raw; }
+          if (Array.isArray(raw)) { return { elements: raw }; }
           return { elements: [] };
         };
 
-        // Parse English content
-        if (pageData) {
-          pageData.content = normalizeContent(pageData.content);
-        }
-
-        // Parse Arabic content if present
-        if (pageData && pageData.content_ar !== undefined) {
-          pageData.content_ar = normalizeContent(pageData.content_ar);
-        }
-
+        if (pageData) { pageData.content = normalizeContent(pageData.content); }
+        if (pageData && pageData.content_ar !== undefined) { pageData.content_ar = normalizeContent(pageData.content_ar); }
         setPage(pageData);
 
-        // Determine language from page data or default to 'en'
-        if (pageData?.lang) {
-          setLang(pageData.lang);
-        } else if (pageData?.language) {
-          setLang(pageData.language);
-        }
+        if (pageData?.lang) { setLang(pageData.lang); } else if (pageData?.language) { setLang(pageData.language); }
 
         // SEO: Update document title
         if (pageData?.meta_title) {
@@ -230,11 +281,7 @@ const PageRenderer: React.FC = () => {
           // Meta description
           const pageDesc = lang === 'ar' ? pageData.meta_description_ar : pageData.meta_description;
           let metaDesc = document.querySelector('meta[name="description"]');
-          if (!metaDesc) {
-            metaDesc = document.createElement('meta');
-            metaDesc.name = 'description';
-            document.head.appendChild(metaDesc);
-          }
+          if (!metaDesc) { metaDesc = document.createElement('meta'); metaDesc.name = 'description'; document.head.appendChild(metaDesc); }
           metaDesc.content = pageDesc || pageData.meta_description || '';
         }
 
@@ -243,11 +290,7 @@ const PageRenderer: React.FC = () => {
         const pageKeywords = lang === 'ar' ? keywordsData?.ar : keywordsData?.en;
         if (pageKeywords && Array.isArray(pageKeywords) && pageKeywords.length > 0) {
           let metaKeywords = document.querySelector('meta[name="keywords"]');
-          if (!metaKeywords) {
-            metaKeywords = document.createElement('meta');
-            metaKeywords.name = 'keywords';
-            document.head.appendChild(metaKeywords);
-          }
+          if (!metaKeywords) { metaKeywords = document.createElement('meta'); metaKeywords.name = 'keywords'; document.head.appendChild(metaKeywords); }
           metaKeywords.content = pageKeywords.join(', ');
         }
 
@@ -257,27 +300,32 @@ const PageRenderer: React.FC = () => {
           const globalSchema = document.getElementById('seo-schema');
           let mergedSchema = schemaData;
           if (globalSchema) {
-            try {
-              const globalData = JSON.parse(globalSchema.textContent || '{}');
-              mergedSchema = { ...globalData, ...schemaData };
-            } catch (e) {}
+            try { const globalData = JSON.parse(globalSchema.textContent || '{}'); mergedSchema = { ...globalData, ...schemaData }; } catch (e) {}
           }
           let schemaScript = document.getElementById('seo-schema');
-          if (!schemaScript) {
-            schemaScript = document.createElement('script');
-            schemaScript.id = 'seo-schema';
-            schemaScript.type = 'application/ld+json';
-            document.head.appendChild(schemaScript);
-          }
+          if (!schemaScript) { schemaScript = document.createElement('script'); schemaScript.id = 'seo-schema'; schemaScript.type = 'application/ld+json'; document.head.appendChild(schemaScript); }
           schemaScript.textContent = JSON.stringify(mergedSchema);
         }
+
+        setLoading(false);
       } catch (err) {
         console.error('[PageRenderer] Page fetch failed:', err);
-      } finally {
+        setError('Page not found');
         setLoading(false);
       }
-    })();
-  }, [pageSlug, siteDomain, lang]);
+    };
+
+    loadPage();
+  }, [siteDomain, pageSlug, lang]);
+
+  // Update favicon when page data changes (site favicon)
+  useEffect(() => {
+    if (page?.site?.favicon_url) {
+      updateFavicon(page.site.favicon_url);
+    } else {
+      updateFavicon(null); // Revert to default
+    }
+  }, [page?.site?.favicon_url]);
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white">
