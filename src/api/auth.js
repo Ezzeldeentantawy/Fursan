@@ -55,11 +55,11 @@ export const authApi = {
       
       console.log('[Auth] Attempting login...');
       
-      // ✅ Now make the login request - axios interceptor will add the CSRF token
-      // Note: auth routes are in web.php, not api.php
-      const res = await api.post('/auth/login', { email, password });
-      console.log('[Auth] Login response:', res.status);
-      return res.data.data || res.data;
+       // ✅ Now make the login request - axios interceptor will add the CSRF token
+       // Note: auth routes are in web.php, not api.php
+       const res = await api.post('/auth/login', { email, password });
+       console.log('[Auth] Login response:', res.status);
+       return res.data; // Return full response (includes user.data and redirect)
     } catch (err) {
       console.error('[Auth] Login error:', err.message);
       console.error('[Auth] Error response:', err.response?.data);

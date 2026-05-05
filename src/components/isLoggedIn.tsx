@@ -14,6 +14,8 @@ interface User {
     id: string;
     email: string;
     name: string;
+    role: 'super_admin' | 'site_admin';
+    site_id: number | null;
     // add other fields your API returns
 }
 
@@ -24,6 +26,7 @@ interface AuthContextType {
     login: (userData: User) => void;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
+    updateProfile: (userData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +40,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkAuth = useCallback(async () => {
         setLoading(true);
         try {
+            // First check localStorage for user data (set during login)
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const userData = JSON.parse(storedUser);
+                setUser(userData);
+                setLoading(false);
+                return;
+            }
+            
+            // Otherwise check with API
             const user = await authApi.checkAuth();
             setUser(user);
             setError(null);
@@ -51,12 +64,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    const login = (userData: User) => setUser(userData);
+    const login = (userData: User) => {
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+    };
+
+    const updateProfile = (userData: Partial<User>) => {
+        if (user) {
+            const updatedUser = { ...user, ...userData };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+    };
 
     const logout = async () => {
         try {
             await authApi.logout();
             setUser(null);
+            localStorage.removeItem('user');
         } catch (err) {
             console.error("Logout failed", err);
         }
@@ -74,7 +99,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         error,
         login,
         logout,
-        refreshUser: checkAuth
+        refreshUser: checkAuth,
+        updateProfile,
     }), [user, loading, error, checkAuth]);
 
     return (

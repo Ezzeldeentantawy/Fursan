@@ -21,12 +21,14 @@ const PagesList: React.FC = () => {
       try {
         // Fetch all sites
         const sitesRes = await sitesApi.list();
-        const sitesData = sitesRes.data.data || sitesRes.data;
+        // Unwrap: Axios response -> JsonResource wrapper -> actual data
+        const sitesData = sitesRes.data?.data || sitesRes.data;
         setSites(sitesData || []);
         
         // Fetch default site and set as default filter
         const defaultRes = await sitesApi.getDefault();
-        const defaultSite = defaultRes.data.data || defaultRes.data;
+        // Unwrap: Axios response -> JsonResource wrapper -> actual data
+        const defaultSite = defaultRes.data?.data || defaultRes.data;
         if (defaultSite?.id) {
           setSelectedSiteId(defaultSite.id.toString());
         }
@@ -43,7 +45,7 @@ const PagesList: React.FC = () => {
       setError(null);
       const res = await pagesApi.getAll('en', selectedSiteId || undefined);
       // Unwrap: Axios response -> JsonResource wrapper -> actual data
-      const data = res.data.data || res.data;
+      const data = res.data?.data || res.data;
       setPages(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error('Error fetching pages:', err);

@@ -3,27 +3,41 @@ import {
   LayoutDashboard, 
   FileText, 
   Globe, 
-  UserPlus, 
+  Users,
   Settings,
-  Image
+  Image,
+  User
 } from 'lucide-react';
+import { useAuth } from '../../components/isLoggedIn';
 
-const navItems = [
-  { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/admin/pages', label: 'Pages', icon: FileText },
-  { path: '/admin/sites', label: 'Sites', icon: Globe },
-  { path: '/admin/dashboard/create-employer-account', label: 'Create Employer', icon: UserPlus },
-  { path: '/admin/media', label: 'Media', icon: Image },
-  { path: '/admin/settings', label: 'Settings', icon: Settings },
+const allNavItems = [
+  { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['super_admin', 'site_admin'] },
+  { path: '/admin/pages', label: 'Pages', icon: FileText, roles: ['super_admin', 'site_admin'] },
+  { path: '/admin/sites', label: 'Sites', icon: Globe, roles: ['super_admin'] },
+  { path: '/admin/users', label: 'Users', icon: Users, roles: ['super_admin'] },
+  { path: '/admin/media', label: 'Media', icon: Image, roles: ['super_admin', 'site_admin'] },
+  { path: '/admin/profile', label: 'Profile', icon: User, roles: ['super_admin', 'site_admin'] },
 ];
 
 const AdminSidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
+  const userRole = user?.role || 'site_admin';
+  
+  // Filter nav items based on user role
+  const navItems = allNavItems.filter(item => 
+    item.roles.includes(userRole)
+  );
   
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-700 flex flex-col">
       <div className="p-4 border-b border-slate-700">
         <h2 className="text-white font-bold text-xl">Fursan CMS</h2>
+        {user && (
+          <p className="text-slate-400 text-xs mt-1">
+            {user.name} ({userRole === 'super_admin' ? 'Super Admin' : 'Site Admin'})
+          </p>
+        )}
       </div>
       <nav className="flex-1 p-4 space-y-2">
         {navItems.map((item) => {
@@ -46,6 +60,11 @@ const AdminSidebar = () => {
           );
         })}
       </nav>
+      <div className="p-4 border-t border-slate-700">
+        <p className="text-slate-500 text-xs text-center">
+          Fursan CMS v1.0
+        </p>
+      </div>
     </aside>
   );
 };
