@@ -56,7 +56,7 @@ export const CanvasInner: React.FC<CanvasInnerProps> = ({ activeBreakpoint = 'md
   return (
     <div
       ref={setRootDroppableRef}
-      className={`min-h-full p-8 transition-all ${
+      className={`min-h-full transition-all ${
         isDraggingFromPanel && isRootOver
           ? 'outline-2 outline-solid outline-green-400 bg-green-50/50'
           : isDraggingFromPanel

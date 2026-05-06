@@ -13,9 +13,12 @@ interface ToolbarProps {
   showNavigator?: boolean;
   onToggleTemplates?: () => void;
   onToggleCustomCode?: () => void;
+  currentLang?: 'en' | 'ar';
+  onLanguageSwitch?: (lang: 'en' | 'ar') => void;
+  pageData?: any; // Full page data including content and content_ar
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlug, isDefaultSite = false, onSave, isSaving, onToggleNavigator, showNavigator, onToggleTemplates, onToggleCustomCode }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlug, isDefaultSite = false, onSave, isSaving, onToggleNavigator, showNavigator, onToggleTemplates, onToggleCustomCode, currentLang = 'en', onLanguageSwitch, pageData }) => {
   const temporal = useBuilderStore.temporal;
   const tree = useBuilderStore((state) => state.tree);
 
@@ -28,16 +31,25 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlu
   };
 
   const handleExportJSON = () => {
-    // Export in the same structure as saved to database: { elements, customCss, customJs }
-    const elements = tree.children || [];
-    const customCss = useBuilderStore.getState().customCss;
-    const customJs = useBuilderStore.getState().customJs;
-    
-    const exportData = {
-      elements: elements,
-      customCss: customCss || null,
-      customJs: customJs || null,
+    // Export the CURRENT builder state (including unsaved changes)
+    // Structure: { elements: [], customCss: "", customJs: "" }
+    const exportData: any = {
+      elements: [],
+      customCss: null,
+      customJs: null,
     };
+    
+    // Always include current builder state (unsaved changes)
+    const currentElements = tree.children || [];
+    const currentCustomCss = useBuilderStore.getState().customCss || null;
+    const currentCustomJs = useBuilderStore.getState().customJs || null;
+    
+    exportData.elements = currentElements;
+    exportData.customCss = currentCustomCss;
+    exportData.customJs = currentCustomJs;
+    
+    console.log('[Export] Exporting current builder state:', exportData);
+    console.log('[Export] JSON:', JSON.stringify(exportData, null, 2));
     
     const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -82,6 +94,34 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlu
 
       {/* Center Section - Actions */}
       <div className="flex items-center gap-2">
+        {/* Language Switcher */}
+        {onLanguageSwitch && (
+          <div className="flex items-center gap-1 bg-slate-800 rounded-xl p-1 mr-2">
+            <button
+              onClick={() => onLanguageSwitch('en')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                currentLang === 'en' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="English"
+            >
+              EN
+            </button>
+            <button
+              onClick={() => onLanguageSwitch('ar')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                currentLang === 'ar' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="العربية"
+            >
+              عربي
+            </button>
+          </div>
+        )}
+
         {/* Undo/Redo */}
         <button
           type="button"

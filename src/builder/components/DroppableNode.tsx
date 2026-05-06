@@ -89,28 +89,29 @@ export const DroppableNode: React.FC<DroppableNodeProps> = ({
     }
   };
 
-  // Build DnD props to pass to the element
-  // FIX Issue 1: Hide original element when dragging (opacity: 0) to prevent empty spaces
-  const dndProps = {
-    ref: setRefs,
-    id: node.id,
-    'data-node-id': node.id,
-    style: {
-      // Hide original element when dragging - prevents empty spaces
-      // The DragOverlay handles the visual preview at cursor position
-      opacity: isDragging ? 0 : 1,
-      // No transform or transition - let DragOverlay handle preview
-    },
-    className: [
-      isSelected && !isPreviewMode ? 'ring-2 ring-blue-500 ring-offset-2' : '',
-      // Hovered container gets a subtle green background
-      isOver && isContainer ? 'bg-green-50/50' : '',
-    ].filter(Boolean).join(' '),
-    onClick: handleClick,
-    onContextMenu: handleContextMenu,
-    ...attributes,
-    ...listeners,
-  };
+    // Build DnD props to pass to the element
+    // FIX Issue 1: Hide original element when dragging (opacity: 0) to prevent empty spaces
+    const dndProps = {
+      ref: setRefs,
+      id: node.id,
+      'data-node-id': node.id,
+      style: {
+        // Hide original element when dragging - prevents empty spaces
+        // The DragOverlay handles the visual preview at cursor position
+        opacity: isDragging ? 0 : 1,
+        // No transform or transition - let DragOverlay handle preview
+      },
+      className: [
+        // Highlight selected element with blue ring (always, not just preview mode)
+        isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : '',
+        // Hovered container gets a subtle green background
+        isOver && isContainer ? 'bg-green-50/50' : '',
+      ].filter(Boolean).join(' '),
+      onClick: handleClick,
+      onContextMenu: handleContextMenu,
+      ...attributes,
+      ...listeners,
+    };
 
   return (
     <>

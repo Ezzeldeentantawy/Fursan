@@ -64,6 +64,8 @@ export const Builder: React.FC = () => {
   const [isDefaultSite, setIsDefaultSite] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentLang, setCurrentLang] = useState<'en' | 'ar'>('en');
+  const [pageData, setPageData] = useState<any>(null);
   
   // Drag state
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -90,6 +92,135 @@ export const Builder: React.FC = () => {
     }),
     useSensor(KeyboardSensor)
   );
+
+  // Helper function to load content for a specific language
+  const loadContentForLanguage = (lang: 'en' | 'ar', data: any) => {
+    if (!data) {
+      console.log('[Builder] No page data provided to loadContentForLanguage');
+      return;
+    }
+    
+    console.log('[Builder] loadContentForLanguage - lang:', lang);
+    console.log('[Builder] loadContentForLanguage - data.content:', data.content);
+    console.log('[Builder] loadContentForLanguage - data.content_ar:', data.content_ar);
+    
+    // Determine which content to load
+    let contentToLoad = null;
+    if (lang === 'ar' && data.content_ar) {
+      contentToLoad = data.content_ar;
+    } else if (lang === 'en' && data.content) {
+      contentToLoad = data.content;
+    }
+    
+    console.log('[Builder] contentToLoad:', contentToLoad);
+    console.log('[Builder] typeof contentToLoad:', typeof contentToLoad);
+    console.log('[Builder] JSON.stringify contentToLoad:', JSON.stringify(contentToLoad));
+    
+    // Handle different possible structures
+    // Structure 1: { elements: [...], customCss: "...", customJs: "..." }
+    // Structure 2: [...] (direct array)
+    // Structure 3: JSON string
+    
+    let elements = [];
+    let customCss = null;
+    let customJs = null;
+    
+    if (typeof contentToLoad === 'string') {
+      // Try to parse as JSON
+      try {
+        contentToLoad = JSON.parse(contentToLoad);
+        console.log('[Builder] Parsed contentToLoad from string:', contentToLoad);
+      } catch (e) {
+        console.error('[Builder] Failed to parse contentToLoad:', e);
+        resetTree();
+        return;
+      }
+    }
+    
+    if (Array.isArray(contentToLoad)) {
+      // Structure 2: Direct array
+      console.log('[Builder] contentToLoad is a direct array');
+      elements = contentToLoad;
+    } else if (contentToLoad && typeof contentToLoad === 'object') {
+      // Structure 1 or 3
+      if (contentToLoad.elements && Array.isArray(contentToLoad.elements)) {
+        console.log('[Builder] contentToLoad has elements array');
+        elements = contentToLoad.elements;
+        customCss = contentToLoad.customCss || null;
+        customJs = contentToLoad.customJs || null;
+      } else {
+        console.warn('[Builder] contentToLoad has unexpected structure:', contentToLoad);
+      }
+    }
+    
+    console.log('[Builder] Final elements:', elements);
+    console.log('[Builder] Final customCss:', customCss);
+    console.log('[Builder] Final customJs:', customJs);
+    console.log('[Builder] elements.length:', elements.length);
+    
+    // Load customCss and customJs
+    useBuilderStore.getState().setCustomCss(customCss);
+    useBuilderStore.getState().setCustomJs(customJs);
+    
+    // Load elements
+    if (elements.length > 0) {
+      // Deduplicate elements by ID to prevent duplicates
+      const seenIds = new Set();
+      const uniqueElements = elements.filter((el: any) => {
+        if (!el.id || seenIds.has(el.id)) {
+          console.warn('[Builder] Duplicate or missing ID detected:', el);
+          return false;
+        }
+        seenIds.add(el.id);
+        return true;
+      });
+      
+      if (uniqueElements.length !== elements.length) {
+        console.warn(`[Builder] Removed ${elements.length - uniqueElements.length} duplicate elements`);
+      }
+      
+      const rootTree: BuilderNode = {
+        id: 'root',
+        type: 'container',
+        props: {
+          bgColor: 'transparent', bgImage: '', bgSize: 'cover',
+          width: '', height: '', minWidth: '', minHeight: '',
+          maxWidth: '', maxHeight: '', borderRadius: '',
+          borderWidth: '0px', borderColor: '#e2e8f0', borderStyle: 'none',
+          padding: '16px', direction: 'column', align: 'stretch',
+          justify: 'flex-start', gap: '16px',
+        },
+        children: uniqueElements,
+      };
+      setTree(rootTree);
+      return;
+    }
+    
+    resetTree();
+  };
+
+  // Handle language switch
+  const handleLanguageSwitch = async (lang: 'en' | 'ar') => {
+    if (lang === currentLang) return;
+    
+    console.log('[Builder] Switching language to:', lang);
+    
+    setCurrentLang(lang);
+    
+    // Reload page data with correct lang parameter
+    if (id && id !== 'new') {
+      try {
+        // First, try to get the page with the new language
+        const response = await pagesApi.getOne(id, lang);
+        const data = response.data?.data || response.data;
+        console.log('[Builder] Reloaded page data:', data);
+        setPageData(data);
+        loadContentForLanguage(lang, data);
+      } catch (error) {
+        console.error('[Builder] Failed to reload page data:', error);
+      }
+    }
+  };
 
   // Load page data on mount
   useEffect(() => {
@@ -121,97 +252,18 @@ export const Builder: React.FC = () => {
           return;
         }
         
-        const pageData = response.data?.data || response.data;
-        console.log('[Builder] Page data received:', pageData);
+        const data = response.data?.data || response.data;
+        console.log('[Builder] Page data received:', data);
           
-          if (pageData) {
-            setPageTitle(pageData.title || '');
-            setSiteDomain(pageData.site?.domain || 'default');
-            setPageSlug(pageData.slug || pageData.id || '');
-            setIsDefaultSite(pageData.site?.is_default || false);
+          if (data) {
+            setPageData(data);
+            setPageTitle(data.title || '');
+            setSiteDomain(data.site?.domain || 'default');
+            setPageSlug(data.slug || data.id || '');
+            setIsDefaultSite(data.site?.is_default || false);
           
-          // Try to load from content.elements (new format)
-          // NEW: Load customCss and customJs
-          if (pageData.content && pageData.content.customCss !== undefined) {
-            useBuilderStore.getState().setCustomCss(pageData.content.customCss || null);
-          }
-          if (pageData.content && pageData.content.customJs !== undefined) {
-            useBuilderStore.getState().setCustomJs(pageData.content.customJs || null);
-          }
-          
-          if (pageData.content && pageData.content.elements) {
-            let elements = pageData.content.elements;
-            
-            if (Array.isArray(elements) && elements.length > 0) {
-              // Deduplicate elements by ID to prevent duplicates
-              const seenIds = new Set();
-              const uniqueElements = elements.filter((el: any) => {
-                if (!el.id || seenIds.has(el.id)) {
-                  console.warn('[Builder] Duplicate or missing ID detected:', el);
-                  return false;
-                }
-                seenIds.add(el.id);
-                return true;
-              });
-              
-              if (uniqueElements.length !== elements.length) {
-                console.warn(`[Builder] Removed ${elements.length - uniqueElements.length} duplicate elements`);
-              }
-              
-              const rootTree: BuilderNode = {
-                id: 'root',
-                type: 'container',
-                props: {
-                  bgColor: 'transparent', bgImage: '', bgSize: 'cover',
-                  width: '', height: '', minWidth: '', minHeight: '',
-                  maxWidth: '', maxHeight: '', borderRadius: '',
-                  borderWidth: '0px', borderColor: '#e2e8f0', borderStyle: 'none',
-                  padding: '16px', direction: 'column', align: 'stretch',
-                  justify: 'flex-start', gap: '16px',
-                },
-                children: uniqueElements,
-              };
-              setTree(rootTree);
-              return;
-            }
-          }
-          
-          // Fallback: try blocks_en (old format)
-          if (pageData.blocks_en) {
-            try {
-              const parsedTree = typeof pageData.blocks_en === 'string' 
-                ? JSON.parse(pageData.blocks_en) 
-                : pageData.blocks_en;
-              
-              if (Array.isArray(parsedTree)) {
-                // Deduplicate elements for blocks_en too
-                const seenIds = new Set();
-                const uniqueTree = parsedTree.filter((el: any) => {
-                  if (!el.id || seenIds.has(el.id)) {
-                    console.warn('[Builder] Duplicate or missing ID in blocks_en:', el);
-                    return false;
-                  }
-                  seenIds.add(el.id);
-                  return true;
-                });
-                
-                const rootTree: BuilderNode = {
-                  id: 'root', type: 'container',
-                  props: { bgColor: 'transparent', padding: '16px', direction: 'column', align: 'stretch', justify: 'flex-start', gap: '16px' },
-                  children: uniqueTree,
-                };
-                setTree(rootTree);
-              } else {
-                if (parsedTree.type === 'section') parsedTree.type = 'container';
-                setTree(parsedTree);
-              }
-              return;
-            } catch (e) {
-              console.error('Failed to parse blocks_en:', e);
-            }
-          }
-          
-          resetTree();
+          // Load content based on current language
+          loadContentForLanguage(currentLang, data);
         }
       } catch (error) {
         if (!cancelled) {
@@ -560,9 +612,19 @@ export const Builder: React.FC = () => {
         customJs: useBuilderStore.getState().customJs || null,
       };
       
-      await pagesApi.update(id, {
-        content: JSON.stringify(contentData),
-      });
+      console.log('[Builder] Saving contentData:', contentData);
+      console.log('[Builder] currentLang:', currentLang);
+      
+      // Send the data directly (not wrapped in content_ar/content)
+      // The backend PageController uses $request->lang to know which field to update
+      console.log('[Builder] PUT request data:', contentData);
+      console.log('[Builder] PUT request JSON:', JSON.stringify(contentData));
+      console.log('[Builder] PUT request lang:', currentLang);
+      
+      // Pass lang parameter so Laravel knows which field to update
+      await pagesApi.update(id, contentData, currentLang);
+      
+      await pagesApi.update(id, updateData);
       
       // Update the tree with deduplicated elements
       if (uniqueElements.length !== elements.length) {
@@ -577,7 +639,7 @@ export const Builder: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [id, tree, setTree]);
+  }, [id, tree, setTree, currentLang]);
 
   // Template handlers
   const handleTemplateSelect = (template: any) => {
@@ -675,6 +737,9 @@ export const Builder: React.FC = () => {
           showNavigator={showNavigator}
           onToggleTemplates={() => setShowTemplates(!showTemplates)}
           onToggleCustomCode={() => setShowCustomCodeModal(true)}
+          currentLang={currentLang}
+          onLanguageSwitch={handleLanguageSwitch}
+          pageData={pageData}
         />
         
         {/* Breakpoint Preview Bar - Dark Theme */}
@@ -704,7 +769,7 @@ export const Builder: React.FC = () => {
         <div className="flex-1 flex overflow-hidden">
           <WidgetPanel />
           
-          <div className="flex-1 overflow-auto bg-slate-200">
+          <div className="flex-1 overflow-auto bg-white">
             <CanvasInner activeBreakpoint={activeBp} />
           </div>
         </div>
