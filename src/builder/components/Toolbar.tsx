@@ -28,7 +28,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlu
   };
 
   const handleExportJSON = () => {
-    const json = JSON.stringify(tree, null, 2);
+    // Export in the same structure as saved to database: { elements, customCss, customJs }
+    const elements = tree.children || [];
+    const customCss = useBuilderStore.getState().customCss;
+    const customJs = useBuilderStore.getState().customJs;
+    
+    const exportData = {
+      elements: elements,
+      customCss: customCss || null,
+      customJs: customJs || null,
+    };
+    
+    const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
