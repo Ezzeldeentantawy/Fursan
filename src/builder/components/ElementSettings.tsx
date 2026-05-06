@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Monitor, Tablet, Smartphone, ChevronDown, X, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Hash, MoveUp, MoveDown, Layers, Eye, Scissors, ArrowDown, ArrowUp, ArrowRight, ArrowLeft, Maximize, Minimize, Image as ImageIcon, Palette, Droplet, Shadow, Sparkles, Link as LinkIcon, Unlink, Plus, Trash2, GripVertical, Bold, Italic, Underline, Strikethrough, CaseUpper, CaseLower, CaseSensitive, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, ExternalLink, Mail, Anchor, FileText, Section, Article, Aside, LayoutDashboard, Navigation, ChevronRight, Settings, PaintBucket, SlidersHorizontal, FlipHorizontal, FlipVertical } from 'lucide-react';
 import { useBuilderStore, Breakpoint } from '../store/builderStore';
 import { ELEMENTS_BY_TYPE, ControlDef } from '../DynamicPages';
@@ -103,6 +103,8 @@ export const ElementSettings: React.FC = () => {
   const updateProps = useBuilderStore((state) => state.updateProps);
   const activeBp = useBuilderStore((state) => state.activeBp);
   const setActiveBp = useBuilderStore((state) => state.setActiveBp);
+  const pendingDesignTabFocus = useBuilderStore((state) => state.pendingDesignTabFocus);
+  const setPendingDesignTabFocus = useBuilderStore((state) => state.setPendingDesignTabFocus);
 
   const selectedNode = selectedId ? findNode(tree, selectedId) : null;
   const elementDef = selectedNode ? ELEMENTS_BY_TYPE[selectedNode.type] : null;
@@ -111,6 +113,14 @@ export const ElementSettings: React.FC = () => {
   const [showMediaBrowser, setShowMediaBrowser] = useState(false);
   const [mediaBrowserTargetKey, setMediaBrowserTargetKey] = useState<string>('');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(DEFAULT_EXPANDED);
+
+  // Auto-switch to design tab when pendingDesignTabFocus is true (new element added)
+  useEffect(() => {
+    if (pendingDesignTabFocus && selectedId) {
+      setActiveTab('design');
+      setPendingDesignTabFocus(false);
+    }
+  }, [pendingDesignTabFocus, selectedId, setPendingDesignTabFocus]);
 
   if (!selectedId || !selectedNode || !elementDef) {
     return null;

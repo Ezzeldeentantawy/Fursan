@@ -94,12 +94,14 @@ export function isContainerType(type: string): boolean {
  * @param children - Optional children to pass to the component
  * @param dndProps - Optional DnD props to inject (ref, style, className, onClick, onContextMenu)
  * @param activeBreakpoint - Which breakpoint is active in preview (for direct style application)
+ * @param extraProps - Additional props to pass to the component (e.g., isSelected, childrenCount)
  */
 export function renderNode(
   node: BuilderNode, 
   children?: React.ReactNode, 
   dndProps?: any,
-  activeBreakpoint?: string  // NEW: which breakpoint is active in preview
+  activeBreakpoint?: string,  // NEW: which breakpoint is active in preview
+  extraProps?: Record<string, any>
 ): React.ReactElement | null {
   const Component = getComponent(node.type);
   
@@ -167,45 +169,45 @@ export function renderNode(
     elementProps.activeBreakpoint = activeBreakpoint;
   }
 
-  // Declare element variable
-  let element: React.ReactElement | null = null;
-  
-  // If DnD props provided, wrap with a div that has id, ref, and all DnD attributes
-  // This guarantees the DOM element has the correct id for document.getElementById
-  // Using display:contents makes the wrapper "transparent" to CSS layout
-  if (dndProps) {
-    // Create the inner element with just its own props (no DnD props)
-    // BUT: pass the DnD className to the inner element so visual indicators (borders, rings) are visible
-    const innerProps: any = {
-      ...elementProps,
-      // Merge DnD visual classes into the inner element's className
-      className: [dndProps.className, elementProps.className].filter(Boolean).join(' '),
-    };
+    // Declare element variable
+    let element: React.ReactElement | null = null;
     
-    delete innerProps.key;
-    
-    // Create inner element without DnD props
-    const innerElement = React.createElement(Component, innerProps, children);
-    
-    // Wrap with a div that has ALL DnD props for proper drag-and-drop behavior
-    // This ensures:
-    // 1. document.getElementById(node.id) finds the element
-    // 2. Drag event listeners are on the correct element
-    // NOTE: Using display:contents to make wrapper transparent to layout
-    // For getBoundingClientRect() to work, we need to ensure the wrapper has dimensions
-    // We'll use a special data attribute to find the actual content element
-    const wrapperProps: any = {
-      id: node.id,
-      'data-node-id': node.id,
-      'data-wrapper': 'true',
-      ref: dndProps.ref,
-      style: { display: 'contents' }, // Transparent to layout
-      // Spread all DnD-related props onto the wrapper
-      ...dndProps.attributes,
-      ...dndProps.listeners,
-      // Merge styles and classNames
-      className: [dndProps.className, innerProps.className].filter(Boolean).join(' '),
-    };
+    // If DnD props provided, wrap with a div that has id, ref, and all DnD attributes
+    // This guarantees the DOM element has the correct id for document.getElementById
+    // Using display:contents makes the wrapper "transparent" to CSS layout
+    if (dndProps) {
+      // Create the inner element with just its own props (no DnD props)
+      // Automatically merge dndClassName into the inner element's className
+      // This ensures ALL elements get the blue selection highlight without modifying each component
+      const innerProps: any = {
+        ...elementProps,
+        // Merge dndClassName (blue ring) into the element's className
+        className: [dndProps.className, elementProps.className, extraProps?.dndClassName].filter(Boolean).join(' ').trim(),
+        // Pass extra props (e.g., isSelected, childrenCount for ContainerComponent)
+        ...(extraProps || {}),
+      };
+      
+      delete innerProps.key;
+      
+      // Create inner element without DnD props
+      const innerElement = React.createElement(Component, innerProps, children);
+      
+      // Wrap with a div that has ALL DnD props for proper drag-and-drop behavior
+      // This ensures:
+      // 1. document.getElementById(node.id) finds the element
+      // 2. Drag event listeners are on the correct element
+      // NOTE: Using display:contents to make wrapper transparent to layout
+      const wrapperProps: any = {
+        id: node.id,
+        'data-node-id': node.id,
+        'data-wrapper': 'true',
+        ref: dndProps.ref,
+        style: { display: 'contents' }, // Transparent to layout
+        // Spread all DnD-related props onto the wrapper
+        ...dndProps.attributes,
+        ...dndProps.listeners,
+        // The wrapper doesn't need className - visual classes go on inner element
+      };
     
     // Merge styles from dndProps only - do NOT merge innerProps.style
     // innerProps.style contains styles for the INNER element (e.g., zIndex, position)

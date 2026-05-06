@@ -588,17 +588,19 @@ export const elementDefinitions: Record<string, any> = {
       zIndex: 0,
       linkUrl: null,
       linkTarget: '_self',
-      customClass: null,
-      customId: null,
-      responsive: {
-        md: { width: null, minWidth: null, maxWidth: null, height: null, minHeight: null, maxHeight: null, pt: null, pr: null, pb: null, pl: null, mt: null, mr: null, mb: null, ml: null, display: 'flex' },
-        sm: {},
-        base: {},
-      },
-    },
-    controls: [
-      // Content tab
-      { id: 'tag', label: 'HTML Tag', tab: 'content', group: 'Content', type: 'select', responsive: false, default: 'div', options: [{ label: 'div', value: 'div' }, { label: 'section', value: 'section' }, { label: 'article', value: 'article' }, { label: 'aside', value: 'aside' }, { label: 'header', value: 'header' }, { label: 'footer', value: 'footer' }, { label: 'main', value: 'main' }, { label: 'nav', value: 'nav' }] },
+       customClass: null,
+       customId: null,
+       transitionDuration: '200ms',
+       transitionEasing: 'ease',
+       responsive: {
+         md: { width: null, minWidth: null, maxWidth: null, height: null, minHeight: null, maxHeight: null, pt: null, pr: null, pb: null, pl: null, mt: null, mr: null, mb: null, ml: null, display: 'flex' },
+         sm: {},
+         base: {},
+       },
+     },
+     controls: [
+       // Content tab
+       { id: 'tag', label: 'HTML Tag', tab: 'content', group: 'Content', type: 'select', responsive: false, default: 'div', options: [{ label: 'div', value: 'div' }, { label: 'section', value: 'section' }, { label: 'article', value: 'article' }, { label: 'aside', value: 'aside' }, { label: 'header', value: 'header' }, { label: 'footer', value: 'footer' }, { label: 'main', value: 'main' }, { label: 'nav', value: 'nav' }] },
       { id: 'linkUrl', label: 'Link URL', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null, placeholder: 'https://...' },
       { id: 'linkTarget', label: 'Link Target', tab: 'content', group: 'Content', type: 'select', responsive: false, default: '_self', options: [{ label: 'Same Tab', value: '_self' }, { label: 'New Tab', value: '_blank' }] },
       { id: 'overflow', label: 'Overflow', tab: 'content', group: 'Content', type: 'select', responsive: false, default: 'visible', options: [{ label: 'Visible', value: 'visible' }, { label: 'Hidden', value: 'hidden' }, { label: 'Scroll', value: 'scroll' }, { label: 'Auto', value: 'auto' }] },
@@ -644,11 +646,14 @@ export const elementDefinitions: Record<string, any> = {
       { id: 'borderRadius', label: 'Border Radius', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '0px' },
       // Design tab - Effects
       { id: 'boxShadow', label: 'Box Shadow', tab: 'design', group: 'Effects', type: 'text', responsive: false, default: null, placeholder: '0 4px 12px rgba(0,0,0,0.1)' },
-      { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
-      { id: 'zIndex', label: 'Z-Index', tab: 'design', group: 'Effects', type: 'number', min: -100, max: 9999, step: 1, responsive: false, default: 0 },
-    ],
-    get component() { return ContainerComponent; },
-  },
+       { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+       { id: 'zIndex', label: 'Z-Index', tab: 'design', group: 'Effects', type: 'number', min: -100, max: 9999, step: 1, responsive: false, default: 0 },
+       // Design tab - Transition
+       { id: 'transitionDuration', label: 'Transition Duration', tab: 'design', group: 'Transition', type: 'text', responsive: false, default: '200ms' },
+       { id: 'transitionEasing', label: 'Transition Easing', tab: 'design', group: 'Transition', type: 'select', responsive: false, default: 'ease', options: [{ label: 'Ease', value: 'ease' }, { label: 'Linear', value: 'linear' }, { label: 'Ease In', value: 'ease-in' }, { label: 'Ease Out', value: 'ease-out' }, { label: 'Ease In Out', value: 'ease-in-out' }] },
+     ],
+     get component() { return ContainerComponent; },
+   },
   image: {
     type: 'image',
     label: 'Image',
@@ -1453,6 +1458,152 @@ export const CONTAINER_TYPES = ['container'];
 
 // ============= COMPONENTS =============
 
+// Container Component
+export const ContainerComponent: React.FC<any> = (props) => {
+  // ✅ Destructure everything EXCEPT flexDirection, justifyContent, alignItems, margin props
+    const {
+      bgColor, bgImage, bgSize, width, height, minWidth, minHeight, maxWidth, maxHeight,
+      borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap,
+      children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display, flexDir, items,
+      bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl,
+      margin, marginTop, marginRight, marginBottom, marginLeft, activeBreakpoint, className: dndClassName,
+      transitionDuration, transitionEasing
+      } = props;
+
+  // ✅ READ DIRECTLY FROM PROPS (not from destructuring):
+  const flexDirFromProps = props.flexDirection;
+  const justifyContentFromProps = props.justifyContent;
+  const alignItemsFromProps = props.alignItems;
+
+  // ✅ MERGE RESPONSIVE STYLES for builder preview
+  // Use activeBreakpoint from props (passed by renderNode), default to 'md' for preview
+  const bp = activeBreakpoint || 'md';
+  const responsiveStyles = mergeResponsiveStyles(responsive || {}, bp);
+
+  // Map alignment values
+  const mapJustify = (j: string): string => {
+    if (j === 'start') return 'flex-start';
+    if (j === 'center') return 'center';
+    if (j === 'end') return 'flex-end';
+    if (j === 'between') return 'space-between';
+    if (j === 'around') return 'space-around';
+    if (j === 'evenly') return 'space-evenly';
+    return j || 'flex-start';
+  };
+
+  const mapAlign = (a: string): string => {
+    if (!a || a === 'stretch') return 'stretch';
+    if (a === 'start') return 'flex-start';
+    if (a === 'center') return 'center';
+    if (a === 'end') return 'flex-end';
+    if (a === 'baseline') return 'baseline';
+    return a || 'stretch';
+  };
+
+  // Build background
+  let bg = bgColor || undefined;
+  const bw = borderWidth ? (isNaN(Number(borderWidth)) ? borderWidth : `${borderWidth}px`) : undefined;
+
+  if (bgImage) {
+    bg = `url(${cleanUrl(bgImage)}) center / ${bgSize ?? 'cover'} no-repeat`;
+  }
+
+  // Handle gradient
+  if (bgGradient) {
+    const direction = bgGradientDirection || '180deg';
+    if (bgGradientType === 'radial') {
+      bg = `radial-gradient(${bgGradientColor2 || 'center'}, ${bgGradientColor1}, ${bgGradientColor2})`;
+    } else {
+      bg = `linear-gradient(${direction}, ${bgGradientColor1}, ${bgGradientColor2})`;
+    }
+    if (bgImage) {
+      bg = `${bg}, url(${cleanUrl(bgImage)}) center / ${bgSize ?? 'cover'} no-repeat`;
+    }
+  }
+
+  // ✅ BUILD containerStyle - start with base props, then merge responsive styles
+  const containerStyle: React.CSSProperties = {
+    // Base props (only if explicitly set)
+    minHeight: minHeight || undefined,
+    minWidth: minWidth || undefined,
+    maxWidth: maxWidth || undefined,
+    maxHeight: maxHeight || undefined,
+    width: width || undefined,
+    height: height || undefined,
+    borderRadius: borderRadius || undefined,
+    padding: padding || undefined,
+    margin: margin || undefined,
+    marginTop: marginTop || undefined,
+    marginRight: marginRight || undefined,
+    marginBottom: marginBottom || undefined,
+    marginLeft: marginLeft || undefined,
+    flexWrap: flexWrap as any || undefined,
+    textAlign: textAlign as any || undefined,
+    borderWidth: bw || undefined,
+    borderColor: borderColor || undefined,
+    borderStyle: borderStyle || (bw && bw !== '0px' ? 'solid' : undefined),
+    background: bg || undefined,
+    display: display || undefined,
+    gap: gap || undefined,
+    boxShadow: boxShadow || undefined,
+    zIndex: zIndex ?? undefined,
+    position: zIndex !== null && zIndex !== undefined ? 'relative' : undefined,
+    ...(transitionDuration && transitionEasing ? { transition: `all ${transitionDuration} ${transitionEasing}` } : {}),
+  };
+
+  // ✅ Apply flexDirection: check responsive first (short-form key), then props
+  // Note: mergeResponsiveStyles now returns short-form keys (flexDir, not flexDirection)
+  containerStyle.flexDirection = (responsiveStyles.flexDir as any) || flexDirFromProps || flexDir || direction || undefined;
+
+  // ✅ Apply justifyContent: check responsive first (short-form key), then props
+  containerStyle.justifyContent = (responsiveStyles.justify as any) || justifyContentFromProps || justify || undefined;
+
+  // ✅ Apply alignItems: check responsive first (short-form key), then props
+  containerStyle.alignItems = (responsiveStyles.items as any) || alignItemsFromProps || items || align || undefined;
+
+  // ✅ Merge all other responsive styles (padding, margin, gap, etc.)
+  // This ensures responsive values override base props
+  // Note: responsiveStyles now has short-form keys (pt, mt, etc.)
+  // We need to convert them to camelCase for containerStyle using propMap
+  Object.keys(responsiveStyles).forEach(key => {
+    const value = responsiveStyles[key];
+    if (value !== undefined && value !== '') {
+      // Convert short-form to camelCase using propMap
+      const mapping = propMap[key];
+      if (mapping) {
+        (containerStyle as any)[mapping.react] = value;
+      } else {
+        // If no mapping, use key as-is (already camelCase)
+        (containerStyle as any)[key] = value;
+      }
+    }
+  });
+
+  // Handle tag and link
+  const Tag = (tag === 'a' && linkUrl) ? 'a' : tag || 'div';
+  const linkProps = (tag === 'a' && linkUrl) ? { href: linkUrl } : {};
+
+  // ✅ Generate responsive styles as <style> tags for builder preview
+  const responsiveStylesElement = generateResponsiveStyles(id, responsive);
+
+  return (
+    <>
+      {/* Render responsive styles */}
+      {responsiveStylesElement}
+      
+      <Tag
+        id={id}
+        data-node-id={id}
+        style={containerStyle}
+        className={`${dndClassName || ''} ${customClass || ''}`.trim()}
+        {...linkProps}
+      >
+        {children}
+      </Tag>
+    </>
+  );
+};
+
 // Heading Component - SIMPLIFIED & ROBUST
 export const HeadingComponent: React.FC<any> = (props) => {
   const {
@@ -1462,7 +1613,7 @@ export const HeadingComponent: React.FC<any> = (props) => {
     textTransform, letterSpacing, wordSpacing, lineHeight,
     id, customClass, customId, boxShadow, zIndex, responsive,
     fontFamily, fontStyle, textShadow, linkUrl, linkTarget, tag,
-    pt, pr, pb, pl, mt, mr, mb, ml
+    pt, pr, pb, pl, mt, mr, mb, ml, transitionDuration, transitionEasing
   } = props;
 
   // Normalize heading level
@@ -1485,60 +1636,70 @@ export const HeadingComponent: React.FC<any> = (props) => {
 
   // Use textAlign if available (responsive), fall back to align (legacy)
   const alignment = textAlign || align || undefined;
-  const alignClass = alignment ? getTextAlignmentClass(alignment) : '';
+  const alignClass = alignment === 'center' ? 'items-center' : alignment === 'right' ? 'items-end' : (alignment ? 'items-start' : '');
 
-  // Build text shadow
-  const textShadowStyle = textShadow || undefined;
+  const headingStyle: React.CSSProperties = {
+    color: color || undefined,
+    background: bg || undefined,
+    fontSize: fontSize || undefined,
+    fontWeight: fontWeight || undefined,
+    textDecoration: textDecoration || undefined,
+    fontFamily: fontFamily || undefined,
+    fontStyle: fontStyle || undefined,
+    textTransform: textTransform || undefined,
+    letterSpacing: letterSpacing || undefined,
+    wordSpacing: wordSpacing || undefined,
+    lineHeight: lineHeight || undefined,
+    textShadow: textShadow || undefined,
+    minHeight: minHeight || undefined,
+    borderRadius: borderRadius || undefined,
+    borderWidth: borderWidth || undefined,
+    borderColor: borderColor || undefined,
+    borderStyle: borderStyle || undefined,
+    boxShadow: boxShadow || undefined,
+    width: width || undefined,
+    height: height || undefined,
+    opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
+    zIndex: zIndex ?? undefined,
+    position: (zIndex ?? null) !== null ? 'relative' : undefined,
+    textAlign: alignment as any || undefined,
+    paddingTop: pt || undefined,
+    paddingRight: pr || undefined,
+    paddingBottom: pb || undefined,
+    paddingLeft: pl || undefined,
+    marginTop: mt || undefined,
+    marginRight: mr || undefined,
+    marginBottom: mb || undefined,
+    marginLeft: ml || undefined,
+    ...(transitionDuration && transitionEasing ? { transition: `all ${transitionDuration} ${transitionEasing}` } : {}),
+  };
 
-  // Build font family
-  const fontFamilyStyle = fontFamily || undefined;
+  const headingContent = (
+    <Tag
+      id={id}
+      style={headingStyle}
+      className={customClass || ''}
+    >
+      {htmlContent}
+    </Tag>
+  );
 
   return (
-    <div id={customId || `${id}-wrap`} className={`${alignClass} ${customClass || ''}`}>
-      <Tag
-        id={id}
-        className={customClass || ''}
-        style={{
-          color: color || undefined,
-          textDecoration: textDecoration || undefined,
-          opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
-          width: width || undefined,
-          height: height || undefined,
-          background: bg,
-          minHeight: minHeight || undefined,
-          borderRadius: borderRadius || undefined,
-          borderColor: borderColor || undefined,
-          borderWidth: borderWidth || undefined,
-          borderStyle: (borderWidth && borderWidth !== '0px') ? 'solid' : 'none',
-          textAlign: alignment as any || undefined,
-          boxShadow: boxShadow || undefined,
-          zIndex: zIndex ?? undefined,
-          position: (zIndex ?? null) !== null ? 'relative' : undefined,
-          fontSize: fontSize || undefined,
-          fontWeight: fontWeight || undefined,
-          textTransform: (textTransform && textTransform !== 'none') ? textTransform : undefined,
-          letterSpacing: (letterSpacing && letterSpacing !== 'normal') ? letterSpacing : undefined,
-          wordSpacing: (wordSpacing && wordSpacing !== 'normal') ? wordSpacing : undefined,
-          lineHeight: (lineHeight && lineHeight !== 'normal') ? lineHeight : undefined,
-          fontFamily: fontFamilyStyle,
-          fontStyle: (fontStyle && fontStyle !== 'normal') ? fontStyle : undefined,
-          textShadow: textShadowStyle,
-          paddingTop: pt || undefined,
-          paddingRight: pr || undefined,
-          paddingBottom: pb || undefined,
-          paddingLeft: pl || undefined,
-          marginTop: mt || undefined,
-          marginRight: mr || undefined,
-          marginBottom: mb || undefined,
-          marginLeft: ml || undefined,
-        }}
-        dangerouslySetInnerHTML={{ __html: htmlContent }}
-      />
-    </div>
+    <>
+      <div id={customId || `${id}-wrap`} className={`${alignClass}`.trim()}>
+        {linkUrl ? (
+          <a href={linkUrl} target={linkTarget || '_self'} style={{ textDecoration: 'none', color: 'inherit' }}>
+            {headingContent}
+          </a>
+        ) : (
+          headingContent
+        )}
+      </div>
+    </>
   );
 };
 
-// Text Component (Paragraph) - SIMPLIFIED & ROBUST
+// Text Component (Paragraph)
 export const TextComponent: React.FC<any> = (props) => {
   const {
     text, html, content, align, textAlign, color, textDecoration, opacity, minHeight,
@@ -1612,7 +1773,7 @@ export const TextComponent: React.FC<any> = (props) => {
   );
 };
 
-// Button Component - SIMPLIFIED & ROBUST
+// Button Component
 export const ButtonComponent: React.FC<any> = (props) => {
   const {
     text, label, linkUrl, url, href, bgColor, color, textColor, borderRadius, borderWidth, borderColor, borderStyle,
@@ -1717,151 +1878,7 @@ export const ButtonComponent: React.FC<any> = (props) => {
   );
 };
 
-// Container Component - SIMPLIFIED & ROBUST
-export const ContainerComponent: React.FC<any> = (props) => {
-  // ✅ Destructure everything EXCEPT flexDirection, justifyContent, alignItems, margin props
-    const {
-      bgColor, bgImage, bgSize, width, height, minWidth, minHeight, maxWidth, maxHeight,
-      borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap,
-      children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display, flexDir, items,
-      bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl,
-      margin, marginTop, marginRight, marginBottom, marginLeft, activeBreakpoint, className: dndClassName
-      } = props;
-
-  // ✅ READ DIRECTLY FROM PROPS (not from destructuring):
-  const flexDirFromProps = props.flexDirection;
-  const justifyContentFromProps = props.justifyContent;
-  const alignItemsFromProps = props.alignItems;
-
-  // ✅ MERGE RESPONSIVE STYLES for builder preview
-  // Use activeBreakpoint from props (passed by renderNode), default to 'md' for preview
-  const bp = activeBreakpoint || 'md';
-  const responsiveStyles = mergeResponsiveStyles(responsive || {}, bp);
-
-  // Map alignment values
-  const mapJustify = (j: string): string => {
-    if (j === 'start') return 'flex-start';
-    if (j === 'center') return 'center';
-    if (j === 'end') return 'flex-end';
-    if (j === 'between') return 'space-between';
-    if (j === 'around') return 'space-around';
-    if (j === 'evenly') return 'space-evenly';
-    return j || 'flex-start';
-  };
-
-  const mapAlign = (a: string): string => {
-    if (!a || a === 'stretch') return 'stretch';
-    if (a === 'start') return 'flex-start';
-    if (a === 'center') return 'center';
-    if (a === 'end') return 'flex-end';
-    if (a === 'baseline') return 'baseline';
-    return a || 'stretch';
-  };
-
-  // Build background
-  let bg = bgColor || undefined;
-  const bw = borderWidth ? (isNaN(Number(borderWidth)) ? borderWidth : `${borderWidth}px`) : undefined;
-
-  if (bgImage) {
-    bg = `url(${cleanUrl(bgImage)}) center / ${bgSize ?? 'cover'} no-repeat`;
-  }
-
-  // Handle gradient
-  if (bgGradient) {
-    const direction = bgGradientDirection || '180deg';
-    if (bgGradientType === 'radial') {
-      bg = `radial-gradient(${bgGradientColor2 || 'center'}, ${bgGradientColor1}, ${bgGradientColor2})`;
-    } else {
-      bg = `linear-gradient(${direction}, ${bgGradientColor1}, ${bgGradientColor2})`;
-    }
-    if (bgImage) {
-      bg = `${bg}, url(${cleanUrl(bgImage)}) center / ${bgSize ?? 'cover'} no-repeat`;
-    }
-  }
-
-  // ✅ BUILD containerStyle - start with base props, then merge responsive styles
-  const containerStyle: React.CSSProperties = {
-    // Base props (only if explicitly set)
-    minHeight: minHeight || undefined,
-    minWidth: minWidth || undefined,
-    maxWidth: maxWidth || undefined,
-    maxHeight: maxHeight || undefined,
-    width: width || undefined,
-    height: height || undefined,
-    borderRadius: borderRadius || undefined,
-    padding: padding || undefined,
-    margin: margin || undefined,
-    marginTop: marginTop || undefined,
-    marginRight: marginRight || undefined,
-    marginBottom: marginBottom || undefined,
-    marginLeft: marginLeft || undefined,
-    flexWrap: flexWrap as any || undefined,
-    textAlign: textAlign as any || undefined,
-    borderWidth: bw || undefined,
-    borderColor: borderColor || undefined,
-    borderStyle: borderStyle || (bw && bw !== '0px' ? 'solid' : undefined),
-    background: bg || undefined,
-    display: display || undefined,
-    gap: gap || undefined,
-    boxShadow: boxShadow || undefined,
-    zIndex: zIndex ?? undefined,
-    position: zIndex !== null && zIndex !== undefined ? 'relative' : undefined,
-  };
-
-  // ✅ Apply flexDirection: check responsive first (short-form key), then props
-  // Note: mergeResponsiveStyles now returns short-form keys (flexDir, not flexDirection)
-  containerStyle.flexDirection = (responsiveStyles.flexDir as any) || flexDirFromProps || flexDir || direction || undefined;
-
-  // ✅ Apply justifyContent: check responsive first (short-form key), then props
-  containerStyle.justifyContent = (responsiveStyles.justify as any) || justifyContentFromProps || justify || undefined;
-
-  // ✅ Apply alignItems: check responsive first (short-form key), then props
-  containerStyle.alignItems = (responsiveStyles.items as any) || alignItemsFromProps || items || align || undefined;
-
-  // ✅ Merge all other responsive styles (padding, margin, gap, etc.)
-  // This ensures responsive values override base props
-  // Note: responsiveStyles now has short-form keys (pt, mt, etc.)
-  // We need to convert them to camelCase for containerStyle using propMap
-  Object.keys(responsiveStyles).forEach(key => {
-    const value = responsiveStyles[key];
-    if (value !== undefined && value !== '') {
-      // Convert short-form to camelCase using propMap
-      const mapping = propMap[key];
-      if (mapping) {
-        (containerStyle as any)[mapping.react] = value;
-      } else {
-        // If no mapping, use key as-is (already camelCase)
-        (containerStyle as any)[key] = value;
-      }
-    }
-  });
-
-  // Handle tag and link
-  const Tag = (tag === 'a' && linkUrl) ? 'a' : tag || 'div';
-  const linkProps = (tag === 'a' && linkUrl) ? { href: linkUrl } : {};
-
-  // ✅ Generate responsive styles as <style> tags for builder preview
-  const responsiveStylesElement = generateResponsiveStyles(id, responsive);
-
-  return (
-    <>
-      {/* Render responsive styles */}
-      {responsiveStylesElement}
-      
-      <Tag
-        id={id}
-        data-node-id={id}
-        style={containerStyle}
-        className={`${dndClassName || ''} ${customClass || ''}`.trim()}
-        {...linkProps}
-      >
-        {children}
-      </Tag>
-    </>
-  );
-};
-
-// Image Component - SIMPLIFIED & ROBUST
+// Image Component
 export const ImageComponent: React.FC<any> = (props) => {
   const {
     src, alt, align, textAlign, caption, id, customClass, customId,
@@ -1973,7 +1990,7 @@ export const DividerComponent: React.FC<any> = (props) => {
   const showMiddle = showMiddleContent && middleType !== 'none';
 
   return (
-    <div id={customId || id} className={`${customClass || ''}`} style={{ paddingTop: padding || undefined, paddingBottom: padding || undefined, marginTop, marginBottom, opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined }}>
+    <div id={customId || id} className={`${customClass || ''}`.trim()} style={{ paddingTop: padding || undefined, paddingBottom: padding || undefined, marginTop, marginBottom, opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined }}>
       <div style={{ textAlign: alignment as any }}>
         <hr style={{
           borderColor: lineColor,

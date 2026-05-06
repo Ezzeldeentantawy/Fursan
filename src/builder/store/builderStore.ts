@@ -33,6 +33,9 @@ interface BuilderState {
   setActiveBp: (bp: Breakpoint) => void;
   setCustomCss: (css: string | null) => void;
   setCustomJs: (js: string | null) => void;
+  // New: Track if we should auto-focus the design tab for newly added elements
+  pendingDesignTabFocus: boolean;
+  setPendingDesignTabFocus: (value: boolean) => void;
 }
 
 const defaultTree: BuilderNode = { 
@@ -69,6 +72,7 @@ export const useBuilderStore = create<BuilderState>()(
       isPreviewMode: false,
       customCss: null,
       customJs: null,
+      pendingDesignTabFocus: false,
        activeDragId: null,
        activeDragType: null,
        overContainerId: null,
@@ -82,6 +86,7 @@ export const useBuilderStore = create<BuilderState>()(
        setActiveBp: (bp) => set({ activeBp: bp }),
        setCustomCss: (css) => set({ customCss: css }),
        setCustomJs: (js) => set({ customJs: js }),
+       setPendingDesignTabFocus: (value) => set({ pendingDesignTabFocus: value }),
        
        addNode: (parentId, node, index) => {
          console.log('[BuilderStore] addNode called with parentId:', parentId, 'node:', node, 'index:', index);
@@ -105,6 +110,8 @@ export const useBuilderStore = create<BuilderState>()(
            
            return {
              tree: newTree,
+             selectedId: node.id,
+             pendingDesignTabFocus: true, // Auto-focus design tab for new elements
            };
          });
        },

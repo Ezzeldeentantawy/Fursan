@@ -29,6 +29,7 @@ export const DroppableNode: React.FC<DroppableNodeProps> = ({
 
   const isContainer = CONTAINER_TYPES.includes(node.type);
   const isDraggingFromPanel = activeDragId !== null && activeDragType !== null;
+  const childrenCount = node.children ? node.children.length : 0;
 
   // Set up draggable for ALL elements (for reordering)
   const {
@@ -115,7 +116,7 @@ export const DroppableNode: React.FC<DroppableNodeProps> = ({
 
   return (
     <>
-      {renderNode(node, children, dndProps, activeBreakpoint)}
+      {renderNode(node, children, dndProps, activeBreakpoint, { isSelected, childrenCount })}
       
       {contextMenu && (
         <ContextMenu
