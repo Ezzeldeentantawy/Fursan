@@ -126,7 +126,7 @@ export const useBuilderStore = create<BuilderState>()(
         console.log('[BuilderStore] props.responsive:', props.responsive);
         return set((state) => {
           const newTree = treeUtils.updateNodeProps(state.tree, id, props);
-          console.log('[BuilderStore] After update, node props:', findNode(newTree, id)?.props);
+          console.log('[BuilderStore] After update, node props:', treeUtils.findNode(newTree, id)?.props);
           return { tree: newTree };
         });
       },

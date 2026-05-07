@@ -97,6 +97,71 @@ const DEFAULT_EXPANDED = new Set([
   'Content', 'Sizing', 'Spacing', 'Typography', 'Background', 'Alignment', 'Layout'
 ]);
 
+// SpacingControl component — always shows 4 separate fields, no link toggle
+const SpacingControl: React.FC<{
+  control: ControlDef;
+  props: string[];
+  getPropValue: (id: string) => any;
+  setPropValue: (id: string, value: any) => void;
+  parseNumberValue: (value: any) => { num: number | ''; unit: string };
+  formatNumberValue: (num: number | '', unit: string) => string;
+}> = ({ control, props, getPropValue, setPropValue, parseNumberValue, formatNumberValue }) => {
+  const labels = ['Top', 'Right', 'Bottom', 'Left'];
+
+  // Read values for all sides
+  const values: Record<string, { num: number | ''; unit: string }> = {};
+  props.forEach(prop => {
+    const propValue = getPropValue(prop);
+    values[prop] = parseNumberValue(propValue);
+  });
+
+  const handleChange = (prop: string, num: number | '', unit: string) => {
+    setPropValue(prop, formatNumberValue(num, unit));
+  };
+
+  const handleUnitChange = (prop: string, unit: string) => {
+    const freshVal = parseNumberValue(getPropValue(prop));
+    setPropValue(prop, formatNumberValue(freshVal.num, unit));
+  };
+
+  return (
+    <div className="space-y-2 px-3 py-2">
+      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        {control.label}
+      </label>
+
+      <div className="grid grid-cols-4 gap-1.5">
+        {props.map((prop, i) => (
+          <div key={prop} className="flex flex-col items-center gap-0.5">
+            <input
+              type="number"
+              min="0"
+              value={values[prop].num}
+              onChange={(e) => handleChange(
+                prop,
+                e.target.value ? parseFloat(e.target.value) : '',
+                values[prop].unit
+              )}
+              className="w-full h-8 px-1 text-center text-xs bg-slate-800/50 border border-slate-700 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              placeholder="0"
+            />
+            <span className="text-[8px] text-slate-500 uppercase">{labels[i]}</span>
+            <select
+              value={values[prop].unit}
+              onChange={(e) => handleUnitChange(prop, e.target.value)}
+              className="w-full h-5 px-0.5 bg-slate-700 border border-slate-600 rounded text-[8px] text-slate-300 focus:outline-none cursor-pointer text-center"
+            >
+              {['px', '%', 'em', 'rem', 'vw', 'vh'].map(u => (
+                <option key={u} value={u} className="bg-slate-800 text-slate-200">{u}</option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const ElementSettings: React.FC = () => {
   const selectedId = useBuilderStore((state) => state.selectedId);
   const tree = useBuilderStore((state) => state.tree);
@@ -294,107 +359,6 @@ export const ElementSettings: React.FC = () => {
             </button>
           );
         })}
-      </div>
-    );
-  };
-
-  const renderSpacing = (control: ControlDef, value: any, onChange: (v: any) => void, props: string[]) => {
-    const [linked, setLinked] = useState(control.linkedSides !== false);
-
-    // Parse values for each side
-    const values: Record<string, { num: number | '', unit: string }> = {};
-    props.forEach(prop => {
-      const propValue = getPropValue(prop);
-      values[prop] = parseNumberValue(propValue);
-    });
-
-    const handleChange = (prop: string, num: number | '', unit: string) => {
-      if (linked) {
-        // Update all sides
-        props.forEach(p => {
-          setPropValue(p, formatNumberValue(num, unit));
-        });
-      } else {
-        setPropValue(prop, formatNumberValue(num, unit));
-      }
-    };
-
-    const labels = ['Top', 'Right', 'Bottom', 'Left'];
-    const propKeys = ['pt', 'pr', 'pb', 'pl'];
-
-    return (
-      <div className="space-y-2">
-        <div className="grid grid-cols-3 gap-1 items-center">
-          {/* Top */}
-          <div className="col-start-2">
-            <input
-              type="number"
-              value={values[propKeys[0]].num}
-              onChange={(e) => handleChange(propKeys[0], e.target.value ? parseFloat(e.target.value) : '', values[propKeys[0]].unit)}
-              className="w-full px-2 py-1 text-center bg-slate-800/50 border border-slate-700 rounded text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <div className="text-[8px] text-slate-500 text-center mt-0.5">{labels[0]}</div>
-          </div>
-          {/* Left */}
-          <div>
-            <input
-              type="number"
-              value={values[propKeys[3]].num}
-              onChange={(e) => handleChange(propKeys[3], e.target.value ? parseFloat(e.target.value) : '', values[propKeys[3]].unit)}
-              className="w-full px-2 py-1 text-center bg-slate-800/50 border border-slate-700 rounded text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <div className="text-[8px] text-slate-500 text-center mt-0.5">{labels[3]}</div>
-          </div>
-          {/* Center gear icon */}
-          <div className="flex items-center justify-center">
-            <Settings size={14} className="text-slate-600" />
-          </div>
-          {/* Right */}
-          <div>
-            <input
-              type="number"
-              value={values[propKeys[1]].num}
-              onChange={(e) => handleChange(propKeys[1], e.target.value ? parseFloat(e.target.value) : '', values[propKeys[1]].unit)}
-              className="w-full px-2 py-1 text-center bg-slate-800/50 border border-slate-700 rounded text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <div className="text-[8px] text-slate-500 text-center mt-0.5">{labels[1]}</div>
-          </div>
-          {/* Bottom */}
-          <div className="col-start-2">
-            <input
-              type="number"
-              value={values[propKeys[2]].num}
-              onChange={(e) => handleChange(propKeys[2], e.target.value ? parseFloat(e.target.value) : '', values[propKeys[2]].unit)}
-              className="w-full px-2 py-1 text-center bg-slate-800/50 border border-slate-700 rounded text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <div className="text-[8px] text-slate-500 text-center mt-0.5">{labels[2]}</div>
-          </div>
-        </div>
-        {/* Unit selectors */}
-        <div className="flex gap-1">
-          {props.map((prop, i) => (
-            <select
-              key={prop}
-              value={values[prop].unit}
-              onChange={(e) => handleChange(prop, values[prop].num, e.target.value)}
-              className="flex-1 px-1 py-0.5 bg-slate-700 border border-slate-600 rounded text-[9px] text-slate-300 focus:outline-none"
-            >
-              {['px', '%', 'em', 'rem', 'vw', 'vh'].map(u => (
-                <option key={u} value={u}>{u}</option>
-              ))}
-            </select>
-          ))}
-        </div>
-        {/* Link all sides */}
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={linked}
-            onChange={(e) => setLinked(e.target.checked)}
-            className="w-3 h-3 accent-blue-500"
-          />
-          <span className="text-[10px] text-slate-400">Link all sides</span>
-        </label>
       </div>
     );
   };
@@ -1327,10 +1291,17 @@ export const ElementSettings: React.FC = () => {
         return renderButtonGroup(control, value, (v) => setPropValue(control.id, v));
 
       case 'spacing': {
-        // Determine if this is padding or margin based on control.id or group
-        const isPadding = control.id.includes('padding') || control.group?.toLowerCase().includes('padding');
-        const props = isPadding ? ['pt', 'pr', 'pb', 'pl'] : ['mt', 'mr', 'mb', 'ml'];
-        return renderSpacing(control, value, (v) => setPropValue(control.id, v), props);
+        const spacingProps = control.id === 'padding' ? ['pt', 'pr', 'pb', 'pl'] : ['mt', 'mr', 'mb', 'ml'];
+        return (
+          <SpacingControl
+            control={control}
+            props={spacingProps}
+            getPropValue={getPropValue}
+            setPropValue={setPropValue}
+            parseNumberValue={parseNumberValue}
+            formatNumberValue={formatNumberValue}
+          />
+        );
       }
 
       case 'sizing':
@@ -1510,11 +1481,16 @@ export const ElementSettings: React.FC = () => {
                   </h5>
                 )}
                 <div className="space-y-3">
-                  {groupControls.map((control) => (
-                    <ControlField key={control.id} control={control}>
-                      {renderControl(control)}
-                    </ControlField>
-                  ))}
+                  {groupControls.map((control) => {
+                    if (control.type === 'spacing') {
+                      return <div key={control.id}>{renderControl(control)}</div>;
+                    }
+                    return (
+                      <ControlField key={control.id} control={control}>
+                        {renderControl(control)}
+                      </ControlField>
+                    );
+                  })}
                 </div>
               </div>
             ))}
