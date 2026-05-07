@@ -41,9 +41,11 @@ function generateResponsiveStyles(blockId: string, responsive: Record<string, Re
   let css = '';
   const normalizedBlockId = getBlockId(blockId);
 
-  // Use breakpoints from DynamicPages
-  breakpoints.forEach((bpConfig) => {
-    const bp = bpConfig.key;
+  // Output order: md (default, no query) → base (max-width) → sm (min+max)
+  const outputOrder = ['md', 'base', 'sm'];
+  outputOrder.forEach((bp) => {
+    const bpConfig = breakpoints.find(b => b.key === bp);
+    if (!bpConfig) return;
     const props = responsive[bp];
     if (!props || Object.keys(props).length === 0) return;
 
@@ -103,18 +105,19 @@ function generateResponsiveStyles(blockId: string, responsive: Record<string, Re
       let mediaQuery = '';
       const { minWidth, maxWidth } = bpConfig;
 
-      // Handle base breakpoint (minWidth === 0, maxWidth !== null)
-      // Handle sm breakpoint (minWidth > 0, maxWidth !== null)
-      // Handle md breakpoint (minWidth > 0, maxWidth === null)
-      if (minWidth === 0 && maxWidth !== null) {
-        // Mobile (base): 0 to maxWidth
-        mediaQuery = `@media (max-width: ${maxWidth}px) { ${targetSelector} { ${allRules} } }\n`;
+      // Desktop-first approach:
+      // - md (desktop, minWidth>0, maxWidth===null): no media query = default styles
+      // - sm (tablet, minWidth>0, maxWidth!==null): @media (min-width) and (max-width)
+      // - base (mobile, minWidth===0): @media (max-width)
+      if (minWidth !== null && maxWidth === null) {
+        // Desktop (md): no media query — applied as default
+        mediaQuery = `${targetSelector} { ${allRules} }\n`;
       } else if (minWidth !== null && maxWidth !== null) {
         // Tablet (sm): minWidth to maxWidth
         mediaQuery = `@media (min-width: ${minWidth}px) and (max-width: ${maxWidth}px) { ${targetSelector} { ${allRules} } }\n`;
-      } else if (minWidth !== null && maxWidth === null) {
-        // Desktop (md): minWidth and up
-        mediaQuery = `@media (min-width: ${minWidth}px) { ${targetSelector} { ${allRules} } }\n`;
+      } else if (minWidth === 0 && maxWidth !== null) {
+        // Mobile (base): 0 to maxWidth
+        mediaQuery = `@media (max-width: ${maxWidth}px) { ${targetSelector} { ${allRules} } }\n`;
       }
 
       css += mediaQuery;
@@ -416,7 +419,6 @@ const PageRenderer: React.FC = () => {
             background: bgImageUrl,
             display: p.display || undefined,
             flexDirection: p.flexDirection || p.flexDir || undefined,
-            gap: p.gap || undefined,
             boxShadow: p.boxShadow || undefined,
             zIndex: p.zIndex ?? undefined, 
             position: (p.zIndex ?? null) !== null ? 'relative' : undefined

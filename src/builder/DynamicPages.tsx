@@ -1309,10 +1309,20 @@ export const mergeResponsiveStyles = (responsiveConfig: any, activeBreakpoint: s
 
   const breakpointKeys = breakpoints.map(bp => bp.key);
   const activeIndex = breakpointKeys.indexOf(activeBreakpoint);
+  const mdIndex = breakpointKeys.indexOf('md');
   const mergedStyles: any = {};
 
-  for (let i = 0; i <= activeIndex; i++) {
+  // Desktop-first: iterate from md (default) down to active breakpoint
+  // md is always included (no media query = default).
+  // The active breakpoint's own values are included (they override default via @media).
+  // Other breakpoints' values are NOT included (different media query range).
+  for (let i = breakpointKeys.length - 1; i >= 0; i--) {
     const breakpointKey = breakpointKeys[i];
+
+    // Include md always (default); include active breakpoint's own values (overrides)
+    const shouldInclude = (i === mdIndex) || (i === activeIndex);
+    if (!shouldInclude) continue;
+
     const breakpointProps = responsiveConfig[breakpointKey];
     if (!breakpointProps) continue;
 
@@ -1494,6 +1504,11 @@ export const ContainerComponent: React.FC<any> = (props) => {
       }
     }
   });
+
+  // ✅ Gap is now a global (non-responsive) prop — re-assert base gap so responsive gap doesn't leak
+  if (gap !== undefined && gap !== null && gap !== '') {
+    containerStyle.gap = gap;
+  }
 
   // Empty container defaults: show placeholder dimensions and dashed blue border
   // These are removed automatically once children are added
@@ -1881,7 +1896,7 @@ export const ImageComponent: React.FC<any> = (props) => {
   return (
     <>
       {hoverStyle && <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />}
-      <div id={customId || `${id}-wrap`} className={`${alignClass} ${customClass || ''}`}>
+      <div id={customId || `${id}-wrap`} className={`flex flex-col ${alignClass} ${customClass || ''}`}>
         {linkUrl && linkType !== 'none' ? (
           <a href={linkUrl} target={linkTarget || '_self'}>
             {imageContent}
