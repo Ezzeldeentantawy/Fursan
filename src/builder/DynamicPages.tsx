@@ -1467,7 +1467,8 @@ export const ContainerComponent: React.FC<any> = (props) => {
       children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display, flexDir, items,
       bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl,
       margin, marginTop, marginRight, marginBottom, marginLeft, activeBreakpoint, className: dndClassName,
-      transitionDuration, transitionEasing
+      transitionDuration, transitionEasing,
+      childrenCount
       } = props;
 
   // ✅ READ DIRECTLY FROM PROPS (not from destructuring):
@@ -1579,6 +1580,16 @@ export const ContainerComponent: React.FC<any> = (props) => {
     }
   });
 
+  // Empty container defaults: show placeholder dimensions and dashed blue border
+  // These are removed automatically once children are added
+  if (childrenCount === 0) {
+    if (!width && !containerStyle.width) containerStyle.width = '100%';
+    if (!height && !containerStyle.height) containerStyle.height = '150px';
+    containerStyle.borderWidth = '2px';
+    containerStyle.borderColor = '#3b82f6';
+    containerStyle.borderStyle = 'dashed';
+  }
+
   // Handle tag and link
   const Tag = (tag === 'a' && linkUrl) ? 'a' : tag || 'div';
   const linkProps = (tag === 'a' && linkUrl) ? { href: linkUrl } : {};
@@ -1679,9 +1690,8 @@ export const HeadingComponent: React.FC<any> = (props) => {
       id={id}
       style={headingStyle}
       className={customClass || ''}
-    >
-      {htmlContent}
-    </Tag>
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
+    />
   );
 
   return (

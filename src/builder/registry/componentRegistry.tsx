@@ -189,6 +189,12 @@ export function renderNode(
       
       delete innerProps.key;
       
+      // Also merge DnD className into customClass, since non-container components
+      // (Heading, Text, Image, Button, Divider, Spacer, etc.) use customClass instead of className
+      if (dndProps?.className) {
+        innerProps.customClass = [dndProps.className, innerProps.customClass].filter(Boolean).join(' ').trim();
+      }
+      
       // Create inner element without DnD props
       const innerElement = React.createElement(Component, innerProps, children);
       
