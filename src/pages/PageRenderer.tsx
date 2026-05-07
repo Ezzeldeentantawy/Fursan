@@ -12,6 +12,7 @@ import {
 import { WIDGETS } from '../widgets';
 import { breakpoints } from '../builder/DynamicPages';
 import { propMap } from '../builder/registry/componentRegistry';
+import DynamicIcon from '../icons';
 
 const pagesApi = basePagesApi as any;
 
@@ -668,6 +669,9 @@ const PageRenderer: React.FC = () => {
               </div>
             </React.Fragment>
           );
+        }
+        case 'iconElement': {
+          return <DynamicIcon {...p} id={block.id} />;
         }
         default: return null;
       }

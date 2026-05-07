@@ -5,6 +5,7 @@ import { ELEMENTS_BY_TYPE, ControlDef } from '../DynamicPages';
 import { findNode } from '../utils/treeUtils';
 import { RichTextEditor } from './RichTextEditor';
 import { MediaBrowser } from './MediaBrowser';
+import { IconPicker, DynamicIcon } from '../../icons';
 
 type TabKey = 'content' | 'alignment' | 'design';
 
@@ -177,6 +178,7 @@ export const ElementSettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('content');
   const [showMediaBrowser, setShowMediaBrowser] = useState(false);
   const [mediaBrowserTargetKey, setMediaBrowserTargetKey] = useState<string>('');
+  const [showIconPicker, setShowIconPicker] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(DEFAULT_EXPANDED);
 
   // Auto-switch to design tab when pendingDesignTabFocus is true (new element added)
@@ -335,6 +337,12 @@ export const ElementSettings: React.FC = () => {
     if (mediaBrowserTargetKey) {
       setPropValue(mediaBrowserTargetKey, url);
     }
+  };
+
+  const handleIconSelect = (iconName: string, packType: string) => {
+    setPropValue('icon', iconName);
+    setPropValue('iconType', packType);
+    setShowIconPicker(false);
   };
 
   const openMediaBrowser = (controlKey: string) => {
@@ -1400,6 +1408,32 @@ export const ElementSettings: React.FC = () => {
       case 'htmlTag':
         return renderHtmlTag(control, value, (v) => setPropValue(control.id, v));
 
+      case 'iconPicker': {
+        const iconName = value;
+        const packType = getPropValue('iconType') || getPropValue('source') || 'lucide';
+        return (
+          <div className="flex items-center gap-2 p-2 bg-slate-800/50 rounded-lg border border-slate-700">
+            <div className="w-9 h-9 flex items-center justify-center bg-slate-800 rounded-lg shrink-0 overflow-hidden">
+              {iconName ? (
+                <DynamicIcon icon={iconName} iconType={packType} iconSize="20px" />
+              ) : (
+                <span className="text-slate-600 text-[10px] font-bold">—</span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] text-white font-medium truncate">{iconName || 'No icon selected'}</p>
+              <p className="text-[9px] text-slate-500">{packType}</p>
+            </div>
+            <button
+              onClick={() => setShowIconPicker(true)}
+              className="px-2.5 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-md text-[10px] font-bold hover:bg-purple-500/30 transition-colors whitespace-nowrap shrink-0"
+            >
+              {iconName ? 'Change' : 'Select'}
+            </button>
+          </div>
+        );
+      }
+
       default:
         return (
           <input
@@ -1610,6 +1644,23 @@ export const ElementSettings: React.FC = () => {
         onClose={() => setShowMediaBrowser(false)}
         onSelect={handleMediaSelect}
       />
+
+      {/* Icon Picker Modal */}
+      {showIconPicker && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]"
+          onClick={() => setShowIconPicker(false)}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <IconPicker
+              selectedIcon={getPropValue('icon')}
+              selectedPack={getPropValue('iconType') || getPropValue('source') || 'lucide'}
+              onSelect={handleIconSelect}
+              onClose={() => setShowIconPicker(false)}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };
