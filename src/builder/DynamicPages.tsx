@@ -1595,7 +1595,8 @@ export const ContainerComponent: React.FC<any> = (props) => {
   const linkProps = (tag === 'a' && linkUrl) ? { href: linkUrl } : {};
 
   // ✅ Generate responsive styles as <style> tags for builder preview
-  const responsiveStylesElement = generateResponsiveStyles(id, responsive);
+  // Skip in builder (activeBreakpoint set) — inline styles from mergeResponsiveStyles are used instead
+  const responsiveStylesElement = !activeBreakpoint ? generateResponsiveStyles(id, responsive) : null;
 
   return (
     <>
@@ -2086,7 +2087,7 @@ export const ListItemComponent: React.FC<any> = (props) => {
 
   return (
     <>
-      {generateResponsiveStyles(id, responsive)}
+      {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
       <div
         id={customId || id}
         style={{
@@ -2199,7 +2200,7 @@ export const IconElementComponent: React.FC<any> = (props) => {
   if (linkUrl) {
     return (
       <>
-        {generateResponsiveStyles(id, responsive)}
+        {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
         <a href={linkUrl} style={{ textDecoration: 'none' }}>
           {content}
         </a>
@@ -2209,7 +2210,7 @@ export const IconElementComponent: React.FC<any> = (props) => {
 
   return (
     <>
-      {generateResponsiveStyles(id, responsive)}
+      {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
       {content}
     </>
   );
@@ -2237,7 +2238,7 @@ export const NestedTimelineComponent: React.FC<any> = (props) => {
 
   return (
     <>
-      {generateResponsiveStyles(id, responsive)}
+      {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
       <div
         id={customId || id}
         style={{
@@ -2371,7 +2372,7 @@ export const ImageBoxComponent: React.FC<any> = (props) => {
 
   return (
     <>
-      {generateResponsiveStyles(id, responsive)}
+      {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
       <div
         id={customId || id}
         style={{
@@ -2451,7 +2452,7 @@ export const AccordionItemComponent: React.FC<any> = (props) => {
 
   return (
     <>
-      {generateResponsiveStyles(id, responsive)}
+      {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
       <div
         id={customId || id}
         style={{
@@ -2536,7 +2537,7 @@ export const WidgetComponent: React.FC<any> = (props) => {
 
   return (
     <>
-      {generateResponsiveStyles(id, responsive)}
+      {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
       <div
         id={customId || id}
         style={{
@@ -2597,7 +2598,7 @@ export const CounterComponent: React.FC<any> = (props) => {
 
   return (
     <>
-      {generateResponsiveStyles(id, responsive)}
+      {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
       <div
         id={customId || id}
         style={{
@@ -2641,7 +2642,7 @@ export const MenuComponent: React.FC<any> = (props) => {
 
   return (
     <>
-      {generateResponsiveStyles(id, responsive)}
+      {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
       <nav
         id={customId || id}
         style={{
@@ -2702,7 +2703,7 @@ export const TabsComponent: React.FC<any> = (props) => {
 
   return (
     <>
-      {generateResponsiveStyles(id, responsive)}
+      {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
       <div
         id={customId || id}
         style={{
