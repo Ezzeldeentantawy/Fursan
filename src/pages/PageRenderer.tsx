@@ -416,6 +416,7 @@ const PageRenderer: React.FC = () => {
             background: bgImageUrl,
             display: p.display || undefined,
             flexDirection: p.flexDirection || p.flexDir || undefined,
+            gap: p.gap || undefined,
             boxShadow: p.boxShadow || undefined,
             zIndex: p.zIndex ?? undefined, 
             position: (p.zIndex ?? null) !== null ? 'relative' : undefined

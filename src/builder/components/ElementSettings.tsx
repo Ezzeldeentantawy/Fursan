@@ -238,7 +238,21 @@ export const ElementSettings: React.FC = () => {
     }
 
     // Global prop: read from top-level props
-    return selectedNode.props?.[controlId] ?? null;
+    const topValue = selectedNode.props?.[controlId];
+    if (topValue !== undefined && topValue !== null) return topValue;
+
+    // Fallback: for gap, also check responsive object (existing data may have it there)
+    if (controlId === 'gap') {
+      const resp = selectedNode.props?.responsive;
+      if (resp) {
+        for (const bp of ['md', 'sm', 'base']) {
+          const v = resp[bp]?.gap;
+          if (v !== undefined && v !== null) return v;
+        }
+      }
+    }
+
+    return null;
   };
 
   /**
@@ -285,7 +299,26 @@ export const ElementSettings: React.FC = () => {
       updateProps(selectedId, { responsive });
     } else {
       // Global prop: write to top-level props
-      updateProps(selectedId, { [controlId]: value });
+      // If setting gap globally, also clean it from responsive to avoid confusion
+      const extra: any = {};
+      if (controlId === 'gap') {
+        const responsive = { ...selectedNode.props.responsive };
+        let changed = false;
+        for (const bp of ['md', 'sm', 'base']) {
+          if (responsive[bp]?.gap !== undefined) {
+            const bpProps = { ...responsive[bp] };
+            delete bpProps.gap;
+            if (Object.keys(bpProps).length > 0) {
+              responsive[bp] = bpProps;
+            } else {
+              delete responsive[bp];
+            }
+            changed = true;
+          }
+        }
+        if (changed) extra.responsive = responsive;
+      }
+      updateProps(selectedId, { [controlId]: value, ...extra });
     }
   };
 
