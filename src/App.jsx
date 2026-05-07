@@ -6,6 +6,7 @@ import AdminDashboard from './pages/admin/dashboard';
 import SiteAdminDashboard from './pages/admin/SiteAdminDashboard';
 import Builder from './pages/admin/Pages/Builder';
 import PagesList from './pages/admin/Pages';
+import TemplatesIndex from './pages/admin/templates';
 import SitesList from './pages/admin/sites';
 import CreateSite from './pages/admin/sites/create';
 import EditSite from './pages/admin/sites/edit';
@@ -36,6 +37,9 @@ function App() {
               <Route path="pages" element={<PagesList />} />
               <Route path="pages/new" element={<Builder />} />
               <Route path="pages/:id/edit" element={<Builder />} />
+              <Route path="templates" element={<TemplatesIndex />} />
+              <Route path="templates/new" element={<Builder />} />
+              <Route path="templates/:id/edit" element={<Builder />} />
               <Route path="sites" element={<SitesList />} />
               <Route path="sites/create" element={<CreateSite />} />
               <Route path="sites/:id/edit" element={<EditSite />} />
@@ -59,6 +63,8 @@ function App() {
               <Route path="pages" element={<PagesList />} />
               <Route path="pages/new" element={<Builder />} />
               <Route path="pages/:id/edit" element={<Builder />} />
+              <Route path="templates" element={<TemplatesIndex />} />
+              <Route path="templates/:id/edit" element={<Builder />} />
               <Route path="media" element={<MediaManager />} />
               <Route path="profile" element={<Profile />} />
                

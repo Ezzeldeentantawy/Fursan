@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   DndContext,
   DragEndEvent,
@@ -34,6 +34,7 @@ import { createNode, isContainer } from './utils/nodeFactory';
 import { CONTAINER_TYPES, ELEMENTS_BY_TYPE } from './DynamicPages';
 import type { BuilderNode } from './utils/nodeFactory';
 import { findNode, findParentNode } from './utils/treeUtils';
+import templatesApi from '../api/templatesApi';
 
 // Store subscription for debugging tree updates (outside component)
 if (typeof window !== 'undefined') {
@@ -49,6 +50,8 @@ if (typeof window !== 'undefined') {
 export const Builder: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isTemplateMode = location.pathname.includes('/templates/');
   
   const setTree = useBuilderStore((state) => state.setTree);
   const tree = useBuilderStore((state) => state.tree);
@@ -243,32 +246,58 @@ export const Builder: React.FC = () => {
       isLoadingRef.current = true;
       setIsLoading(true);
       try {
-        console.log('[Builder] Loading page with id:', id);
-        const response = await pagesApi.getOne(id);
-        console.log('[Builder] Page API response:', response);
-        
-        // Check if this request was cancelled (component unmounted or id changed)
-        if (cancelled) {
-          return;
-        }
-        
-        const data = response.data?.data || response.data;
-        console.log('[Builder] Page data received:', data);
+        if (isTemplateMode) {
+          // Load template content
+          console.log('[Builder] Loading template with id:', id);
+          const response = await templatesApi.getOne(id);
+          if (cancelled) return;
+          const data = response.data?.data || response.data;
+          console.log('[Builder] Template data received:', data);
           
           if (data) {
-            setPageData(data);
             setPageTitle(data.title || '');
-            setSiteDomain(data.site?.domain || 'default');
-            setPageSlug(data.slug || data.id || '');
-            setIsDefaultSite(data.site?.is_default || false);
+            setSiteDomain('templates');
+            setPageSlug('');
+            setIsDefaultSite(false);
+            
+            // Templates have a single content field (no language variants)
+            // Structure: content = { elements: [...], customCss: "...", customJs: "..." }
+            const templateContent = data.content || { elements: [] };
+            loadContentForLanguage(currentLang, { content: templateContent });
+          }
+        } else {
+          // Load page (existing behavior)
+          console.log('[Builder] Loading page with id:', id);
+          const response = await pagesApi.getOne(id);
+          console.log('[Builder] Page API response:', response);
           
-          // Load content based on current language
-          loadContentForLanguage(currentLang, data);
+          // Check if this request was cancelled (component unmounted or id changed)
+          if (cancelled) {
+            return;
+          }
+          
+          const data = response.data?.data || response.data;
+          console.log('[Builder] Page data received:', data);
+            
+            if (data) {
+              setPageData(data);
+              setPageTitle(data.title || '');
+              setSiteDomain(data.site?.domain || 'default');
+              setPageSlug(data.slug || data.id || '');
+              setIsDefaultSite(data.site?.is_default || false);
+            
+            // Load content based on current language
+            loadContentForLanguage(currentLang, data);
+          }
         }
       } catch (error) {
         if (!cancelled) {
-          console.error('Failed to load page:', error);
-          alert('Failed to load page. Please try again.');
+          console.error('Failed to load:', error);
+          if (isTemplateMode) {
+            alert('Failed to load template. Please try again.');
+          } else {
+            alert('Failed to load page. Please try again.');
+          }
         }
       } finally {
         if (!cancelled) {
@@ -583,7 +612,11 @@ export const Builder: React.FC = () => {
   // Save handler
   const handleSave = useCallback(async () => {
     if (!id || id === 'new') {
-      alert('Please create the page first before saving.');
+      if (isTemplateMode) {
+        alert('Please create the template first from the Templates page.');
+      } else {
+        alert('Please create the page first.');
+      }
       return;
     }
 
@@ -613,70 +646,102 @@ export const Builder: React.FC = () => {
       };
       
       console.log('[Builder] Saving contentData:', contentData);
-      console.log('[Builder] currentLang:', currentLang);
       
-      // Send the data directly (not wrapped in content_ar/content)
-      // The backend PageController uses $request->lang to know which field to update
-      console.log('[Builder] PUT request data:', contentData);
-      console.log('[Builder] PUT request JSON:', JSON.stringify(contentData));
-      console.log('[Builder] PUT request lang:', currentLang);
-      
-      // Pass lang parameter so Laravel knows which field to update
-      await pagesApi.update(id, contentData, currentLang);
-      
-      await pagesApi.update(id, updateData);
+      if (isTemplateMode) {
+        // Save as template content
+        await templatesApi.updateContent(id, contentData);
+        alert('Template saved successfully!');
+      } else {
+        // Pass lang parameter so Laravel knows which field to update
+        console.log('[Builder] PUT request lang:', currentLang);
+        await pagesApi.update(id, contentData, currentLang);
+        alert('Page saved successfully!');
+      }
       
       // Update the tree with deduplicated elements
       if (uniqueElements.length !== elements.length) {
         const updatedTree = { ...tree, children: uniqueElements };
         setTree(updatedTree);
       }
-      
-      alert('Page saved successfully!');
     } catch (error) {
-      console.error('Failed to save page:', error);
-      alert('Failed to save page. Please try again.');
+      console.error('Failed to save:', error);
+      if (isTemplateMode) {
+        alert('Failed to save template. Please try again.');
+      } else {
+        alert('Failed to save page. Please try again.');
+      }
     } finally {
       setIsSaving(false);
     }
-  }, [id, tree, setTree, currentLang]);
+  }, [id, tree, setTree, currentLang, isTemplateMode]);
+
+  // Site ID from loaded page data (templates need this)
+  const siteId = pageData?.site?.id || null;
 
   // Template handlers
-  const handleTemplateSelect = (template: any) => {
-    // Deep clone the template tree to avoid mutations
-    const clonedTree = JSON.parse(JSON.stringify(template.tree));
-    setTree(clonedTree);
+  const handleTemplateSelect = (content: { elements: any[] }) => {
+    // Append template elements to the root of the current page tree
+    // (instead of replacing the entire tree)
+    if (content?.elements && content.elements.length > 0) {
+      const currentTree = useBuilderStore.getState().tree;
+      const updatedTree = JSON.parse(JSON.stringify(currentTree));
+      
+      // Regenerate IDs for template elements to avoid conflicts
+      const regenerateIds = (node: any): any => {
+        const newNode = { ...node, id: crypto.randomUUID() };
+        if (newNode.children && newNode.children.length > 0) {
+          newNode.children = newNode.children.map((child: any) => regenerateIds(child));
+        }
+        return newNode;
+      };
+      
+      const newElements = content.elements.map((el: any) => regenerateIds(el));
+      
+      if (!updatedTree.children) updatedTree.children = [];
+      updatedTree.children.push(...newElements);
+      
+      setTree(updatedTree);
+    }
     setShowTemplates(false);
   };
 
-  const handleSaveAsTemplate = (name: string) => {
+  const handleSaveAsTemplate = async (name: string, type: 'header' | 'footer' | 'block') => {
     const currentTree = useBuilderStore.getState().tree;
+    const currentSiteId = siteId;
     
-    // Create a new template from current tree
-    const newTemplate = {
-      id: `template-${Date.now()}`,
-      name: name,
-      description: `Saved on ${new Date().toLocaleDateString()}`,
-      thumbnail: '📄',
-      tree: JSON.parse(JSON.stringify(currentTree)),
-      createdAt: new Date().toISOString(),
-    };
+    if (!currentSiteId) {
+      alert('Cannot save template: no site context. Please save the page first.');
+      return;
+    }
 
-    // Save to localStorage
-    const savedTemplates = localStorage.getItem('fursan_templates');
-    const templates = savedTemplates ? JSON.parse(savedTemplates) : [];
-    templates.push(newTemplate);
-    localStorage.setItem('fursan_templates', JSON.stringify(templates));
-    
-    alert(`Template "${name}" saved successfully!`);
+    try {
+      const content = { elements: currentTree.children || [] };
+      
+      if (content.elements.length === 0) {
+        alert('Cannot save an empty page as a template. Add some elements first.');
+        return;
+      }
+
+      await templatesApi.create({
+        site_id: currentSiteId,
+        title: name,
+        content,
+        type,
+      });
+      
+      alert(`Template "${name}" saved successfully!`);
+    } catch (error) {
+      console.error('[Builder] Failed to save template:', error);
+      alert('Failed to save template. Please try again.');
+    }
   };
 
-  const handleDeleteTemplate = (id: string) => {
-    const savedTemplates = localStorage.getItem('fursan_templates');
-    if (savedTemplates) {
-      const templates = JSON.parse(savedTemplates);
-      const filtered = templates.filter((t: any) => t.id !== id);
-      localStorage.setItem('fursan_templates', JSON.stringify(filtered));
+  const handleDeleteTemplate = async (id: number) => {
+    try {
+      await templatesApi.delete(id);
+    } catch (error) {
+      console.error('[Builder] Failed to delete template:', error);
+      alert('Failed to delete template.');
     }
   };
 
@@ -796,13 +861,26 @@ export const Builder: React.FC = () => {
         )}
 
         {/* Template Picker Modal */}
-        {showTemplates && (
+        {showTemplates && siteId && (
           <TemplatePicker
+            siteId={siteId}
             onSelect={handleTemplateSelect}
             onClose={() => setShowTemplates(false)}
             onSaveCurrent={handleSaveAsTemplate}
             onDeleteTemplate={handleDeleteTemplate}
           />
+        )}
+        {showTemplates && !siteId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowTemplates(false)}>
+            <div className="bg-slate-900 rounded-xl p-8 shadow-2xl border border-slate-700" onClick={(e) => e.stopPropagation()}>
+              <p className="text-white text-center">Please save the page first before accessing templates.</p>
+              <div className="flex justify-center mt-4">
+                <button onClick={() => setShowTemplates(false)} className="px-4 py-2 bg-slate-700 text-white rounded-xl text-xs font-bold hover:bg-slate-600 transition-colors">
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Custom Code Modal */}

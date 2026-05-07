@@ -14,7 +14,8 @@ const AdminLayout = () => {
     const path = location.pathname;
     // Match patterns like: /admin/pages/new, /admin/site/pages/new, /admin/pages/123/edit, etc.
     return path.includes('/pages/new') || 
-           (path.includes('/pages/') && path.includes('/edit'));
+           (path.includes('/pages/') && path.includes('/edit')) ||
+           path.includes('/templates/') && path.includes('/edit');
   }, [location.pathname]);
   
   // Load default site favicon on mount for admin pages

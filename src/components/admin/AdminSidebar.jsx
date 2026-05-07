@@ -6,13 +6,15 @@ import {
   Users,
   Settings,
   Image,
-  User
+  User,
+  LayoutTemplate
 } from 'lucide-react';
 import { useAuth } from '../../components/isLoggedIn';
 
 const allNavItems = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['super_admin', 'site_admin'] },
   { path: '/admin/pages', label: 'Pages', icon: FileText, roles: ['super_admin', 'site_admin'] },
+  { path: '/admin/templates', label: 'Templates', icon: LayoutTemplate, roles: ['super_admin', 'site_admin'] },
   { path: '/admin/sites', label: 'Sites', icon: Globe, roles: ['super_admin'] },
   { path: '/admin/users', label: 'Users', icon: Users, roles: ['super_admin'] },
   { path: '/admin/media', label: 'Media', icon: Image, roles: ['super_admin', 'site_admin'] },

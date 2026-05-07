@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { pagesApi as basePagesApi } from '../api/pagesApi';
+import { templatesApi } from '../api/templatesApi';
 import { updateFavicon } from '../utils/favicon';
 import {
   Block, BLOCK_CATALOG,
@@ -157,6 +158,8 @@ const PageRenderer: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState<string>('en');
   const [error, setError] = useState<string | null>(null);
+  const [headerElements, setHeaderElements] = useState<any[] | null>(null);
+  const [footerElements, setFooterElements] = useState<any[] | null>(null);
 
   // Reserved words that should NOT be treated as site domains
   const RESERVED_WORDS = ['admin', 'login', 'register', 'employer', 'api', 'unauthorized'];
@@ -320,6 +323,43 @@ const PageRenderer: React.FC = () => {
 
     loadPage();
   }, [siteDomain, pageSlug, lang]);
+
+  // Fetch site header/footer when page loads
+  useEffect(() => {
+    const loadGlobals = async () => {
+      const siteId = page?.site?.id;
+      if (!siteId) {
+        setHeaderElements(null);
+        setFooterElements(null);
+        return;
+      }
+
+      try {
+        const res = await templatesApi.getGlobals(siteId);
+        const data = res.data;
+        
+        // Extract elements from header
+        if (data?.header?.content?.elements) {
+          setHeaderElements(data.header.content.elements);
+        } else {
+          setHeaderElements(null);
+        }
+
+        // Extract elements from footer
+        if (data?.footer?.content?.elements) {
+          setFooterElements(data.footer.content.elements);
+        } else {
+          setFooterElements(null);
+        }
+      } catch (err) {
+        console.warn('[PageRenderer] Failed to load header/footer:', err);
+        setHeaderElements(null);
+        setFooterElements(null);
+      }
+    };
+
+    loadGlobals();
+  }, [page?.site?.id]);
 
   // Update favicon when page data changes (site favicon)
   useEffect(() => {
@@ -658,11 +698,25 @@ const PageRenderer: React.FC = () => {
         return null;
       })()}
 
+      {/* Site Header (from template) */}
+      {headerElements && headerElements.length > 0 && (
+        <header className="site-header">
+          {headerElements.map(renderBlock)}
+        </header>
+      )}
+
       {/* Page Content - select content based on current language */}
       {(() => {
         const activeContent = lang === 'ar' ? (page.content_ar || page.content) : page.content;
         return activeContent?.elements && Array.isArray(activeContent.elements) && activeContent.elements.map(renderBlock);
       })()}
+
+      {/* Site Footer (from template) */}
+      {footerElements && footerElements.length > 0 && (
+        <footer className="site-footer">
+          {footerElements.map(renderBlock)}
+        </footer>
+      )}
     </div>
   );
 };
