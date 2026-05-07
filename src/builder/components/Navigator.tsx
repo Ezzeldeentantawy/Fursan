@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { BuilderNode } from '../utils/nodeFactory';
 import { useBuilderStore } from '../store/builderStore';
 import { CONTAINER_TYPES, ELEMENTS_BY_TYPE } from '../DynamicPages';
@@ -10,10 +10,12 @@ interface NavigatorProps {
 }
 
 export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
-  const { selectedId, select: setSelectedId, deleteNode, moveNode, duplicateNode } = useBuilderStore();
+  const { selectedId, select: setSelectedId, deleteNode, moveNode, moveNodeInto, duplicateNode } = useBuilderStore();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['root']));
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null);
+  // Timer ref for auto-expanding collapsed containers when dragging over them
+  const expandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -33,27 +35,75 @@ export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverId(nodeId);
+
+    // Auto-expand collapsed containers when hovering over them during drag
+    const node = findNodeInTree(tree, nodeId);
+    if (node && CONTAINER_TYPES.includes(node.type) && node.children && node.children.length > 0) {
+      if (!expandedIds.has(nodeId)) {
+        // Start a timer (if not already running) to auto-expand this container
+        if (expandTimerRef.current === null) {
+          expandTimerRef.current = setTimeout(() => {
+            setExpandedIds(prev => {
+              const next = new Set(prev);
+              next.add(nodeId);
+              return next;
+            });
+            expandTimerRef.current = null;
+          }, 500);
+        }
+      } else {
+        // Already expanded — clear any stale timer
+        if (expandTimerRef.current) {
+          clearTimeout(expandTimerRef.current);
+          expandTimerRef.current = null;
+        }
+      }
+    } else {
+      // Not hovering over a collapsible container — clear timer
+      if (expandTimerRef.current) {
+        clearTimeout(expandTimerRef.current);
+        expandTimerRef.current = null;
+      }
+    }
   };
 
   const handleDragLeave = () => {
     setDragOverId(null);
+    if (expandTimerRef.current) {
+      clearTimeout(expandTimerRef.current);
+      expandTimerRef.current = null;
+    }
   };
 
   const handleDrop = (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
     setDragOverId(null);
+    // Clear auto-expand timer
+    if (expandTimerRef.current) {
+      clearTimeout(expandTimerRef.current);
+      expandTimerRef.current = null;
+    }
+    
     const sourceId = e.dataTransfer.getData('text/plain');
     
     if (sourceId && sourceId !== targetId) {
-      // Check if we're not dropping a parent into its child
       const sourceNode = findNodeInTree(tree, sourceId);
+      const targetNode = findNodeInTree(tree, targetId);
+      
+      // Prevent dropping a parent into its own descendant
       if (sourceNode && CONTAINER_TYPES.includes(sourceNode.type)) {
-        // Check if target is a descendant of source
         if (isDescendantOf(tree, targetId, sourceId)) {
-          return; // Prevent dropping parent into child
+          return;
         }
       }
-      moveNode(sourceId, targetId);
+      
+      // If target is a container, drop the source INSIDE it (as a child)
+      if (targetNode && CONTAINER_TYPES.includes(targetNode.type)) {
+        moveNodeInto(sourceId, targetId);
+      } else {
+        // Otherwise use existing reorder-as-sibling behavior
+        moveNode(sourceId, targetId);
+      }
     }
   };
 
@@ -153,7 +203,7 @@ export const Navigator: React.FC<NavigatorProps> = ({ tree, onClose }) => {
         )}
       </div>
     );
-  }, [expandedIds, selectedId, setSelectedId, deleteNode, duplicateNode, dragOverId]);
+  }, [expandedIds, selectedId, setSelectedId, deleteNode, duplicateNode, moveNodeInto, dragOverId]);
    
   return (
     <div className="h-full overflow-y-auto bg-slate-900">

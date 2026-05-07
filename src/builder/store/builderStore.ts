@@ -21,6 +21,7 @@ interface BuilderState {
   selectElement: (id: string | null) => void;
   addNode: (parentId: string, node: BuilderNode, index?: number) => void;
   moveNode: (activeId: string, overId: string) => void;
+  moveNodeInto: (activeId: string, newParentId: string, index?: number) => void;
   updateProps: (id: string, props: Record<string, any>) => void;
   deleteNode: (id: string) => void;
   duplicateNode: (id: string) => void;
@@ -118,6 +119,10 @@ export const useBuilderStore = create<BuilderState>()(
       
       moveNode: (activeId, overId) => set((state) => ({
         tree: treeUtils.reorderNode(state.tree, activeId, overId),
+      })),
+      
+      moveNodeInto: (activeId, newParentId, index?) => set((state) => ({
+        tree: treeUtils.moveNodeIntoParent(state.tree, activeId, newParentId, index),
       })),
       
       updateProps: (id, props) => {

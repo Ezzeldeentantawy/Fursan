@@ -161,6 +161,45 @@ export function updateNodeProps(tree: BuilderNode, id: string, props: Record<str
 }
 
 /**
+ * Move a node to be a child of a new parent (instead of reordering as sibling)
+ * activeId: the node being moved
+ * newParentId: the target container to move into
+ * index: optional index to insert at (default: append to end)
+ */
+export function moveNodeIntoParent(tree: BuilderNode, activeId: string, newParentId: string, index?: number): BuilderNode {
+  if (activeId === newParentId) return tree;
+
+  // Deep clone the tree
+  const newTree = JSON.parse(JSON.stringify(tree));
+
+  // Find and remove the active node
+  const { parent: activeParent, index: activeIndex } = findParentNode(newTree, activeId);
+  if (!activeParent || activeIndex === -1) return tree; // Active node not found
+
+  const [activeNode] = activeParent.children.splice(activeIndex, 1);
+
+  // Find the new parent and insert the node as a child
+  function insertIntoParent(current: BuilderNode): BuilderNode {
+    if (current.id === newParentId) {
+      if (!current.children) current.children = [];
+      if (index !== undefined && index >= 0 && index <= current.children.length) {
+        current.children.splice(index, 0, activeNode);
+      } else {
+        current.children.push(activeNode);
+      }
+      return current;
+    }
+    if (current.children) {
+      current.children = current.children.map((child) => insertIntoParent(child));
+    }
+    return current;
+  }
+
+  insertIntoParent(newTree);
+  return newTree;
+}
+
+/**
  * Reorder a node (move from one position to another)
  * activeId: the node being dragged
  * overId: the node being dragged over
