@@ -33,7 +33,7 @@ import {
 
 const GRID_COLUMN_WIDTH = 80;
 const GRID_ROW_HEIGHT = 90;
-const GRID_VISIBLE_HEIGHT = 400;
+const GRID_VISIBLE_HEIGHT = 250;
 const OVERSCAN_COUNT = 3;
 const SEARCH_DEBOUNCE_MS = 200;
 const POPULAR_SET = new Set(POPULAR_PACKS);
@@ -337,6 +337,8 @@ const IconPicker = ({ selectedIcon, selectedPack, onSelect, onClose }) => {
         padding: 12,
         width: '100%',
         maxWidth: 560,
+        maxHeight: '70vh',
+        overflowY: 'auto',
       }}
     >
       {/* Header */}
@@ -401,7 +403,7 @@ const IconPicker = ({ selectedIcon, selectedPack, onSelect, onClose }) => {
       {/* Grid area */}
       <div
         ref={gridWrapperRef}
-        style={{ position: 'relative', minHeight: 200 }}
+        style={{ position: 'relative', minHeight: 200, overflow: 'hidden' }}
       >
         {loading && (
           <div

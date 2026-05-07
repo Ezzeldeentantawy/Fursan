@@ -84,6 +84,9 @@ const DynamicIcon = React.memo(
 
     // Extra style passthrough
     style,
+
+    // Alignment
+    alignment,
   }) => {
     // ---- Normalise props (new schema preferred, fall back to legacy) ----
     const resolvedIconType =
@@ -161,6 +164,9 @@ const DynamicIcon = React.memo(
       if (!css) return null;
       return <style>{css}</style>;
     }, [responsive, elementId]);
+
+    // ---- Alignment wrapper (always present for consistent alignment control) ----
+    const alignValue = alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'flex-start';
 
     // ---- Container style ----
     const containerStyle = useMemo(
@@ -248,7 +254,7 @@ const DynamicIcon = React.memo(
       iconContent
     );
 
-    return (
+    const iconElement = (
       <>
         {responsiveStyleTag}
         <span
@@ -259,6 +265,12 @@ const DynamicIcon = React.memo(
           {inner}
         </span>
       </>
+    );
+
+    return (
+      <div style={{ display: 'flex', justifyContent: alignValue, width: '100%' }}>
+        {iconElement}
+      </div>
     );
   },
   // ---- Custom comparator: shallow compare all icon-relevant props ----
@@ -280,6 +292,7 @@ const DynamicIcon = React.memo(
     prev.reactIcon === next.reactIcon &&
     prev.imageUrl === next.imageUrl &&
     prev.linkUrl === next.linkUrl &&
+    prev.alignment === next.alignment &&
     prev.id === next.id &&
     JSON.stringify(prev.responsive) === JSON.stringify(next.responsive),
 );

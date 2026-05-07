@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Type, AlignLeft, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor } from 'lucide-react';
+import { Type, AlignLeft, AlignCenter, AlignRight, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor } from 'lucide-react';
 import { propMap } from './registry/componentRegistry';
+import { DynamicIcon } from '../icons';
 
 // ============= HELPER FUNCTIONS =============
 
@@ -786,11 +787,17 @@ export const elementDefinitions: Record<string, any> = {
       padding: '8px',
       boxShadow: null,
       linkUrl: null,
+      alignment: 'left',
       customClass: null,
       customId: null,
       responsive: { md: {}, sm: {}, base: {} },
     },
     controls: [
+      { id: 'alignment', label: 'Alignment', tab: 'design', group: 'Layout', type: 'buttonGroup', responsive: false, default: 'left', options: [
+        { label: React.createElement(AlignLeft, { size: 14 }), value: 'left' },
+        { label: React.createElement(AlignCenter, { size: 14 }), value: 'center' },
+        { label: React.createElement(AlignRight, { size: 14 }), value: 'right' },
+      ]},
       { id: 'source', label: 'Source', tab: 'content', group: 'Content', type: 'select', responsive: false, default: 'lucide', options: [
         { label: 'Lucide', value: 'lucide' },
         { label: 'Font Awesome', value: 'fa' },
@@ -2075,84 +2082,53 @@ export const ListItemComponent: React.FC<any> = (props) => {
 // IconElement Component
 export const IconElementComponent: React.FC<any> = (props) => {
   const {
-    source, icon, reactIcon, imageUrl, iconSize, iconColor, bgColor, borderRadius,
-    padding, boxShadow, linkUrl,
+    source, icon, iconType, reactIcon, imageUrl, iconSize, iconColor, bgColor,
+    borderRadius, padding, boxShadow, linkUrl,
     id, customClass, customId, responsive, activeBreakpoint,
-    pt, pr, pb, pl, mt, mr, mb, ml, opacity
+    pt, pr, pb, pl, mt, mr, mb, ml, opacity,
+    alignment = 'left',
   } = props;
 
-  const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
-
-  // Dynamically load lucide icon
-  const [LucideIcon, setLucideIcon] = useState<any>(null);
-
-  useEffect(() => {
-    if (source === 'lucide' && icon) {
-      import('lucide-react').then((module) => {
-        const IconComponent = (module as any)[icon];
-        setLucideIcon(IconComponent || null);
-      });
-    }
-  }, [source, icon]);
-
-  const iconContent = () => {
-    if (source === 'lucide' && LucideIcon) {
-      return <LucideIcon size={iconSize || '32px'} color={iconColor || undefined} />;
-    }
-    if (source === 'react' && reactIcon) {
-      return <span>{reactIcon}</span>;
-    }
-    if (source === 'image' && imageUrl) {
-      return <img src={imageUrl} alt="" style={{ width: iconSize || '32px', height: iconSize || '32px' }} />;
-    }
-    return null;
-  };
-
-  const wrapperStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: bgColor || undefined,
-    borderRadius: borderRadius || undefined,
-    padding: padding || '8px',
-    boxShadow: boxShadow || undefined,
-    opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
-    paddingTop: pt || undefined,
-    paddingRight: pr || undefined,
-    paddingBottom: pb || undefined,
-    paddingLeft: pl || undefined,
-    marginTop: mt || undefined,
-    marginRight: mr || undefined,
-    marginBottom: mb || undefined,
-    marginLeft: ml || undefined,
-    ...responsiveStyles,
-  };
-
-  const content = (
-    <span
-      id={customId || id}
-      style={wrapperStyle}
-      className={customClass || ''}
-    >
-      {iconContent()}
-    </span>
-  );
-
-  if (linkUrl) {
-    return (
-      <>
-        {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
-        <a href={linkUrl} style={{ textDecoration: 'none' }}>
-          {content}
-        </a>
-      </>
-    );
-  }
+  // Build style overrides from responsive short-form props (builder mode)
+  // renderNode injects these via activeBreakpoint — we pass them through to DynamicIcon's container
+  const responsiveStyleOverrides = activeBreakpoint
+    ? Object.fromEntries(
+        Object.entries({
+          paddingTop: pt, paddingRight: pr, paddingBottom: pb, paddingLeft: pl,
+          marginTop: mt, marginRight: mr, marginBottom: mb, marginLeft: ml,
+        }).filter(([_, v]) => v != null && v !== ''),
+      )
+    : {};
 
   return (
     <>
+      {/* Responsive CSS tags only in preview mode (not builder — renderNode handles inline) */}
       {!activeBreakpoint && generateResponsiveStyles(id, responsive)}
-      {content}
+
+      {/* DynamicIcon handles alignment wrapper natively via its `alignment` prop */}
+      <DynamicIcon
+        icon={icon}
+        iconType={iconType || source}
+        iconSize={iconSize}
+        iconColor={iconColor}
+        bgColor={bgColor}
+        borderRadius={borderRadius}
+        padding={padding}
+        boxShadow={boxShadow}
+        opacity={opacity}
+        source={source}
+        reactIcon={reactIcon}
+        imageUrl={imageUrl}
+        linkUrl={linkUrl}
+        id={id}
+        customClass={customClass}
+        customId={customId}
+        alignment={alignment}
+        // Builder handles responsive inline; DynamicIcon only resolves/renders icon
+        responsive={undefined}
+        // Pass responsive style overrides into DynamicIcon's container
+        style={Object.keys(responsiveStyleOverrides).length > 0 ? responsiveStyleOverrides : undefined}
+      />
     </>
   );
 };
