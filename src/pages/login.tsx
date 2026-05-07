@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../components/isLoggedIn";
 import { authApi } from "../api/auth";
 
 const Login = () => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -49,14 +51,9 @@ const Login = () => {
                 
                 console.log('[Login] Called authLogin with:', userData);
                 
-                // Redirect based on role
-                if (userData.role === 'super_admin') {
-                    console.log('[Login] Redirecting to /admin (super_admin)');
-                    window.location.href = '/admin';
-                } else {
-                    console.log('[Login] Redirecting to /admin/site (site_admin)');
-                    window.location.href = '/admin/site';
-                }
+                // Redirect to admin dashboard
+                console.log('[Login] Redirecting to /admin/dashboard');
+                navigate('/admin/dashboard');
             } else {
                 console.error('[Login] Invalid user data structure:', response);
                 setError('Login succeeded but received invalid user data. Please try again.');

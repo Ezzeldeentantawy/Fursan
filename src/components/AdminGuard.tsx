@@ -12,8 +12,8 @@ const AdminGuard = () => {
         return <Navigate to="/login" replace />;
     }
     
-    // Check if user has super_admin role
-    if (user.role !== 'super_admin') {
+    // Check if user has a valid admin role
+    if (!['super_admin', 'site_admin'].includes(user.role)) {
         return <Navigate to="/unauthorized" replace />;
     }
     
