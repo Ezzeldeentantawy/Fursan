@@ -268,7 +268,7 @@ const DynamicIcon = React.memo(
     );
 
     return (
-      <div style={{ display: 'flex', justifyContent: alignValue, width: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: alignValue, width: 'fit-content' }}>
         {iconElement}
       </div>
     );
