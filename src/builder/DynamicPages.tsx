@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Type, AlignLeft, AlignCenter, AlignRight, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor } from 'lucide-react';
+import { Type, AlignLeft, AlignCenter, AlignRight, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor, List, GitBranch, ChevronsDownUp, Hash, Menu, Columns, Smile } from 'lucide-react';
 import { propMap } from './registry/componentRegistry';
 import { DynamicIcon } from '../icons';
 
@@ -725,7 +725,7 @@ export const elementDefinitions: Record<string, any> = {
   listItem: {
     type: 'listItem',
     label: 'List Item',
-    icon: Type,
+    icon: List,
     category: 'content',
     defaults: {
       text: 'List item text',
@@ -772,7 +772,7 @@ export const elementDefinitions: Record<string, any> = {
   iconElement: {
     type: 'iconElement',
     label: 'Icon',
-    icon: Type,
+    icon: Smile,
     category: 'media',
     defaults: {
       source: 'lucide',
@@ -830,7 +830,7 @@ export const elementDefinitions: Record<string, any> = {
   nestedTimeline: {
     type: 'nestedTimeline',
     label: 'Nested Timeline',
-    icon: Type,
+    icon: GitBranch,
     category: 'content',
     defaults: {
       phases: [],
@@ -944,7 +944,7 @@ export const elementDefinitions: Record<string, any> = {
   accordionItem: {
     type: 'accordionItem',
     label: 'Accordion',
-    icon: Type,
+    icon: ChevronsDownUp,
     category: 'content',
     defaults: {
       title: 'Accordion Title',
@@ -1030,7 +1030,7 @@ export const elementDefinitions: Record<string, any> = {
   counter: {
     type: 'counter',
     label: 'Counter',
-    icon: Type,
+    icon: Hash,
     category: 'content',
     defaults: {
       value: '1000',
@@ -1067,7 +1067,7 @@ export const elementDefinitions: Record<string, any> = {
   menu: {
     type: 'menu',
     label: 'Menu',
-    icon: Type,
+    icon: Menu,
     category: 'content',
     defaults: {
       menuId: null,
@@ -1100,7 +1100,7 @@ export const elementDefinitions: Record<string, any> = {
   tabs: {
     type: 'tabs',
     label: 'Tabs',
-    icon: Type,
+    icon: Columns,
     category: 'content',
     defaults: {
       tabs: [],
