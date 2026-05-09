@@ -20,12 +20,11 @@ const PageEditMetadata = () => {
     meta_title_ar: '',
     meta_description: '',
     meta_description_ar: '',
-    keywords: [],
+    keywordsEn: [],
+    keywordsAr: [],
     is_published: false,
     is_home: false,
   });
-
-  const [keywordInput, setKeywordInput] = useState('');
 
   const fetchPage = useCallback(async () => {
     try {
@@ -41,7 +40,8 @@ const PageEditMetadata = () => {
         meta_title_ar: page.meta_title_ar || '',
         meta_description: page.meta_description_en || page.meta_description || '',
         meta_description_ar: page.meta_description_ar || '',
-        keywords: Array.isArray(page.keywords) ? page.keywords : [],
+        keywordsEn: Array.isArray(page.keywords_en) ? page.keywords_en : [],
+        keywordsAr: Array.isArray(page.keywords_ar) ? page.keywords_ar : [],
         is_published: !!page.is_published,
         is_home: !!page.is_home,
       });
@@ -62,22 +62,26 @@ const PageEditMetadata = () => {
     setSuccess(false);
   };
 
-  const addKeyword = () => {
-    const kw = keywordInput.trim();
-    if (kw && !form.keywords.includes(kw)) {
-      handleChange('keywords', [...form.keywords, kw]);
+  const [keywordInputs, setKeywordInputs] = useState({ en: '', ar: '' });
+
+  const handleAddKeyword = (lang) => {
+    const kw = keywordInputs[lang].trim();
+    const field = lang === 'en' ? 'keywordsEn' : 'keywordsAr';
+    if (kw && !form[field].includes(kw)) {
+      handleChange(field, [...form[field], kw]);
     }
-    setKeywordInput('');
+    setKeywordInputs((prev) => ({ ...prev, [lang]: '' }));
   };
 
-  const removeKeyword = (kw) => {
-    handleChange('keywords', form.keywords.filter((k) => k !== kw));
+  const handleRemoveKeyword = (lang, kw) => {
+    const field = lang === 'en' ? 'keywordsEn' : 'keywordsAr';
+    handleChange(field, form[field].filter((k) => k !== kw));
   };
 
-  const handleKeywordKeyDown = (e) => {
+  const handleKeywordKeyDown = (lang, e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      addKeyword();
+      handleAddKeyword(lang);
     }
   };
 
@@ -96,7 +100,10 @@ const PageEditMetadata = () => {
         meta_title_ar: form.meta_title_ar || null,
         meta_description: form.meta_description || null,
         meta_description_ar: form.meta_description_ar || null,
-        keywords: form.keywords.length > 0 ? form.keywords : null,
+        keywords: {
+          en: form.keywordsEn.length > 0 ? form.keywordsEn : [],
+          ar: form.keywordsAr.length > 0 ? form.keywordsAr : [],
+        },
         is_published: form.is_published,
         is_home: form.is_home,
       };
@@ -287,47 +294,95 @@ const PageEditMetadata = () => {
               </div>
             </div>
 
-            {/* Keywords */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Keywords</label>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  value={keywordInput}
-                  onChange={(e) => setKeywordInput(e.target.value)}
-                  onKeyDown={handleKeywordKeyDown}
-                  className="flex-1 px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  placeholder="Type a keyword and press Enter"
-                />
-                <button
-                  type="button"
-                  onClick={addKeyword}
-                  className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors text-sm font-medium"
-                >
-                  Add
-                </button>
-              </div>
-              {form.keywords.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {form.keywords.map((kw) => (
-                    <span
-                      key={kw}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-sm text-slate-300"
-                    >
-                      {kw}
-                      <button
-                        type="button"
-                        onClick={() => removeKeyword(kw)}
-                        className="text-slate-500 hover:text-red-400 transition-colors"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+            {/* Keywords - Dual Language */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  Keywords <span className="text-blue-400">(EN)</span>
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={keywordInputs.en}
+                    onChange={(e) => setKeywordInputs((prev) => ({ ...prev, en: e.target.value }))}
+                    onKeyDown={(e) => handleKeywordKeyDown('en', e)}
+                    className="flex-1 px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    placeholder="Type a keyword and press Enter"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddKeyword('en')}
+                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors text-sm font-medium"
+                  >
+                    Add
+                  </button>
                 </div>
-              ) : (
-                <p className="text-xs text-slate-500">No keywords added yet.</p>
-              )}
+                {form.keywordsEn.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {form.keywordsEn.map((kw) => (
+                      <span
+                        key={kw}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-sm text-slate-300"
+                      >
+                        {kw}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveKeyword('en', kw)}
+                          className="text-slate-500 hover:text-red-400 transition-colors"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">No English keywords added yet.</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                  Keywords <span className="text-emerald-400">(AR)</span>
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={keywordInputs.ar}
+                    onChange={(e) => setKeywordInputs((prev) => ({ ...prev, ar: e.target.value }))}
+                    onKeyDown={(e) => handleKeywordKeyDown('ar', e)}
+                    className="flex-1 px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition text-right"
+                    dir="rtl"
+                    placeholder="اكتب كلمة مفتاحية واضغط Enter"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddKeyword('ar')}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors text-sm font-medium"
+                  >
+                    Add
+                  </button>
+                </div>
+                {form.keywordsAr.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {form.keywordsAr.map((kw) => (
+                      <span
+                        key={kw}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-sm text-slate-300"
+                      >
+                        {kw}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveKeyword('ar', kw)}
+                          className="text-slate-500 hover:text-red-400 transition-colors"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">No Arabic keywords added yet.</p>
+                )}
+              </div>
             </div>
           </div>
 
