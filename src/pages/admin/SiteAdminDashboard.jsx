@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   FileText, 
   Image,
@@ -271,10 +272,10 @@ const SiteAdminDashboard = () => {
               <FileText size={48} className="text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">No pages yet</p>
               <p className="text-sm text-gray-400 mt-1">Create your first page to see it here</p>
-              <a href="/admin/pages" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+              <Link to="/admin/pages" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                 <Plus size={16} />
                 Create Page
-              </a>
+              </Link>
             </div>
           ) : (
             <div className="space-y-4">
@@ -317,7 +318,7 @@ const SiteAdminDashboard = () => {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <a href="/admin/pages" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
+          <Link to="/admin/pages" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
             <div className="p-2 bg-green-100 rounded-lg group-hover:scale-110 transition-transform">
               <FileText size={20} className="text-green-600" />
             </div>
@@ -325,8 +326,8 @@ const SiteAdminDashboard = () => {
               <p className="font-medium text-gray-900">Create New Page</p>
               <p className="text-sm text-gray-500">Build with drag & drop</p>
             </div>
-          </a>
-          <a href="/admin/media" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
+          </Link>
+          <Link to="/admin/media" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
             <div className="p-2 bg-yellow-100 rounded-lg group-hover:scale-110 transition-transform">
               <Image size={20} className="text-yellow-600" />
             </div>
@@ -334,7 +335,7 @@ const SiteAdminDashboard = () => {
               <p className="font-medium text-gray-900">Upload Media</p>
               <p className="text-sm text-gray-500">Images & files</p>
             </div>
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Globe, 
   FileText, 
@@ -496,7 +497,7 @@ const AdminDashboard = () => {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a href="/admin/pages" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
+          <Link to="/admin/pages" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
             <div className="p-2 bg-green-100 rounded-lg group-hover:scale-110 transition-transform">
               <FileText size={20} className="text-green-600" />
             </div>
@@ -504,8 +505,8 @@ const AdminDashboard = () => {
               <p className="font-medium text-gray-900">Create New Page</p>
               <p className="text-sm text-gray-500">Build with drag & drop</p>
             </div>
-          </a>
-          <a href="/admin/media" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
+          </Link>
+          <Link to="/admin/media" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
             <div className="p-2 bg-yellow-100 rounded-lg group-hover:scale-110 transition-transform">
               <Image size={20} className="text-yellow-600" />
             </div>
@@ -513,9 +514,9 @@ const AdminDashboard = () => {
               <p className="font-medium text-gray-900">Upload Media</p>
               <p className="text-sm text-gray-500">Images & files</p>
             </div>
-          </a>
+          </Link>
           {isSuperAdmin && (
-            <a href="/admin/users" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
+            <Link to="/admin/users" className="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-shadow group">
               <div className="p-2 bg-purple-100 rounded-lg group-hover:scale-110 transition-transform">
                 <Users size={20} className="text-purple-600" />
               </div>
@@ -523,7 +524,7 @@ const AdminDashboard = () => {
                 <p className="font-medium text-gray-900">Manage Users</p>
                 <p className="text-sm text-gray-500">Roles & permissions</p>
               </div>
-            </a>
+            </Link>
           )}
         </div>
       </div>
