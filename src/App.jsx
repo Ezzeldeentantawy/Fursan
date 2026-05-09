@@ -6,6 +6,7 @@ import AdminDashboard from './pages/admin/dashboard';
 import SiteAdminDashboard from './pages/admin/SiteAdminDashboard';
 import Builder from './pages/admin/Pages/Builder';
 import PagesList from './pages/admin/Pages';
+import PageEditMetadata from './pages/admin/Pages/edit';
 import TemplatesIndex from './pages/admin/templates';
 import SitesList from './pages/admin/sites';
 import CreateSite from './pages/admin/sites/create';
@@ -36,6 +37,7 @@ function App() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="pages" element={<PagesList />} />
               <Route path="pages/new" element={<Builder />} />
+              <Route path="pages/:id" element={<PageEditMetadata />} />
               <Route path="pages/:id/edit" element={<Builder />} />
               <Route path="templates" element={<TemplatesIndex />} />
               <Route path="templates/new" element={<Builder />} />
@@ -62,6 +64,7 @@ function App() {
               <Route path="dashboard" element={<SiteAdminDashboard />} />
               <Route path="pages" element={<PagesList />} />
               <Route path="pages/new" element={<Builder />} />
+              <Route path="pages/:id" element={<PageEditMetadata />} />
               <Route path="pages/:id/edit" element={<Builder />} />
               <Route path="templates" element={<TemplatesIndex />} />
               <Route path="templates/:id/edit" element={<Builder />} />

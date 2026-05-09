@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Pencil, Hammer, Eye, Trash2, Loader2 } from 'lucide-react';
 import { pagesApi } from '../../../api/pagesApi';
 import { sitesApi } from '../../../api/sites';
 
@@ -79,6 +80,10 @@ const PagesList: React.FC = () => {
   };
 
   const handleEdit = (id: number) => {
+    navigate(`/admin/pages/${id}`);
+  };
+
+  const handleEditBuilder = (id: number) => {
     navigate(`/admin/pages/${id}/edit`);
   };
 
@@ -258,38 +263,38 @@ const PagesList: React.FC = () => {
                           {formatDate(page.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-1.5">
                             <button
                               onClick={() => handleEdit(page.id)}
-                              className="text-blue-400 hover:text-blue-400 transition-colors"
-                              title="Edit"
+                              className="p-2 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+                              title="Edit Metadata"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleEditBuilder(page.id)}
+                              className="p-2 rounded-full bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+                              title="Edit with Builder"
+                            >
+                              <Hammer size={16} />
                             </button>
                             <button
                               onClick={() => handlePreview(page)}
-                              className="text-green-400 hover:text-green-400 transition-colors"
+                              className="p-2 rounded-full bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
                               title="Preview"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
+                              <Eye size={16} />
                             </button>
                             <button
                               onClick={() => handleDelete(page.id, page.title || 'Untitled')}
                               disabled={deleteLoading === page.id}
-                              className="text-red-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                              className="p-2 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
                               title="Delete"
                             >
                               {deleteLoading === page.id ? (
-                                <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-red-400 border-r-transparent"></div>
+                                <Loader2 size={16} className="animate-spin" />
                               ) : (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
+                                <Trash2 size={16} />
                               )}
                             </button>
                           </div>
