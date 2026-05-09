@@ -9,13 +9,12 @@ const AdminLayout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   
-  // Check if we're in the builder - more robust detection
+  // Check if we're in the builder - hide sidebar/header for full-width editing
   const isBuilder = useMemo(() => {
     const path = location.pathname;
-    // Match patterns like: /admin/pages/new, /admin/site/pages/new, /admin/pages/123/edit, etc.
-    return path.includes('/pages/new') || 
+    return path.includes('/templates/new') ||
            (path.includes('/pages/') && path.includes('/edit')) ||
-           path.includes('/templates/') && path.includes('/edit');
+           (path.includes('/templates/') && path.includes('/edit'));
   }, [location.pathname]);
   
   // Load default site favicon on mount for admin pages

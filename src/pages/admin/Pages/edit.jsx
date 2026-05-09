@@ -7,7 +7,7 @@ import { Pencil, Hammer, ArrowLeft, Save, Globe, FileText, Loader2, Check, Plus 
 const PageEditMetadata = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isNew = id === 'new';
+  const isNew = id === 'new' || !id;
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -30,18 +30,18 @@ const PageEditMetadata = () => {
     is_home: false,
   });
 
-  // On mount: fetch all sites (needed for create mode) and set default site
+  // On mount: fetch all sites and set default site for new pages
   useEffect(() => {
     const init = async () => {
       try {
         const sitesRes = await sitesApi.list();
         const sitesData = sitesRes.data?.data || sitesRes.data;
-        setSites(Array.isArray(sitesData) ? sitesData : []);
+        const sitesList = Array.isArray(sitesData) ? sitesData : [];
+        setSites(sitesList);
 
-        // Set default site for new pages
+        // Set default site for new pages (from the already-loaded list — avoids race condition with separate getDefault call)
         if (isNew) {
-          const defaultRes = await sitesApi.getDefault();
-          const defaultSite = defaultRes.data?.data || defaultRes.data;
+          const defaultSite = sitesList.find(s => s.is_default) || sitesList[0];
           if (defaultSite?.id) {
             setForm((prev) => ({ ...prev, site_id: defaultSite.id.toString() }));
           }
@@ -145,6 +145,7 @@ const PageEditMetadata = () => {
         // Navigate to the builder to edit content
         navigate(`/admin/pages/${newPage.id}/edit`);
       } else {
+        payload.site_id = parseInt(form.site_id, 10);
         await pagesApi.update(id, payload);
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
@@ -223,27 +224,25 @@ const PageEditMetadata = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Site selector — only shown in create mode */}
-          {isNew && (
-            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Globe size={18} className="text-blue-400" />
-                Site
-              </h2>
-              <select
-                value={form.site_id}
-                onChange={(e) => handleChange('site_id', e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              >
-                <option value="">Select a site</option>
-                {sites.map((site) => (
-                  <option key={site.id} value={site.id}>
-                    {site.name} {site.is_default ? '(Default)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* Site selector — shown in both create and edit modes */}
+          <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Globe size={18} className="text-blue-400" />
+              Site
+            </h2>
+            <select
+              value={form.site_id}
+              onChange={(e) => handleChange('site_id', e.target.value)}
+              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            >
+              <option value="">Select a site</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name} {site.is_default ? '(Default)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Title Section */}
           <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
