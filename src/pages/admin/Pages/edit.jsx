@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { pagesApi } from '../../../api/pagesApi';
-import { Pencil, Hammer, ArrowLeft, Save, Globe, FileText, Loader2, Check } from 'lucide-react';
+import { sitesApi } from '../../../api/sites';
+import { Pencil, Hammer, ArrowLeft, Save, Globe, FileText, Loader2, Check, Plus } from 'lucide-react';
 
 const PageEditMetadata = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isNew = id === 'new';
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [sites, setSites] = useState([]);
 
   const [form, setForm] = useState({
+    site_id: '',
     title: '',
     title_ar: '',
     slug: '',
@@ -26,13 +30,39 @@ const PageEditMetadata = () => {
     is_home: false,
   });
 
+  // On mount: fetch all sites (needed for create mode) and set default site
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const sitesRes = await sitesApi.list();
+        const sitesData = sitesRes.data?.data || sitesRes.data;
+        setSites(Array.isArray(sitesData) ? sitesData : []);
+
+        // Set default site for new pages
+        if (isNew) {
+          const defaultRes = await sitesApi.getDefault();
+          const defaultSite = defaultRes.data?.data || defaultRes.data;
+          if (defaultSite?.id) {
+            setForm((prev) => ({ ...prev, site_id: defaultSite.id.toString() }));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load sites:', err);
+      }
+    };
+    init();
+  }, [isNew]);
+
+  // Fetch page data if editing
   const fetchPage = useCallback(async () => {
+    if (isNew) return;
     try {
       setLoading(true);
       setError(null);
       const res = await pagesApi.getOne(id);
       const page = res.data?.data || res.data;
       setForm({
+        site_id: page.site_id?.toString() || '',
         title: page.title_en || page.title || '',
         title_ar: page.title_ar || '',
         slug: page.slug || '',
@@ -51,7 +81,7 @@ const PageEditMetadata = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, isNew]);
 
   useEffect(() => {
     fetchPage();
@@ -95,7 +125,7 @@ const PageEditMetadata = () => {
       const payload = {
         title: form.title,
         title_ar: form.title_ar || null,
-        slug: form.slug,
+        slug: form.slug || undefined,
         meta_title: form.meta_title || null,
         meta_title_ar: form.meta_title_ar || null,
         meta_description: form.meta_description || null,
@@ -108,9 +138,17 @@ const PageEditMetadata = () => {
         is_home: form.is_home,
       };
 
-      await pagesApi.update(id, payload);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      if (isNew) {
+        payload.site_id = parseInt(form.site_id, 10);
+        const res = await pagesApi.create(payload);
+        const newPage = res.data?.data || res.data;
+        // Navigate to the builder to edit content
+        navigate(`/admin/pages/${newPage.id}/edit`);
+      } else {
+        await pagesApi.update(id, payload);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      }
     } catch (err) {
       console.error('Error saving page:', err);
       setError(err.response?.data?.message || err.message || 'Failed to save page.');
@@ -147,26 +185,28 @@ const PageEditMetadata = () => {
             </button>
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                <FileText size={24} className="text-blue-400" />
-                Edit Page Metadata
+                {isNew ? <Plus size={24} className="text-emerald-400" /> : <FileText size={24} className="text-blue-400" />}
+                {isNew ? 'Create New Page' : 'Edit Page Metadata'}
               </h1>
               <p className="text-sm text-slate-400 mt-1">
-                {form.title || 'Untitled'} — <span className="text-slate-500">/{form.slug}</span>
+                {isNew ? 'Enter title and metadata, then edit with the builder.' : `${form.title || 'Untitled'} — <span class="text-slate-500">/${form.slug}</span>`}
               </p>
             </div>
           </div>
 
-          <button
-            onClick={() => navigate(`/admin/pages/${id}/edit`)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors text-sm font-medium"
-          >
-            <Hammer size={16} />
-            Edit with Builder
-          </button>
+          {!isNew && (
+            <button
+              onClick={() => navigate(`/admin/pages/${id}/edit`)}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              <Hammer size={16} />
+              Edit with Builder
+            </button>
+          )}
         </div>
 
-        {/* Success message */}
-        {success && (
+        {/* Success message (edit mode only) */}
+        {success && !isNew && (
           <div className="mb-6 p-4 bg-emerald-900/30 border border-emerald-800 rounded-xl text-emerald-300 flex items-center gap-3">
             <Check size={18} className="text-emerald-400" />
             Page metadata saved successfully!
@@ -183,6 +223,28 @@ const PageEditMetadata = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Site selector — only shown in create mode */}
+          {isNew && (
+            <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Globe size={18} className="text-blue-400" />
+                Site
+              </h2>
+              <select
+                value={form.site_id}
+                onChange={(e) => handleChange('site_id', e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              >
+                <option value="">Select a site</option>
+                {sites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.name} {site.is_default ? '(Default)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Title Section */}
           <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -200,6 +262,7 @@ const PageEditMetadata = () => {
                   onChange={(e) => handleChange('title', e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   placeholder="Page title in English"
+                  autoFocus={isNew}
                 />
               </div>
               <div>
@@ -435,18 +498,18 @@ const PageEditMetadata = () => {
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || (isNew && !form.site_id)}
               className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800/50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors"
             >
               {saving ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  Saving...
+                  {isNew ? 'Creating...' : 'Saving...'}
                 </>
               ) : (
                 <>
-                  <Save size={16} />
-                  Save Changes
+                  {isNew ? <Plus size={16} /> : <Save size={16} />}
+                  {isNew ? 'Create & Edit with Builder' : 'Save Changes'}
                 </>
               )}
             </button>

@@ -36,7 +36,7 @@ function App() {
               {/* Admin sub-routes (relative paths) */}
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="pages" element={<PagesList />} />
-              <Route path="pages/new" element={<Builder />} />
+              <Route path="pages/new" element={<PageEditMetadata />} />
               <Route path="pages/:id" element={<PageEditMetadata />} />
               <Route path="pages/:id/edit" element={<Builder />} />
               <Route path="templates" element={<TemplatesIndex />} />
@@ -63,7 +63,7 @@ function App() {
               {/* Site Admin sub-routes */}
               <Route path="dashboard" element={<SiteAdminDashboard />} />
               <Route path="pages" element={<PagesList />} />
-              <Route path="pages/new" element={<Builder />} />
+              <Route path="pages/new" element={<PageEditMetadata />} />
               <Route path="pages/:id" element={<PageEditMetadata />} />
               <Route path="pages/:id/edit" element={<Builder />} />
               <Route path="templates" element={<TemplatesIndex />} />
