@@ -36,12 +36,16 @@ const TemplatesIndex: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<'header' | 'footer' | 'block'>('block');
   const [creating, setCreating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
 
   const fetchTemplates = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await templatesApi.getAll();
+      const params: any = {};
+      if (debouncedSearch) params.search = debouncedSearch;
+      const res = await templatesApi.getAll(params);
       const data = res.data?.data || [];
       data.sort((a: any, b: any) => (TYPE_ORDER[a.type] ?? 1) - (TYPE_ORDER[b.type] ?? 1));
       setTemplates(data);
@@ -53,9 +57,17 @@ const TemplatesIndex: React.FC = () => {
     }
   };
 
+  // Debounced search — 300ms delay before fetching
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   useEffect(() => {
     fetchTemplates();
-  }, []);
+  }, [debouncedSearch]);
 
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -123,6 +135,20 @@ const TemplatesIndex: React.FC = () => {
           <Plus size={16} />
           New Template
         </button>
+      </div>
+
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search templates by title..."
+          className="pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full max-w-md"
+        />
       </div>
 
       {error && (

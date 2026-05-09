@@ -18,9 +18,10 @@ const BASE_PUBLIC = '/api/v1/';
 
 export const pagesApi = {
   /** GET /api/v1/pages */
-  getAll: (lang = 'en', siteId = null) => {
+  getAll: (lang = 'en', siteId = null, search = '') => {
     const params = { lang };
     if (siteId) params.site_id = siteId;
+    if (search) params.search = search;
     return api.get(BASE, { params });
   },
 
@@ -57,7 +58,7 @@ export const pagesApi = {
   setHomepage: (id) => api.patch(`${BASE}/${id}/set-home`),
 
   /** DELETE /api/v1/pages/:id */
-  destroy: (id) => api.delete(`${BASE}/${id}`),
+  delete: (id) => api.delete(`${BASE}/${id}`),
 };
 
 export default pagesApi;

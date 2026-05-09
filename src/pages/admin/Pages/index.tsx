@@ -16,6 +16,8 @@ const PagesList: React.FC = () => {
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
   const [sites, setSites] = useState<any[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
 
   useEffect(() => {
     const init = async () => {
@@ -44,7 +46,7 @@ const PagesList: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await pagesApi.getAll('en', selectedSiteId || undefined);
+      const res = await pagesApi.getAll('en', selectedSiteId || undefined, debouncedSearch || undefined);
       // Unwrap: Axios response -> JsonResource wrapper -> actual data
       const data = res.data?.data || res.data;
       setPages(Array.isArray(data) ? data : []);
@@ -59,7 +61,15 @@ const PagesList: React.FC = () => {
   // Add useEffect to refetch when site changes
   useEffect(() => {
     fetchPages();
-  }, [selectedSiteId]);
+  }, [selectedSiteId, debouncedSearch]);
+
+  // Debounced search — 300ms delay before fetching
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const handleDelete = async (id: number, title: string) => {
     if (!window.confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
@@ -140,6 +150,19 @@ const PagesList: React.FC = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-white">Pages Management</h1>
           <div className="flex items-center gap-4">
+            {/* Search input */}
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search pages..."
+                className="pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+              />
+            </div>
             <div className="flex items-center gap-2">
               <label className="text-sm text-slate-400">Filter by Site:</label>
               <select
