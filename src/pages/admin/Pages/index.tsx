@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Hammer, Eye, Trash2, Loader2 } from 'lucide-react';
+import { Pencil, Hammer, Eye, Trash2, Loader2, Search } from 'lucide-react';
 import { pagesApi } from '../../../api/pagesApi';
 import { sitesApi } from '../../../api/sites';
 
@@ -63,13 +63,23 @@ const PagesList: React.FC = () => {
     fetchPages();
   }, [selectedSiteId, debouncedSearch]);
 
-  // Debounced search — 300ms delay before fetching
+  // Debounced search — 3-second auto-search after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
-    }, 300);
+    }, 3000);
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  const handleSearch = () => {
+    setDebouncedSearch(searchTerm);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   const handleDelete = async (id: number, title: string) => {
     if (!window.confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
@@ -150,18 +160,28 @@ const PagesList: React.FC = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-white">Pages Management</h1>
           <div className="flex items-center gap-4">
-            {/* Search input */}
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search pages..."
-                className="pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
-              />
+            {/* Search input with button */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Search pages..."
+                  className="pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                />
+              </div>
+              <button
+                onClick={handleSearch}
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
+                title="Search"
+              >
+                <Search size={18} />
+              </button>
             </div>
             <div className="flex items-center gap-2">
               <label className="text-sm text-slate-400">Filter by Site:</label>

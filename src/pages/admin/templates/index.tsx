@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { templatesApi } from '../../../api/templatesApi';
-import { Loader2, LayoutTemplate, FileType, PanelTop, PanelBottom, Edit3, Trash2, Plus, X, CheckCheck } from 'lucide-react';
+import { Loader2, LayoutTemplate, FileType, PanelTop, PanelBottom, Edit3, Trash2, Plus, X, CheckCheck, Search } from 'lucide-react';
 
 const TYPE_COLORS: Record<string, string> = {
   block:  'bg-blue-500/20 text-blue-400',
@@ -57,13 +57,23 @@ const TemplatesIndex: React.FC = () => {
     }
   };
 
-  // Debounced search — 300ms delay before fetching
+  // Debounced search — 3-second auto-search after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
-    }, 300);
+    }, 3000);
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  const handleSearch = () => {
+    setDebouncedSearch(searchTerm);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   useEffect(() => {
     fetchTemplates();
@@ -137,18 +147,28 @@ const TemplatesIndex: React.FC = () => {
         </button>
       </div>
 
-      {/* Search bar */}
-      <div className="relative mb-4">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search templates by title..."
-          className="pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full max-w-md"
-        />
+      {/* Search bar with button */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="relative flex-1 max-w-md">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Search templates by title..."
+            className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+        </div>
+        <button
+          onClick={handleSearch}
+          className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors"
+          title="Search"
+        >
+          <Search size={18} />
+        </button>
       </div>
 
       {error && (
