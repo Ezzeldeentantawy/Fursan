@@ -673,6 +673,7 @@ const PageRenderer: React.FC = () => {
         case 'iconElement': {
           return <DynamicIcon {...p} id={block.id} />;
         }
+        case 'counter': return <CounterBlock block={block} />;
         default: return null;
       }
     })();
@@ -773,6 +774,57 @@ function AccordionItem({ block }: { block: Block }) {
         )}
       </div>
     </React.Fragment>
+  );
+}
+
+function CounterBlock({ block }: { block: Block }) {
+  const p = block.props;
+  const styles = generateResponsiveStyles(block.id, p.responsive);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const target = parseInt(p.value) || 1000;
+    const durationMs = (p.duration || 2) * 1000;
+    const step = target / (durationMs / 16);
+    let current = 0;
+
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      setCount(Math.floor(current));
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [p.value, p.duration]);
+
+  return (
+    <>
+      {styles}
+      <div
+        id={getBlockId(block.id)}
+        style={{
+          backgroundColor: p.bgColor || undefined,
+          padding: p.padding || '16px',
+          textAlign: (p.textAlign || p.alignment || 'center') as any,
+          opacity: (p.opacity !== undefined && p.opacity !== null) ? (p.opacity <= 1 ? p.opacity : p.opacity / 100) : undefined,
+          boxShadow: p.boxShadow || undefined,
+          zIndex: p.zIndex ?? undefined,
+          position: (p.zIndex ?? null) !== null ? 'relative' : undefined,
+        }}
+        className={p.customClass || ''}
+      >
+        <span style={{
+          color: p.numberColor || '#000000',
+          fontSize: p.fontSize || undefined,
+          fontWeight: p.fontWeight || undefined,
+        }}>
+          {p.prefix || ''}{count}{p.suffix || ''}
+        </span>
+      </div>
+    </>
   );
 }
 

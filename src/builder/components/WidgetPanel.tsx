@@ -11,10 +11,11 @@ const categoryLabels: Record<string, string> = {
   basic: 'Basic',
   layout: 'Layout',
   media: 'Media',
+  content: 'Content',
   advanced: 'Advanced',
 };
 
-const categoryOrder = ['basic', 'layout', 'media', 'advanced'];
+const categoryOrder = ['basic', 'layout', 'media', 'content', 'advanced'];
 
 export const WidgetPanel: React.FC = () => {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
