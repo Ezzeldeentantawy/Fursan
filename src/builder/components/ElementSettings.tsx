@@ -171,6 +171,7 @@ export const ElementSettings: React.FC = () => {
   const setActiveBp = useBuilderStore((state) => state.setActiveBp);
   const pendingDesignTabFocus = useBuilderStore((state) => state.pendingDesignTabFocus);
   const setPendingDesignTabFocus = useBuilderStore((state) => state.setPendingDesignTabFocus);
+  const siteMenus = useBuilderStore((state) => state.siteMenus);
 
   const selectedNode = selectedId ? findNode(tree, selectedId) : null;
   const elementDef = selectedNode ? ELEMENTS_BY_TYPE[selectedNode.type] : null;
@@ -1226,7 +1227,21 @@ export const ElementSettings: React.FC = () => {
         return renderColorPicker(control, value, (v) => setPropValue(control.id, v));
 
       case 'select': {
-        const options = control.options || [];
+        let options = control.options || [];
+
+        // Dynamically populate menuId options from site menus in the builder store
+        if (control.id === 'menuId') {
+          if (siteMenus && siteMenus.length > 0) {
+            options = [
+              { label: 'None', value: null },
+              ...siteMenus.map((menu) => ({
+                label: menu.name || 'Unnamed Menu',
+                value: menu.name,
+              })),
+            ];
+          }
+        }
+
         const isObjectOptions = options.length > 0 && typeof options[0] === 'object';
         return (
           <select

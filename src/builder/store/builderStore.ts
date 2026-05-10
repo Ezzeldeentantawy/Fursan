@@ -16,8 +16,11 @@ interface BuilderState {
   customCss: string | null;
   customJs: string | null;
 
+  siteMenus: Array<{ name: string; links: Array<any> }>;
+
   // Actions
   select: (id: string | null) => void;
+  setSiteMenus: (menus: Array<{ name: string; links: Array<any> }>) => void;
   selectElement: (id: string | null) => void;
   addNode: (parentId: string, node: BuilderNode, index?: number) => void;
   moveNode: (activeId: string, overId: string) => void;
@@ -74,6 +77,7 @@ export const useBuilderStore = create<BuilderState>()(
       customCss: null,
       customJs: null,
       pendingDesignTabFocus: false,
+      siteMenus: [],
        activeDragId: null,
        activeDragType: null,
        overContainerId: null,
@@ -88,6 +92,7 @@ export const useBuilderStore = create<BuilderState>()(
        setCustomCss: (css) => set({ customCss: css }),
        setCustomJs: (js) => set({ customJs: js }),
        setPendingDesignTabFocus: (value) => set({ pendingDesignTabFocus: value }),
+       setSiteMenus: (menus) => set({ siteMenus: menus }),
        
        addNode: (parentId, node, index) => {
          console.log('[BuilderStore] addNode called with parentId:', parentId, 'node:', node, 'index:', index);
@@ -168,11 +173,12 @@ export const useBuilderStore = create<BuilderState>()(
       },
       setPreviewMode: (mode) => set({ isPreviewMode: mode }),
        resetTree: () => set({ 
-         tree: JSON.parse(JSON.stringify(defaultTree)),
-         selectedId: null,
-         customCss: null,
-         customJs: null,
-       }),
+          tree: JSON.parse(JSON.stringify(defaultTree)),
+          selectedId: null,
+          customCss: null,
+          customJs: null,
+          siteMenus: [],
+        }),
     }),
     {
       // Exclude selectedId and isPreviewMode from temporal state

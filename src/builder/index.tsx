@@ -35,6 +35,7 @@ import { CONTAINER_TYPES, ELEMENTS_BY_TYPE } from './DynamicPages';
 import type { BuilderNode } from './utils/nodeFactory';
 import { findNode, findParentNode } from './utils/treeUtils';
 import templatesApi from '../api/templatesApi';
+import siteMenusApi from '../api/siteMenusApi';
 
 // Store subscription for debugging tree updates (outside component)
 if (typeof window !== 'undefined') {
@@ -60,6 +61,7 @@ export const Builder: React.FC = () => {
   const resetTree = useBuilderStore((state) => state.resetTree);
   const activeBp = useBuilderStore((state) => state.activeBp);
   const setActiveBp = useBuilderStore((state) => state.setActiveBp);
+  const setSiteMenus = useBuilderStore((state) => state.setSiteMenus);
   
   const [pageTitle, setPageTitle] = useState<string>('');
   const [siteDomain, setSiteDomain] = useState<string>('');
@@ -259,6 +261,14 @@ export const Builder: React.FC = () => {
             setSiteDomain('templates');
             setPageSlug('');
             setIsDefaultSite(false);
+
+            // Set pageData so the menu-fetching useEffect can get site_id
+            // Templates have a nullable site_id field (global templates may be null)
+            if (data.site_id) {
+              setPageData({ site: { id: data.site_id } });
+            } else {
+              setPageData(null);
+            }
             
             // Templates have a single content field (no language variants)
             // Structure: content = { elements: [...], customCss: "...", customJs: "..." }
@@ -677,6 +687,36 @@ export const Builder: React.FC = () => {
 
   // Site ID from loaded page data (templates need this)
   const siteId = pageData?.site?.id || null;
+
+  // Fetch site menus when siteId changes
+  useEffect(() => {
+    if (!siteId) {
+      setSiteMenus([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadMenus = async () => {
+      try {
+        const data = await siteMenusApi.getMenus(siteId);
+        if (!cancelled) {
+          setSiteMenus(data.menus || []);
+        }
+      } catch (error) {
+        console.error('[Builder] Failed to load site menus:', error);
+        if (!cancelled) {
+          setSiteMenus([]);
+        }
+      }
+    };
+
+    loadMenus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [siteId, setSiteMenus]);
 
   // Template handlers
   const handleTemplateSelect = (content: { elements: any[] }) => {

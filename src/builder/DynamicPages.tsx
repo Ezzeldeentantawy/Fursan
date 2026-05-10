@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Type, AlignLeft, AlignCenter, AlignRight, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor, List, GitBranch, ChevronsDownUp, Hash, Menu, Columns, Smile } from 'lucide-react';
 import { propMap } from './registry/componentRegistry';
 import { DynamicIcon } from '../icons';
+import { useBuilderStore } from './store/builderStore';
 
 // ============= HELPER FUNCTIONS =============
 
@@ -2555,6 +2556,10 @@ export const MenuComponent: React.FC<any> = (props) => {
     pt, pr, pb, pl, mt, mr, mb, ml, opacity
   } = props;
 
+  const siteMenus = useBuilderStore((state) => state.siteMenus);
+  const selectedMenu = siteMenus.find((m) => m.name === menuId);
+  const links = selectedMenu?.links || [];
+
   const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
 
   return (
@@ -2578,15 +2583,33 @@ export const MenuComponent: React.FC<any> = (props) => {
         }}
         className={customClass || ''}
       >
-        {menuId ? (
+        {menuId && selectedMenu ? (
           <div style={{
             display: 'flex',
             flexDirection: (menuDirection === 'vertical' ? 'column' : 'row') as any,
             gap: gap || '24px',
             justifyContent: (align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start') as any,
-            color: textColor || '#000000',
           }}>
-            <div style={{ padding: '8px 0' }}>Menu: {menuId}</div>
+            {links.map((link, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: '8px 0',
+                  color: textColor || '#000000',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = hoverColor || '#3b82f6'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = textColor || '#000000'; }}
+              >
+                {link.label_en || link.label_ar || 'Link'}
+              </div>
+            ))}
+          </div>
+        ) : menuId && !selectedMenu ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#f59e0b' }}>
+            Menu &quot;{menuId}&quot; not found
           </div>
         ) : (
           <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
