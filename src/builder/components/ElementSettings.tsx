@@ -33,7 +33,6 @@ const GLOBAL_PROPS = new Set([
   'iconName', 'iconPosition', 'iconSize', 'iconGap', 'iconColor', 'iconHoverColor',
   'objectFit', 'objectPosition',
   'overflow',
-  'flexDirection', 'flexWrap', 'justifyContent', 'alignItems', 'alignContent',
   'rowGap', 'columnGap',
   'dividerStyle', 'dividerColor',
   'lazyLoad',
@@ -61,6 +60,10 @@ const RESPONSIVE_PROPS = new Set([
   'spacerHeight',
   'dividerWidth', 'dividerThickness',
   'justifySelf', 'alignSelf',
+  // Flex layout alignment (short-form)
+  'flexDir', 'justify', 'items',
+  // Flex layout alignment (full-form — matches control IDs)
+  'flexDirection', 'flexWrap', 'justifyContent', 'alignItems', 'alignContent', 'gap',
 ]);
 
 function isResponsiveProp(key: string): boolean {
@@ -117,7 +120,9 @@ const SpacingControl: React.FC<{
   });
 
   const handleChange = (prop: string, num: number | '', unit: string) => {
-    if (unit === 'auto') {
+    if (unit === 'auto' && num !== '') {
+      setPropValue(prop, formatNumberValue(num, 'px'));
+    } else if (unit === 'auto') {
       setPropValue(prop, 'auto');
     } else {
       setPropValue(prop, formatNumberValue(num, unit));
@@ -130,7 +135,11 @@ const SpacingControl: React.FC<{
       return;
     }
     const freshVal = parseNumberValue(getPropValue(prop));
-    setPropValue(prop, formatNumberValue(freshVal.num, unit));
+    if (freshVal.unit === 'auto') {
+      setPropValue(prop, formatNumberValue(0, unit));
+    } else {
+      setPropValue(prop, formatNumberValue(freshVal.num, unit));
+    }
   };
 
   return (
@@ -272,7 +281,8 @@ export const ElementSettings: React.FC = () => {
   const hasOverride = (controlId: string): boolean => {
     if (activeBp === 'md') return false;
     if (!isResponsiveProp(controlId)) return false;
-    return selectedNode.props?.responsive?.[activeBp]?.[controlId] !== undefined;
+    const val = selectedNode.props?.responsive?.[activeBp]?.[controlId];
+    return val !== undefined && val !== null;
   };
 
   /**
@@ -293,8 +303,20 @@ export const ElementSettings: React.FC = () => {
       }
       // Inherit from md
       if (activeBp !== 'md') {
-        return selectedNode.props?.responsive?.md?.[controlId] ?? null;
+        const mdValue = selectedNode.props?.responsive?.md?.[controlId];
+        if (mdValue !== undefined && mdValue !== null) return mdValue;
       }
+
+      // Backward compat: alignment props that were previously stored at top level
+      const ALIGNMENT_BACKWARD_PROPS = [
+        'flexDirection', 'flexWrap', 'justifyContent', 'alignItems', 'alignContent', 'gap',
+        'flexDir', 'justify', 'items',
+      ];
+      if (ALIGNMENT_BACKWARD_PROPS.includes(controlId)) {
+        const topValue = selectedNode.props?.[controlId];
+        if (topValue !== undefined && topValue !== null) return topValue;
+      }
+
       return null;
     }
 
@@ -307,17 +329,6 @@ export const ElementSettings: React.FC = () => {
     // Global prop: read from top-level props
     const topValue = selectedNode.props?.[controlId];
     if (topValue !== undefined && topValue !== null) return topValue;
-
-    // Fallback: for gap, also check responsive object (existing data may have it there)
-    if (controlId === 'gap') {
-      const resp = selectedNode.props?.responsive;
-      if (resp) {
-        for (const bp of ['md', 'sm', 'base']) {
-          const v = resp[bp]?.gap;
-          if (v !== undefined && v !== null) return v;
-        }
-      }
-    }
 
     return null;
   };
@@ -494,13 +505,27 @@ export const ElementSettings: React.FC = () => {
                 <input
                   type="number"
                   value={parsed.num}
-                  onChange={(e) => setPropValue(key, formatNumberValue(e.target.value ? parseFloat(e.target.value) : '', parsed.unit))}
+                  onChange={(e) => {
+                    const num = e.target.value ? parseFloat(e.target.value) : '';
+                    if (parsed.unit === 'auto' && num !== '') {
+                      setPropValue(key, formatNumberValue(num, 'px'));
+                    } else {
+                      setPropValue(key, formatNumberValue(num, parsed.unit));
+                    }
+                  }}
                   placeholder="auto"
                   className="flex-1 px-2 py-1 bg-slate-800/50 border border-slate-700 rounded text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <select
                   value={parsed.unit}
-                  onChange={(e) => setPropValue(key, formatNumberValue(parsed.num, e.target.value))}
+                  onChange={(e) => {
+                    const newUnit = e.target.value;
+                    if (parsed.unit === 'auto' && newUnit !== 'auto' && parsed.num === '') {
+                      setPropValue(key, formatNumberValue(0, newUnit));
+                    } else {
+                      setPropValue(key, formatNumberValue(parsed.num, newUnit));
+                    }
+                  }}
                   className="px-1 py-1 bg-slate-700 border border-slate-600 rounded text-[9px] text-slate-300 focus:outline-none"
                 >
                   {['px', '%', 'em', 'rem', 'vw', 'vh', 'auto'].map(u => (
@@ -1281,7 +1306,10 @@ export const ElementSettings: React.FC = () => {
           <input
             type="number"
             value={value ?? ''}
-            onChange={(e) => setPropValue(control.id, e.target.value ? parseFloat(e.target.value) : null)}
+            onChange={(e) => {
+              console.log(`[NumberInput] control.id=${control.id} value="${e.target.value}" parsed=${e.target.value ? parseFloat(e.target.value) : 'null'}`);
+              setPropValue(control.id, e.target.value ? parseFloat(e.target.value) : null);
+            }}
             min={control.min}
             max={control.max}
             step={control.step}

@@ -1,82 +1,108 @@
-import React, { useState } from 'react';
-import { authApi } from '../api/auth';
+import { useState } from "react";
 
-const NewsletterForm = ({ lang = 'en', ...props }) => {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
+export default function NewsletterForm() {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!email) return;
-    
-    setStatus('loading');
-    setMessage('');
-    
-    try {
-      await authApi.subscribeNewsletter(email);
-      setStatus('success');
-      setMessage(
-        lang === 'ar' 
-          ? 'شكراً لك! تم الإشتراك بنجاح.' 
-          : 'Thank you! You have been successfully subscribed.'
-      );
-      setEmail('');
-    } catch (err) {
-      setStatus('error');
-      setMessage(
-        lang === 'ar'
-          ? 'حدث خطأ. يرجى المحاولة مرة أخرى.'
-          : 'An error occurred. Please try again.'
-      );
-    }
+    if (email) setSubmitted(true);
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow" id="newsletter-form">
-      <h3 className="text-xl font-bold mb-4 text-center">
-        {lang === 'ar' ? 'النشرة الإخبارية' : 'Newsletter'}
-      </h3>
-      <p className="text-sm text-gray-600 mb-6 text-center">
-        {lang === 'ar' 
-          ? 'اشترك في نشرتنا الإخبارية للحصول على آخر التحديثات.'
-          : 'Subscribe to our newsletter for the latest updates.'}
-      </p>
-      
-      {status === 'success' ? (
-        <div className="p-4 bg-green-100 text-green-700 rounded text-center">
-          {message}
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <div className="flex gap-2">
+    <>
+
+        {submitted ? (
+          <p className="text-white text-xl font-semibold animate-pulse">
+            🎉 You're in! Welcome aboard.
+          </p>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="flex items-center gap-0 border border-white rounded-[10px] px-[10px] py-[5px] w-full max-w-xl"
+          >
+            {/* Email icon */}
+            <svg
+              className="w-5 h-5 text-white/60 mr-2 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5H4.5a2.25 2.25 0 00-2.25 2.25m19.5 0l-9.75 6.75L2.25 6.75"
+              />
+            </svg>
+
+            {/* Email input */}
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={lang === 'ar' ? 'البريد الإلكتروني' : 'Your email'}
-              className="flex-1 p-3 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              placeholder="Email Address"
               required
+              className="
+                flex-1
+                bg-transparent
+                border-none
+                outline-none
+                text-white
+                placeholder:text-white
+                placeholder:font-normal
+                placeholder:text-[19px]
+                placeholder:leading-none
+                placeholder:capitalize
+                text-[19px]
+                leading-none
+                w-[58%]
+              "
             />
+
+            {/* Submit button */}
             <button
               type="submit"
-              disabled={status === 'loading'}
-              className="px-6 py-3 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition disabled:bg-gray-400"
+              className="
+                flex items-center gap-2
+                bg-white
+                text-[#2A69C6]
+                border border-[#2A69C6]
+                rounded-[10px]
+                px-[60px] py-[20px]
+                font-extrabold
+                text-[16px]
+                leading-none
+                uppercase
+                tracking-wide
+                transition-all
+                duration-200
+                hover:bg-[#2A69C6]
+                hover:text-white
+                hover:border-white
+                active:scale-95
+                cursor-pointer
+                shrink-0
+              "
             >
-              {status === 'loading' 
-                ? (lang === 'ar' ? 'جاري الإرسال...' : 'Subscribing...')
-                : (lang === 'ar' ? 'اشتراك' : 'Subscribe')}
+              {/* Send icon (replaces the SVG from ::before) */}
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                />
+              </svg>
+              Join Us!
             </button>
-          </div>
-          {status === 'error' && (
-            <div className="mt-3 p-3 bg-red-100 text-red-700 rounded text-sm">
-              {message}
-            </div>
-          )}
-        </form>
-      )}
-    </div>
+          </form>
+        )}
+    </>
   );
-};
-
-export default NewsletterForm;
+}

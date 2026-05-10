@@ -76,11 +76,6 @@ function generateResponsiveStyles(blockId: string, responsive: Record<string, Re
       const cssProp = mapping.css;
       let rule = `${cssProp}: ${val} !important; `;
       
-      // Special handling for zIndex which also needs position
-      if (cleanKey === 'zIndex') {
-        rule += `position: relative !important; `;
-      }
-      
       // Special handling for visibility
       if (cleanKey === 'visibility') {
         const displayVal = val === 'hidden' ? 'none' : val;
@@ -516,6 +511,10 @@ const PageRenderer: React.FC = () => {
             background: bgImageUrl,
             display: p.display || undefined,
             flexDirection: p.flexDirection || p.flexDir || undefined,
+            justifyContent: (p.justifyContent || p.justify) as any || undefined,
+            alignItems: (p.alignItems || p.items || p.align) as any || undefined,
+            alignContent: p.alignContent as any || undefined,
+            gap: p.gap || undefined,
             boxShadow: p.boxShadow || undefined,
             zIndex: p.zIndex ?? undefined, 
             position: (p.zIndex ?? null) !== null ? 'relative' : undefined
@@ -679,13 +678,13 @@ const PageRenderer: React.FC = () => {
           );
         }
         case 'divider': return (
-          <div key={block.id} id={p.customId || getBlockId(block.id)} className={`${p.customClass || ''}`} style={{ paddingTop: p.padding, paddingBottom: p.padding }}>
+          <div key={block.id} id={p.customId || getBlockId(block.id)} className={`${p.customClass || ''}`} style={{ paddingTop: p.padding, paddingBottom: p.padding, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }}>
             <hr style={{ borderColor: p.color, borderWidth: p.thickness, borderStyle: p.style }} />
           </div>
         );
-        case 'spacer': return <div key={block.id} id={p.customId || getBlockId(block.id)} style={{ height: p.height }} className={p.customClass || ''} />;
+        case 'spacer': return <div key={block.id} id={p.customId || getBlockId(block.id)} style={{ height: p.height, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }} className={p.customClass || ''} />;
         case 'card': return (
-          <div key={block.id} id={p.customId || getBlockId(block.id)} className={`${p.customClass || ''}`}>
+          <div key={block.id} id={p.customId || getBlockId(block.id)} className={`${p.customClass || ''}`} style={{ zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }}>
             <div style={{ background: p.bgColor, boxShadow: p.boxShadow || (p.shadow ? '0 4px 24px rgba(0,0,0,0.08)' : 'none') }} className="rounded-2xl p-6 border border-gray-100">
               <div className="w-8 h-1 rounded-full mb-4" style={{ background: p.accentColor }} />
               <h3 className="font-bold text-slate-800 text-lg mb-2">{p.title}</h3>
@@ -702,7 +701,7 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || getBlockId(block.id)} className={`flex items-center ${p.customClass || ''}`} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, boxShadow: p.boxShadow }}>
+              <div id={p.customId || getBlockId(block.id)} className={`flex items-center ${p.customClass || ''}`} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, boxShadow: p.boxShadow, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }}>
                 <div className="flex items-center" style={{ gap: p.gap }}>
                   <div className="shrink-0 flex items-center justify-center" style={{ width: p.iconSize || '24px', height: p.iconSize || '24px' }}>
                     {(!isImage && Icon) ? (
@@ -725,7 +724,7 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || getBlockId(block.id)} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, flexDirection: p.flexDir as any, boxShadow: p.boxShadow }} className={`flex items-center ${p.customClass || ''}`}>
+              <div id={p.customId || getBlockId(block.id)} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, flexDirection: p.flexDir as any, boxShadow: p.boxShadow, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }} className={`flex items-center ${p.customClass || ''}`}>
                 <div className="shrink-0" style={{ width: p.imageWidth }}>
                   {p.image ? <img src={imageBoxSrc} alt={p.title} className="w-full h-auto" style={{ borderRadius: p.borderRadius }} /> : <div className="w-full h-32 bg-slate-100 rounded-xl" />}
                 </div>
@@ -823,7 +822,9 @@ function AccordionItem({ block }: { block: Block }) {
           width: p.width || undefined,
           height: p.height || undefined,
           textAlign: p.textAlign as any,
-          boxShadow: p.boxShadow
+          boxShadow: p.boxShadow,
+          zIndex: p.zIndex ?? undefined,
+          position: (p.zIndex ?? null) !== null ? 'relative' : undefined
         }}
       >
         <div

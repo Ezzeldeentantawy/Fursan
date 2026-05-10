@@ -207,6 +207,21 @@ export const Builder: React.FC = () => {
       };
       uniqueElements.forEach(normalizeResponsiveJustify);
       
+      // ✅ DEBUG: Trace zIndex values before tree enters store
+      const scanZIndex = (els: any[], path: string = 'root') => {
+        els.forEach((el: any, i: number) => {
+          const curPath = `${path} > [${i}]`;
+          if (el.props?.zIndex !== undefined && el.props?.zIndex !== null && el.props?.zIndex !== 0) {
+            console.log(`[ZINDEX TRACE] ${curPath}: type=${el.type}, id=${el.id}, zIndex=${el.props.zIndex} (${typeof el.props.zIndex})`);
+          }
+          if (el.children && el.children.length > 0) {
+            scanZIndex(el.children, curPath);
+          }
+        });
+      };
+      console.log('[ZINDEX TRACE] About to setTree with', uniqueElements.length, 'elements');
+      scanZIndex(uniqueElements);
+      
       const rootTree: BuilderNode = {
         id: 'root',
         type: 'container',
@@ -220,6 +235,7 @@ export const Builder: React.FC = () => {
         },
         children: uniqueElements,
       };
+      console.log('[ZINDEX TRACE] rootTree.children[0]?.props?.zIndex:', rootTree.children[0]?.props?.zIndex);
       setTree(rootTree);
       return;
     }
@@ -897,7 +913,7 @@ export const Builder: React.FC = () => {
         <div className="flex-1 flex overflow-hidden">
           <WidgetPanel />
           
-          <div className="flex-1 overflow-auto bg-white">
+          <div className="flex-1 overflow-auto bg-white px-2">
             <CanvasInner activeBreakpoint={activeBp} />
           </div>
         </div>

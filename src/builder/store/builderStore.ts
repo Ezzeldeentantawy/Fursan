@@ -150,7 +150,25 @@ export const useBuilderStore = create<BuilderState>()(
         tree: treeUtils.duplicateNode(state.tree, id),
       })),
       
-       setTree: (tree) => {
+        setTree: (tree) => {
+        // ✅ DEBUG: Check zIndex before deep clone
+        const scanForZIndex = (nodes: any[], path: string = '') => {
+          nodes.forEach((n: any, i: number) => {
+            const cp = path ? `${path} > [${i}]` : `[${i}]`;
+            if (n.props?.zIndex !== undefined && n.props?.zIndex !== null && n.props?.zIndex !== 0) {
+              console.log(`[STORE TRACE] Before clone ${cp}: ${n.type} zIndex=${n.props.zIndex}`);
+            }
+            if (n.children) scanForZIndex(n.children, cp);
+          });
+        };
+        if (tree.children) scanForZIndex(tree.children);
+        
+        // Deep clone
+        const cloned = JSON.parse(JSON.stringify(tree));
+        
+        // ✅ DEBUG: Check zIndex after deep clone
+        if (cloned.children) scanForZIndex(cloned.children);
+        
         // Deduplicate tree before setting
         const deduplicateTree = (node: BuilderNode): BuilderNode => {
           if (node.children && node.children.length > 0) {
@@ -169,6 +187,21 @@ export const useBuilderStore = create<BuilderState>()(
         };
         
         const dedupedTree = deduplicateTree(JSON.parse(JSON.stringify(tree)));
+        
+        // ✅ DEBUG: Check zIndex after dedupe
+        if (dedupedTree.children) {
+          const scanAfter = (nodes: any[], path: string = '') => {
+            nodes.forEach((n: any, i: number) => {
+              const cp = path ? `${path} > [${i}]` : `[${i}]`;
+              if (n.props?.zIndex !== undefined && n.props?.zIndex !== null && n.props?.zIndex !== 0) {
+                console.log(`[STORE TRACE] After dedupe ${cp}: ${n.type} zIndex=${n.props.zIndex}`);
+              }
+              if (n.children) scanAfter(n.children, cp);
+            });
+          };
+          scanAfter(dedupedTree.children);
+        }
+        
         set({ tree: dedupedTree });
       },
       setPreviewMode: (mode) => set({ isPreviewMode: mode }),

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Type, AlignLeft, AlignCenter, AlignRight, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor, List, GitBranch, ChevronsDownUp, Hash, Menu, Columns, Smile } from 'lucide-react';
+import { Type, AlignLeft, AlignCenter, AlignRight, MousePointerClick, Minus, MoveVertical, Box, Image, Smartphone, Tablet, Monitor, List, GitBranch, ChevronsDownUp, Hash, Menu, X, Columns, Smile } from 'lucide-react';
 import { propMap } from './registry/componentRegistry';
 import { DynamicIcon } from '../icons';
 import { useBuilderStore } from './store/builderStore';
@@ -81,50 +81,6 @@ export const defaultResponsiveProps = {
     base: {},
   },
 };
-
-export const commonAdvancedFields = [
-  {
-    key: 'sep_sizing',
-    label: 'Layering & Depth',
-    type: 'separator'
-  },
-  {
-    key: 'zIndex',
-    label: 'Z-Index Layer',
-    type: 'number',
-    min: -100,
-    max: 9999,
-    step: 1
-  },
-  {
-    key: 'boxShadow',
-    label: 'Box Shadow',
-    type: 'text',
-    placeholder: '0 4px 12px rgba(0,0,0,0.1)'
-  },
-  {
-    key: 'sep_common',
-    label: 'Advanced Identity',
-    type: 'separator'
-  },
-  {
-    key: 'customClass',
-    label: 'Custom CSS Class',
-    type: 'text',
-    placeholder: 'my-element-class'
-  },
-  {
-    key: 'customId',
-    label: 'Custom HTML ID',
-    type: 'text',
-    placeholder: 'my-element-id'
-  },
-  {
-    key: 'responsive',
-    label: 'Responsive Styles',
-    type: 'responsive'
-  }
-];
 
 export const defaultTypographyProps = {
   fontSize: '',
@@ -560,14 +516,9 @@ export const elementDefinitions: Record<string, any> = {
       borderColor: '#e2e8f0',
       borderStyle: 'none',
       boxShadow: null,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'flex-start',
-      alignItems: 'stretch',
-      alignContent: 'flex-start',
       gap: '0px',
       overflow: 'visible',
-      zIndex: 0,
+      zIndex: null,
       linkUrl: null,
       linkTarget: '_self',
        customClass: null,
@@ -575,7 +526,16 @@ export const elementDefinitions: Record<string, any> = {
        transitionDuration: '200ms',
        transitionEasing: 'ease',
        responsive: {
-         md: { width: null, minWidth: null, maxWidth: null, height: null, minHeight: null, maxHeight: null, pt: null, pr: null, pb: null, pl: null, mt: null, mr: null, mb: null, ml: null, display: 'flex' },
+         md: {
+           width: null, minWidth: null, maxWidth: null, height: null, minHeight: null, maxHeight: null,
+           pt: null, pr: null, pb: null, pl: null, mt: null, mr: null, mb: null, ml: null,
+           display: 'flex',
+           flexDirection: 'row',
+           flexWrap: 'wrap',
+           justifyContent: 'flex-start',
+           alignItems: 'stretch',
+           alignContent: 'flex-start',
+         },
          sm: {},
          base: {},
        },
@@ -589,12 +549,12 @@ export const elementDefinitions: Record<string, any> = {
       { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
       { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
       // Alignment tab
-      { id: 'flexDirection', label: 'Flex Direction', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'row', options: [{ label: 'Row', value: 'row' }, { label: 'Column', value: 'column' }, { label: 'Row Reverse', value: 'row-reverse' }, { label: 'Column Reverse', value: 'column-reverse' }] },
-      { id: 'flexWrap', label: 'Flex Wrap', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'wrap', options: [{ label: 'No Wrap', value: 'nowrap' }, { label: 'Wrap', value: 'wrap' }, { label: 'Wrap Reverse', value: 'wrap-reverse' }] },
-      { id: 'justifyContent', label: 'Justify Content', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'flex-start', options: [{ label: 'Flex Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'Flex End', value: 'flex-end' }, { label: 'Space Between', value: 'space-between' }, { label: 'Space Around', value: 'space-around' }, { label: 'Space Evenly', value: 'space-evenly' }] },
-      { id: 'alignItems', label: 'Align Items', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'stretch', options: [{ label: 'Stretch', value: 'stretch' }, { label: 'Flex Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'Flex End', value: 'flex-end' }, { label: 'Baseline', value: 'baseline' }] },
-      { id: 'alignContent', label: 'Align Content', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'flex-start', options: [{ label: 'Flex Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'Flex End', value: 'flex-end' }, { label: 'Space Between', value: 'space-between' }, { label: 'Space Around', value: 'space-around' }, { label: 'Stretch', value: 'stretch' }] },
-      { id: 'gap', label: 'Gap', tab: 'alignment', group: 'Layout', type: 'text', responsive: false, default: '0px', placeholder: 'e.g. 20px or 20px 30px' },
+      { id: 'flexDirection', label: 'Flex Direction', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'row', options: [{ label: 'Row', value: 'row' }, { label: 'Column', value: 'column' }, { label: 'Row Reverse', value: 'row-reverse' }, { label: 'Column Reverse', value: 'column-reverse' }] },
+      { id: 'flexWrap', label: 'Flex Wrap', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'wrap', options: [{ label: 'No Wrap', value: 'nowrap' }, { label: 'Wrap', value: 'wrap' }, { label: 'Wrap Reverse', value: 'wrap-reverse' }] },
+      { id: 'justifyContent', label: 'Justify Content', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'flex-start', options: [{ label: 'Flex Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'Flex End', value: 'flex-end' }, { label: 'Space Between', value: 'space-between' }, { label: 'Space Around', value: 'space-around' }, { label: 'Space Evenly', value: 'space-evenly' }] },
+      { id: 'alignItems', label: 'Align Items', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'stretch', options: [{ label: 'Stretch', value: 'stretch' }, { label: 'Flex Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'Flex End', value: 'flex-end' }, { label: 'Baseline', value: 'baseline' }] },
+      { id: 'alignContent', label: 'Align Content', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'flex-start', options: [{ label: 'Flex Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'Flex End', value: 'flex-end' }, { label: 'Space Between', value: 'space-between' }, { label: 'Space Around', value: 'space-around' }, { label: 'Stretch', value: 'stretch' }] },
+      { id: 'gap', label: 'Gap', tab: 'alignment', group: 'Layout', type: 'text', responsive: true, default: '0px', placeholder: 'e.g. 20px or 20px 30px' },
       { id: 'display', label: 'Display', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'flex', options: [{ label: 'Flex', value: 'flex' }, { label: 'Block', value: 'block' }, { label: 'Grid', value: 'grid' }, { label: 'None', value: 'none' }] },
       // Design tab - Sizing
       { id: 'width', label: 'Width', tab: 'design', group: 'Sizing', type: 'text', unit: 'px', responsive: true, default: null },
@@ -621,7 +581,7 @@ export const elementDefinitions: Record<string, any> = {
       { id: 'borderRadius', label: 'Border Radius', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '0px' },
        { id: 'boxShadow', label: 'Box Shadow', tab: 'design', group: 'Effects', type: 'text', responsive: false, default: null, placeholder: '0 4px 12px rgba(0,0,0,0.1)' },
         { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
-        { id: 'zIndex', label: 'Z-Index', tab: 'design', group: 'Effects', type: 'number', min: -100, max: 9999, step: 1, responsive: false, default: 0 },
+        { id: 'zIndex', label: 'Z-Index', tab: 'design', group: 'Effects', type: 'number', min: -100, max: 9999, step: 1, responsive: false, default: null },
        // Design tab - Transition
        { id: 'transitionDuration', label: 'Transition Duration', tab: 'design', group: 'Transition', type: 'text', responsive: false, default: '200ms' },
        { id: 'transitionEasing', label: 'Transition Easing', tab: 'design', group: 'Transition', type: 'select', responsive: false, default: 'ease', options: [{ label: 'Ease', value: 'ease' }, { label: 'Linear', value: 'linear' }, { label: 'Ease In', value: 'ease-in' }, { label: 'Ease Out', value: 'ease-out' }, { label: 'Ease In Out', value: 'ease-in-out' }] },
@@ -1216,11 +1176,6 @@ export function generateResponsiveStyles(blockId: string, responsive: Record<str
       const cssProp = mapping.css;
       let rule = `${cssProp}: ${val} !important; `;
       
-      // Special handling for zIndex which also needs position
-      if (key === 'zIndex') {
-        rule += `position: relative !important; `;
-      }
-      
       // Special handling for visibility
       if (key === 'visibility') {
         const displayVal = val === 'hidden' ? 'none' : val;
@@ -1445,21 +1400,30 @@ export const CONTAINER_TYPES = ['container'];
 
 // Container Component
 export const ContainerComponent: React.FC<any> = (props) => {
-  // ✅ Destructure everything EXCEPT flexDirection, justifyContent, alignItems, margin props
+  // ✅ Destructure everything EXCEPT flexDirection, justifyContent, alignItems, alignContent, margin props
     const {
       bgColor, bgImage, bgSize, width, height, minWidth, minHeight, maxWidth, maxHeight,
       borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap,
-      children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display, flexDir, items,
+      children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display,
+      flexDir, items,
       bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl,
       margin, marginTop, marginRight, marginBottom, marginLeft, activeBreakpoint, className: dndClassName,
       transitionDuration, transitionEasing,
       childrenCount
       } = props;
 
+  // ✅ DEBUG: Trace zIndex value
+  if (id && id !== 'root') {
+    console.log(`[ContainerComponent] ${id} zIndex from props:`, zIndex, 'type:', typeof zIndex);
+    console.log(`[ContainerComponent] props.zIndex:`, props.zIndex);
+    console.log(`[ContainerComponent] props.responsive:`, props.responsive);
+  }
+
   // ✅ READ DIRECTLY FROM PROPS (not from destructuring):
   const flexDirFromProps = props.flexDirection;
   const justifyContentFromProps = props.justifyContent;
   const alignItemsFromProps = props.alignItems;
+  const alignContentFromProps = props.alignContent;
 
   // ✅ MERGE RESPONSIVE STYLES for builder preview
   // Use activeBreakpoint from props (passed by renderNode), default to 'md' for preview
@@ -1548,13 +1512,21 @@ export const ContainerComponent: React.FC<any> = (props) => {
   // ✅ Apply alignItems: check responsive first (short-form key), then props
   containerStyle.alignItems = (responsiveStyles.items as any) || alignItemsFromProps || items || align || undefined;
 
-  // ✅ Merge all other responsive styles (padding, margin, gap, etc.)
+  // ✅ Apply alignContent: check responsive first (short-form or full-form), then props
+  containerStyle.alignContent = (responsiveStyles.alignContent as any) || alignContentFromProps || undefined;
+
+  // ✅ Apply gap: check responsive first (if stored responsively), then fall back to top-level prop
+  containerStyle.gap = (responsiveStyles.gap as any) || gap || undefined;
+
+  // ✅ Merge all other responsive styles (padding, margin, etc.)
   // This ensures responsive values override base props
   // Note: responsiveStyles now has short-form keys (pt, mt, etc.)
   // We need to convert them to camelCase for containerStyle using propMap
   Object.keys(responsiveStyles).forEach(key => {
     const value = responsiveStyles[key];
     if (value !== undefined && value !== '') {
+      // Skip keys already handled above (flexDir, justify, items, alignContent, gap)
+      if (['flexDir', 'flexDirection', 'justify', 'justifyContent', 'items', 'alignItems', 'alignContent', 'gap'].includes(key)) return;
       // Convert short-form to camelCase using propMap
       const mapping = propMap[key];
       if (mapping) {
@@ -1565,11 +1537,6 @@ export const ContainerComponent: React.FC<any> = (props) => {
       }
     }
   });
-
-  // ✅ Gap is now a global (non-responsive) prop — re-assert base gap so responsive gap doesn't leak
-  if (gap !== undefined && gap !== null && gap !== '') {
-    containerStyle.gap = gap;
-  }
 
   // Empty container defaults: show placeholder dimensions and dashed blue border
   // These are removed automatically once children are added
@@ -2605,8 +2572,20 @@ export const MenuComponent: React.FC<any> = (props) => {
   const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
   const alignment = textAlign || align || 'left';
 
-  // Show collapse breakpoint indicator when set
+  // Collapse breakpoint logic
   const hasCollapse = collapseBreakpoint && collapseBreakpoint !== 'none';
+  const breakpointOrder = ['md', 'sm', 'base'];
+  // Determine threshold index: '1024px' → collapse at sm/base (index>=1), '768px' → collapse at base only (index>=2)
+  const collapseThreshold = collapseBreakpoint === '1024px' ? 1 : collapseBreakpoint === '768px' ? 2 : -1;
+  const activeBpIndex = breakpointOrder.indexOf(activeBreakpoint || 'md');
+  const shouldCollapse = hasCollapse && collapseThreshold >= 0 && activeBpIndex >= collapseThreshold;
+
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Reset mobile menu when breakpoint changes
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [activeBreakpoint]);
 
   return (
     <>
@@ -2626,12 +2605,16 @@ export const MenuComponent: React.FC<any> = (props) => {
           marginBottom: mb || undefined,
           marginLeft: ml || undefined,
           position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          minHeight: '48px',
           ...responsiveStyles,
         }}
         className={customClass || ''}
       >
         {/* Collapse breakpoint indicator badge */}
-        {hasCollapse && (
+        {hasCollapse && !shouldCollapse && (
           <div style={{
             position: 'absolute',
             top: -8,
@@ -2648,33 +2631,72 @@ export const MenuComponent: React.FC<any> = (props) => {
           </div>
         )}
         {menuId && selectedMenu ? (
-          <div style={{
-            display: 'flex',
-            flexDirection: (menuDirection === 'vertical' ? 'column' : 'row') as any,
-            gap: gap || '24px',
-            justifyContent: (alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'flex-start') as any,
-          }}>
-            {links.map((link, index) => (
-              <div
-                key={index}
+          <>
+            {/* Hamburger toggle — shown when collapsed */}
+            {shouldCollapse && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setMobileOpen(!mobileOpen); }}
                 style={{
-                  padding: '8px 0',
-                  color: textColor || '#000000',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'none',
+                  border: 'none',
                   cursor: 'pointer',
-                  textDecoration: 'none',
-                  transition: 'color 0.2s',
-                  fontSize: fontSize || undefined,
-                  fontWeight: fontWeight || undefined,
-                  fontFamily: fontFamily || undefined,
-                  textTransform: (textTransform && textTransform !== 'none') ? textTransform : undefined,
+                  padding: '8px',
+                  color: textColor || '#000000',
+                  marginLeft: 'auto',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = hoverColor || '#3b82f6'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = textColor || '#000000'; }}
+                aria-label="Toggle menu"
               >
-                {link.label_en || link.label_ar || 'Link'}
-              </div>
-            ))}
-          </div>
+                {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            )}
+            <div className="menu-links" style={{
+              display: shouldCollapse && !mobileOpen ? 'none' : 'flex',
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              width: '100%',
+              flexDirection: (shouldCollapse && mobileOpen ? 'column' : (menuDirection === 'vertical' ? 'column' : 'row')) as any,
+              gap: (shouldCollapse && mobileOpen ? '2px' : (gap || '24px')),
+              justifyContent: (alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'flex-start') as any,
+              minHeight: '40px',
+              ...(shouldCollapse && mobileOpen ? {
+                padding: '8px 0',
+                backgroundColor: bgColor || '#ffffff',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                borderRadius: '0 0 8px 8px',
+                zIndex: 100,
+                minHeight: '48px',
+              } : {}),
+            }}>
+              {links.map((link, index) => (
+                <div
+                  key={index}
+                  style={{
+                    padding: shouldCollapse ? '12px 16px' : '8px 0',
+                    color: textColor || '#000000',
+                    cursor: 'pointer',
+                    textDecoration: 'none',
+                    transition: 'color 0.2s',
+                    fontSize: fontSize || undefined,
+                    fontWeight: fontWeight || undefined,
+                    fontFamily: fontFamily || undefined,
+                    textTransform: (textTransform && textTransform !== 'none') ? textTransform : undefined,
+                    ...(shouldCollapse && mobileOpen ? {
+                      borderBottom: index < links.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none',
+                    } : {}),
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = hoverColor || '#3b82f6'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = textColor || '#000000'; }}
+                  onClick={() => { if (shouldCollapse) setMobileOpen(false); }}
+                >
+                  {link.label_en || link.label_ar || 'Link'}
+                </div>
+              ))}
+            </div>
+          </>
         ) : menuId && !selectedMenu ? (
           <div style={{ padding: '20px', textAlign: 'center', color: '#f59e0b' }}>
             Menu &quot;{menuId}&quot; not found

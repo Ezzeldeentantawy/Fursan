@@ -125,6 +125,11 @@ export function renderNode(
   // Create the element props
   let elementProps: any = { ...node.props, id: node.id, key: node.id, 'data-node-id': node.id };
   
+  // ✅ DEBUG: Trace zIndex through renderNode
+  if (node.id !== 'root' && node.props?.zIndex !== undefined && node.props?.zIndex !== null && node.props?.zIndex !== 0) {
+    console.log(`[RENDER TRACE] renderNode id=${node.id} type=${node.type} zIndex=${node.props.zIndex}`);
+  }
+  
   // ✅ Apply responsive styles with proper breakpoint inheritance (base → sm → md)
   // Uses mergeResponsiveStyles so smaller breakpoints inherit from larger ones.
   // This matches how ContainerComponent handles responsive styles internally.
