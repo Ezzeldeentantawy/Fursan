@@ -142,6 +142,35 @@ const getTypoStyles = (p: Record<string, any>, prefix: string = '') => ({
 } as React.CSSProperties);
 
 /**
+ * Normalize legacy responsive data: expand short-form justify values in all elements
+ * (between → space-between, start → flex-start, etc.)
+ * Prevents invalid CSS like "justify-content: between" from being generated.
+ */
+const normalizeResponsiveJustify = (elements: any[]) => {
+  const shortToFull: Record<string, string> = {
+    'start': 'flex-start',
+    'end': 'flex-end',
+    'between': 'space-between',
+    'around': 'space-around',
+    'evenly': 'space-evenly',
+  };
+  const walk = (els: any[]) => {
+    els.forEach((el: any) => {
+      if (el.props?.responsive) {
+        ['md', 'sm', 'base'].forEach(bp => {
+          const val = el.props.responsive[bp]?.justify;
+          if (val && shortToFull[val]) {
+            el.props.responsive[bp].justify = shortToFull[val];
+          }
+        });
+      }
+      if (el.children) walk(el.children);
+    });
+  };
+  walk(elements);
+};
+
+/**
  * PageRenderer Component
  * Renders dynamic pages based on URL parameters (siteDomain and pageSlug)
  * Fetches page data from the backend and renders blocks based on language
@@ -211,6 +240,9 @@ const PageRenderer: React.FC = () => {
 
             if (pageData) { pageData.content = normalizeContent(pageData.content); }
             if (pageData && pageData.content_ar !== undefined) { pageData.content_ar = normalizeContent(pageData.content_ar); }
+            // Normalize legacy responsive data (between → space-between, etc.)
+            if (pageData?.content?.elements) normalizeResponsiveJustify(pageData.content.elements);
+            if (pageData?.content_ar?.elements) normalizeResponsiveJustify(pageData.content_ar.elements);
             setPage(pageData);
 
             if (pageData?.lang) { setLang(pageData.lang); } else if (pageData?.language) { setLang(pageData.language); }
@@ -278,6 +310,9 @@ const PageRenderer: React.FC = () => {
 
         if (pageData) { pageData.content = normalizeContent(pageData.content); }
         if (pageData && pageData.content_ar !== undefined) { pageData.content_ar = normalizeContent(pageData.content_ar); }
+        // Normalize legacy responsive data (between → space-between, etc.)
+        if (pageData?.content?.elements) normalizeResponsiveJustify(pageData.content.elements);
+        if (pageData?.content_ar?.elements) normalizeResponsiveJustify(pageData.content_ar.elements);
         setPage(pageData);
 
         if (pageData?.lang) { setLang(pageData.lang); } else if (pageData?.language) { setLang(pageData.language); }
@@ -698,7 +733,17 @@ const PageRenderer: React.FC = () => {
         case 'menu': {
           const selectedMenu = siteMenus.find((m) => m.name === p.menuId);
           const links = selectedMenu?.links || [];
-          const styles = generateResponsiveStyles(block.id, p.responsive);
+
+          // Strip justify from responsive before CSS generation — we handle it inline
+          // with proper value mapping below (generateResponsiveStyles passes values through
+          // as-is, producing invalid CSS like "justify-content: between")
+          const menuResponsive = p.responsive ? JSON.parse(JSON.stringify(p.responsive)) : undefined;
+          if (menuResponsive) {
+            ['md', 'sm', 'base'].forEach(bp => {
+              if (menuResponsive[bp]) delete menuResponsive[bp].justify;
+            });
+          }
+          const styles = generateResponsiveStyles(block.id, menuResponsive);
 
           // Hover style via <style> tag
           const hoverStyle = p.hoverColor ? `
@@ -706,6 +751,23 @@ const PageRenderer: React.FC = () => {
               color: ${p.hoverColor} !important;
             }
           ` : '';
+
+          // Map short-form justify values to CSS justify-content values
+          const justifyValueMap: Record<string, string> = {
+            'start': 'flex-start',
+            'center': 'center',
+            'end': 'flex-end',
+            'between': 'space-between',
+            'around': 'space-around',
+            'evenly': 'space-evenly',
+          };
+
+          // Get justify from responsive styles (desktop-first inheritance: md → base → sm)
+          const justifyFromResponsive = p.responsive?.md?.justify || p.responsive?.base?.justify || p.responsive?.sm?.justify;
+          const mappedJustify = justifyFromResponsive ? (justifyValueMap[justifyFromResponsive] || justifyFromResponsive) : undefined;
+
+          // Determine justifyContent: responsive justify > textAlign-based fallback
+          const flexJustifyContent = mappedJustify || (p.textAlign === 'center' ? 'center' : p.textAlign === 'right' ? 'flex-end' : 'flex-start');
 
           return (
             <>
@@ -736,7 +798,7 @@ const PageRenderer: React.FC = () => {
                     display: 'flex',
                     flexDirection: (p.menuDirection === 'vertical' ? 'column' : 'row') as any,
                     gap: p.gap || '24px',
-                    justifyContent: (p.textAlign === 'center' ? 'center' : p.textAlign === 'right' ? 'flex-end' : 'flex-start') as any,
+                    justifyContent: flexJustifyContent as any,
                   }}>
                     {links.map((link: any, index: number) => (
                       <a
@@ -771,18 +833,6 @@ const PageRenderer: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-white ${lang === 'ar' ? 'rtl' : 'ltr'}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Language Switcher */}
-      {page.content_ar && page.content_ar.elements && page.content_ar.elements.length > 0 && page.content.elements && page.content.elements.length > 0 && (
-        <div className="fixed top-4 right-4 z-50">
-          <button
-            onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors text-sm font-medium"
-          >
-            {lang === 'en' ? 'العربية' : 'English'}
-          </button>
-        </div>
-      )}
-
       {/* Custom CSS injection */}
       {(() => {
         const activeContent = lang === 'ar' ? (page.content_ar || page.content) : page.content;

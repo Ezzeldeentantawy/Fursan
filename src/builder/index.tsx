@@ -184,6 +184,29 @@ export const Builder: React.FC = () => {
         console.warn(`[Builder] Removed ${elements.length - uniqueElements.length} duplicate elements`);
       }
       
+      // Normalize legacy responsive data: expand short-form justify values
+      // (between → space-between, start → flex-start, end → flex-end, etc.)
+      // This prevents invalid CSS like "justify-content: between" from being generated
+      const normalizeResponsiveJustify = (el: any) => {
+        if (!el.props?.responsive) return;
+        const shortToFull: Record<string, string> = {
+          'start': 'flex-start',
+          'end': 'flex-end',
+          'between': 'space-between',
+          'around': 'space-around',
+          'evenly': 'space-evenly',
+        };
+        ['md', 'sm', 'base'].forEach(bp => {
+          if (el.props.responsive[bp]?.justify && shortToFull[el.props.responsive[bp].justify]) {
+            el.props.responsive[bp].justify = shortToFull[el.props.responsive[bp].justify];
+          }
+        });
+        if (el.children) {
+          el.children.forEach(normalizeResponsiveJustify);
+        }
+      };
+      uniqueElements.forEach(normalizeResponsiveJustify);
+      
       const rootTree: BuilderNode = {
         id: 'root',
         type: 'container',

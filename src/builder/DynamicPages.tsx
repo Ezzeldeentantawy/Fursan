@@ -1501,7 +1501,8 @@ export const ContainerComponent: React.FC<any> = (props) => {
   containerStyle.flexDirection = (responsiveStyles.flexDir as any) || flexDirFromProps || flexDir || direction || undefined;
 
   // ✅ Apply justifyContent: check responsive first (short-form key), then props
-  containerStyle.justifyContent = (responsiveStyles.justify as any) || justifyContentFromProps || justify || undefined;
+  // Use mapJustify to expand short-form values (between → space-between, start → flex-start, etc.)
+  containerStyle.justifyContent = mapJustify(responsiveStyles.justify as string) || mapJustify(justifyContentFromProps) || mapJustify(justify) || undefined;
 
   // ✅ Apply alignItems: check responsive first (short-form key), then props
   containerStyle.alignItems = (responsiveStyles.items as any) || alignItemsFromProps || items || align || undefined;
