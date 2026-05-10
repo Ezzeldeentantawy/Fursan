@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { Loader2 } from 'lucide-react';
@@ -904,6 +904,32 @@ function CounterBlock({ block }: { block: Block }) {
 function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[]; lang: string }) {
   const p = block.props;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [dropdownTop, setDropdownTop] = useState(0);
+  const navRef = useRef<HTMLElement>(null);
+
+  // Recalculate dropdown position on open, scroll, and resize
+  const updateDropdownPosition = useCallback(() => {
+    if (navRef.current) {
+      const rect = navRef.current.getBoundingClientRect();
+      setDropdownTop(rect.bottom);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      updateDropdownPosition();
+    }
+  }, [mobileOpen, updateDropdownPosition]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    window.addEventListener('scroll', updateDropdownPosition, { passive: true });
+    window.addEventListener('resize', updateDropdownPosition);
+    return () => {
+      window.removeEventListener('scroll', updateDropdownPosition);
+      window.removeEventListener('resize', updateDropdownPosition);
+    };
+  }, [mobileOpen, updateDropdownPosition]);
 
   const selectedMenu = siteMenus.find((m: any) => m.name === p.menuId);
   const links = selectedMenu?.links || [];
@@ -936,25 +962,51 @@ function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[];
 
   const justifyFromResponsive = p.responsive?.md?.justify || p.responsive?.base?.justify || p.responsive?.sm?.justify;
   const mappedJustify = justifyFromResponsive ? (justifyValueMap[justifyFromResponsive] || justifyFromResponsive) : undefined;
-  const flexJustifyContent = mappedJustify || (p.textAlign === 'center' ? 'center' : p.textAlign === 'right' ? 'flex-end' : 'flex-start');
+
+  // Responsive-aware textAlign: top-level prop → responsive (desktop-first) → default
+  const textAlignFromResponsive = p.responsive?.md?.textAlign || p.responsive?.sm?.textAlign || p.responsive?.base?.textAlign;
+  const textAlignValue = p.textAlign || p.align || textAlignFromResponsive || 'left';
+
+  const flexJustifyContent = mappedJustify || (textAlignValue === 'center' ? 'center' : textAlignValue === 'right' ? 'flex-end' : 'flex-start');
 
   // Collapse breakpoint behavior
   const collapseBp: string = p.collapseBreakpoint || 'none';
   const hasCollapse = collapseBp !== 'none';
   const blockId = p.customId || getBlockId(block.id);
 
-  // Generate collapse CSS
+   // Generate collapse CSS
   let collapseStyle = '';
   if (hasCollapse) {
     const maxWidth = collapseBp === '1024px' ? '1023px' : '767px';
+    const dropdownBg = p.bgColor || '#ffffff';
     collapseStyle = `
       @media (max-width: ${maxWidth}) {
         #${blockId} .menu-links { display: none !important; }
-        #${blockId}.menu-open .menu-links { display: flex !important; flex-direction: column; width: 100%; }
+        #${blockId}.menu-open .menu-links {
+          display: flex !important;
+          flex-direction: column !important;
+          padding: 8px 0;
+          border-top: 1px solid rgba(0,0,0,0.08);
+          background: ${dropdownBg};
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          border-radius: 0 0 8px 8px;
+          z-index: 100;
+          gap: 2px !important;
+          animation: menuFadeIn 0.25s ease;
+        }
+        #${blockId}.menu-open .menu-links a {
+          padding: 12px 16px !important;
+          border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        #${blockId} .menu-links a:last-child { border-bottom: none; }
         #${blockId} .menu-toggle { display: inline-flex !important; }
       }
       @media (min-width: ${collapseBp}) {
         #${blockId} .menu-toggle { display: none !important; }
+      }
+      @keyframes menuFadeIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
       }
     `;
   }
@@ -964,15 +1016,19 @@ function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[];
       {styles}
       {collapseStyle && <style dangerouslySetInnerHTML={{ __html: collapseStyle }} />}
       {hoverStyle && <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />}
-      <nav
-        id={blockId}
-        className={`${p.customClass || ''}${mobileOpen && hasCollapse ? ' menu-open' : ''}`}
+        <nav
+         ref={navRef}
+         id={blockId}
+         className={`${p.customClass || ''}${mobileOpen && hasCollapse ? ' menu-open' : ''}`}
         style={{
           backgroundColor: p.bgColor || undefined,
-          textAlign: (p.textAlign as any) || undefined,
+          textAlign: textAlignValue as any,
           boxShadow: p.boxShadow || undefined,
           zIndex: p.zIndex ?? undefined,
           position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
           paddingTop: p.pt || undefined,
           paddingRight: p.pr || undefined,
           paddingBottom: p.pb || undefined,
@@ -1016,6 +1072,12 @@ function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[];
               flexDirection: (p.menuDirection === 'vertical' ? 'column' : 'row') as any,
               gap: p.gap || '24px',
               justifyContent: flexJustifyContent as any,
+              ...(mobileOpen && hasCollapse ? {
+                position: 'fixed',
+                top: dropdownTop,
+                left: 0,
+                width: '100vw',
+              } : {}),
             }}>
               {links.map((link: any, index: number) => (
                 <a

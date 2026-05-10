@@ -1075,7 +1075,7 @@ export const elementDefinitions: Record<string, any> = {
       bgColor: null,
       textColor: '#000000',
       hoverColor: '#3b82f6',
-      align: 'left',
+      textAlign: 'left',
       menuDirection: 'horizontal',
       gap: '24px',
       fontWeight: '400',
@@ -1084,7 +1084,7 @@ export const elementDefinitions: Record<string, any> = {
       collapseBreakpoint: 'none',
       customClass: null,
       customId: null,
-      responsive: { md: { fontSize: '16px' }, sm: {}, base: {} },
+      responsive: { md: { fontSize: '16px', textAlign: 'left' }, sm: {}, base: {} },
     },
     controls: [
       { id: 'menuId', label: 'Menu', tab: 'content', group: 'Content', type: 'select', responsive: false, default: null, options: [{ label: 'None', value: null }] },
@@ -1095,7 +1095,7 @@ export const elementDefinitions: Record<string, any> = {
       { id: 'fontSize', label: 'Font Size', tab: 'design', group: 'Typography', type: 'text', unit: 'px', responsive: true, default: '16px' },
       { id: 'fontWeight', label: 'Font Weight', tab: 'design', group: 'Typography', type: 'select', responsive: false, default: '400', options: [{ label: '100', value: '100' }, { label: '200', value: '200' }, { label: '300', value: '300' }, { label: '400', value: '400' }, { label: '500', value: '500' }, { label: '600', value: '600' }, { label: '700', value: '700' }, { label: '800', value: '800' }, { label: '900', value: '900' }] },
       { id: 'textTransform', label: 'Text Transform', tab: 'design', group: 'Typography', type: 'select', responsive: false, default: 'none', options: [{ label: 'None', value: 'none' }, { label: 'Uppercase', value: 'uppercase' }, { label: 'Lowercase', value: 'lowercase' }, { label: 'Capitalize', value: 'capitalize' }] },
-      { id: 'align', label: 'Alignment', tab: 'alignment', group: 'Alignment', type: 'select', responsive: true, default: 'left', options: [{ label: 'Left', value: 'left' }, { label: 'Center', value: 'center' }, { label: 'Right', value: 'right' }] },
+      { id: 'textAlign', label: 'Alignment', tab: 'alignment', group: 'Alignment', type: 'select', responsive: true, default: 'left', options: [{ label: 'Left', value: 'left' }, { label: 'Center', value: 'center' }, { label: 'Right', value: 'right' }] },
       { id: 'menuDirection', label: 'Direction', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'horizontal', options: [{ label: 'Horizontal', value: 'horizontal' }, { label: 'Vertical', value: 'vertical' }] },
       { id: 'gap', label: 'Gap', tab: 'alignment', group: 'Layout', type: 'text', unit: 'px', responsive: false, default: '24px' },
       { id: 'collapseBreakpoint', label: 'Collapse Breakpoint', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'none', options: [{ label: 'None', value: 'none' }, { label: '1024px', value: '1024px' }, { label: '768px', value: '768px' }] },
@@ -2592,7 +2592,7 @@ export const CounterComponent: React.FC<any> = (props) => {
 // Menu Component
 export const MenuComponent: React.FC<any> = (props) => {
   const {
-    menuId, bgColor, textColor, hoverColor, align, menuDirection, gap,
+    menuId, bgColor, textColor, hoverColor, textAlign, align, menuDirection, gap,
     fontSize, fontWeight, fontFamily, textTransform, collapseBreakpoint,
     id, customClass, customId, responsive, activeBreakpoint,
     pt, pr, pb, pl, mt, mr, mb, ml, opacity
@@ -2603,6 +2603,7 @@ export const MenuComponent: React.FC<any> = (props) => {
   const links = selectedMenu?.links || [];
 
   const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+  const alignment = textAlign || align || 'left';
 
   // Show collapse breakpoint indicator when set
   const hasCollapse = collapseBreakpoint && collapseBreakpoint !== 'none';
@@ -2614,7 +2615,7 @@ export const MenuComponent: React.FC<any> = (props) => {
         id={customId || id}
         style={{
           backgroundColor: bgColor || undefined,
-          textAlign: (align as any) || undefined,
+          textAlign: alignment as any,
           opacity: (opacity !== undefined && opacity !== null) ? (opacity <= 1 ? opacity : opacity / 100) : undefined,
           paddingTop: pt || undefined,
           paddingRight: pr || undefined,
@@ -2651,7 +2652,7 @@ export const MenuComponent: React.FC<any> = (props) => {
             display: 'flex',
             flexDirection: (menuDirection === 'vertical' ? 'column' : 'row') as any,
             gap: gap || '24px',
-            justifyContent: (align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start') as any,
+            justifyContent: (alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'flex-start') as any,
           }}>
             {links.map((link, index) => (
               <div

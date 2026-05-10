@@ -298,6 +298,12 @@ export const ElementSettings: React.FC = () => {
       return null;
     }
 
+    // Backward compat: textAlign fallback to legacy top-level align prop
+    if (controlId === 'textAlign') {
+      const legacyAlign = selectedNode.props?.align;
+      if (legacyAlign !== undefined && legacyAlign !== null) return legacyAlign;
+    }
+
     // Global prop: read from top-level props
     const topValue = selectedNode.props?.[controlId];
     if (topValue !== undefined && topValue !== null) return topValue;
