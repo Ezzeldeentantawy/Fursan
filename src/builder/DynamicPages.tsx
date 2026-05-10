@@ -1081,6 +1081,7 @@ export const elementDefinitions: Record<string, any> = {
       fontWeight: '400',
       fontFamily: null,
       textTransform: 'none',
+      collapseBreakpoint: 'none',
       customClass: null,
       customId: null,
       responsive: { md: { fontSize: '16px' }, sm: {}, base: {} },
@@ -1097,6 +1098,7 @@ export const elementDefinitions: Record<string, any> = {
       { id: 'align', label: 'Alignment', tab: 'alignment', group: 'Alignment', type: 'select', responsive: true, default: 'left', options: [{ label: 'Left', value: 'left' }, { label: 'Center', value: 'center' }, { label: 'Right', value: 'right' }] },
       { id: 'menuDirection', label: 'Direction', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'horizontal', options: [{ label: 'Horizontal', value: 'horizontal' }, { label: 'Vertical', value: 'vertical' }] },
       { id: 'gap', label: 'Gap', tab: 'alignment', group: 'Layout', type: 'text', unit: 'px', responsive: false, default: '24px' },
+      { id: 'collapseBreakpoint', label: 'Collapse Breakpoint', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'none', options: [{ label: 'None', value: 'none' }, { label: '1024px', value: '1024px' }, { label: '768px', value: '768px' }] },
       { id: 'customClass', label: 'Custom Class', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
       { id: 'customId', label: 'Custom ID', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null },
       { id: 'padding', label: 'PADDING', tab: 'design', group: 'Spacing', type: 'spacing' },
@@ -1403,6 +1405,38 @@ ELEMENTS.forEach(el => {
     ELEMENTS_BY_CATEGORY[el.category] = [];
   }
   ELEMENTS_BY_CATEGORY[el.category].push(el);
+});
+
+// Inject display field into every element's responsive defaults and controls
+ELEMENTS.forEach(el => {
+  // Ensure responsive.md exists
+  if (!el.defaults) el.defaults = {};
+  if (!el.defaults.responsive) el.defaults.responsive = { md: {}, sm: {}, base: {} };
+  if (!el.defaults.responsive.md) el.defaults.responsive.md = {};
+  // Set default display to 'block' if not already set
+  if (el.defaults.responsive.md.display === undefined) {
+    el.defaults.responsive.md.display = 'block';
+  }
+  // Add display control if not already defined
+  if (el.controls && !el.controls.find((c: any) => c.id === 'display')) {
+    el.controls.push({
+      id: 'display',
+      label: 'Display',
+      tab: 'design',
+      group: 'Layout',
+      type: 'select',
+      responsive: true,
+      default: 'block',
+      options: [
+        { label: 'Block', value: 'block' },
+        { label: 'Flex', value: 'flex' },
+        { label: 'Inline', value: 'inline' },
+        { label: 'Inline Block', value: 'inline-block' },
+        { label: 'Grid', value: 'grid' },
+        { label: 'None', value: 'none' },
+      ],
+    });
+  }
 });
 
 export const CONTAINER_TYPES = ['container'];
@@ -1799,7 +1833,7 @@ export const ButtonComponent: React.FC<any> = (props) => {
   return (
     <>
       {hoverStyle && <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />}
-      <div id={customId || `${id}-wrap`} className={`${alignClass} ${customClass || ''}`}>
+      <div id={customId || `${id}-wrap`} className={`${alignClass} ${customClass || ''}`} style={{ display: display || undefined }}>
         <a
           id={id}
           href={btnDisabled ? undefined : btnUrl}
@@ -1823,7 +1857,6 @@ export const ButtonComponent: React.FC<any> = (props) => {
             fontSize: fontSize || undefined,
             width: btnFullWidth ? '100%' : (width || undefined),
             height: height || undefined,
-            display: display || undefined,
             paddingTop: pt || undefined,
             paddingRight: pr || undefined,
             paddingBottom: pb || undefined,
@@ -2560,7 +2593,7 @@ export const CounterComponent: React.FC<any> = (props) => {
 export const MenuComponent: React.FC<any> = (props) => {
   const {
     menuId, bgColor, textColor, hoverColor, align, menuDirection, gap,
-    fontSize, fontWeight, fontFamily, textTransform,
+    fontSize, fontWeight, fontFamily, textTransform, collapseBreakpoint,
     id, customClass, customId, responsive, activeBreakpoint,
     pt, pr, pb, pl, mt, mr, mb, ml, opacity
   } = props;
@@ -2570,6 +2603,9 @@ export const MenuComponent: React.FC<any> = (props) => {
   const links = selectedMenu?.links || [];
 
   const responsiveStyles = mergeResponsiveStyles(responsive || {}, activeBreakpoint || 'md');
+
+  // Show collapse breakpoint indicator when set
+  const hasCollapse = collapseBreakpoint && collapseBreakpoint !== 'none';
 
   return (
     <>
@@ -2588,10 +2624,28 @@ export const MenuComponent: React.FC<any> = (props) => {
           marginRight: mr || undefined,
           marginBottom: mb || undefined,
           marginLeft: ml || undefined,
+          position: 'relative',
           ...responsiveStyles,
         }}
         className={customClass || ''}
       >
+        {/* Collapse breakpoint indicator badge */}
+        {hasCollapse && (
+          <div style={{
+            position: 'absolute',
+            top: -8,
+            right: -8,
+            backgroundColor: '#f59e0b',
+            color: '#fff',
+            fontSize: '10px',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            zIndex: 10,
+            whiteSpace: 'nowrap',
+          }}>
+            ↓ {collapseBreakpoint}
+          </div>
+        )}
         {menuId && selectedMenu ? (
           <div style={{
             display: 'flex',

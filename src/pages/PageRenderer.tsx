@@ -606,7 +606,32 @@ const PageRenderer: React.FC = () => {
           );
         }
         case 'button': {
-          const styles = generateResponsiveStyles(block.id, p.responsive);
+          // Strip display from responsive (it goes on wrapper, not <a>)
+          const btnResponsive = p.responsive ? JSON.parse(JSON.stringify(p.responsive)) : undefined;
+          let wrapperDisplayCSS = '';
+          if (btnResponsive) {
+            const wrapId = `${getBlockId(block.id)}-wrap`;
+            const displayBpMap: Record<string, { min?: string; max?: string }> = {
+              base: { max: '767px' },
+              sm: { min: '768px', max: '1023px' },
+              md: { min: '1024px' },
+            };
+            ['base', 'sm', 'md'].forEach((bp) => {
+              if (btnResponsive[bp] && btnResponsive[bp].display !== undefined) {
+                const val = btnResponsive[bp].display;
+                const cfg = displayBpMap[bp];
+                if (cfg.min && cfg.max) {
+                  wrapperDisplayCSS += `@media (min-width: ${cfg.min}) and (max-width: ${cfg.max}) { #${wrapId} { display: ${val} !important; } }\n`;
+                } else if (cfg.min) {
+                  wrapperDisplayCSS += `@media (min-width: ${cfg.min}) { #${wrapId} { display: ${val} !important; } }\n`;
+                } else if (cfg.max) {
+                  wrapperDisplayCSS += `@media (max-width: ${cfg.max}) { #${wrapId} { display: ${val} !important; } }\n`;
+                }
+                delete btnResponsive[bp].display;
+              }
+            });
+          }
+          const styles = generateResponsiveStyles(block.id, btnResponsive);
           const Icon = p.icon ? (LucideIcons as any)[p.icon] : null;
           const hoverStyle = `
             #${getBlockId(block.id)}:hover {
@@ -621,8 +646,9 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
+              {wrapperDisplayCSS && <style dangerouslySetInnerHTML={{ __html: wrapperDisplayCSS }} />}
               <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />
-              <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
+              <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`${alignClass(p.align)} ${p.customClass || ''}`} style={{ display: p.responsive?.md?.display || undefined }}>
                 <a
                   id={getBlockId(block.id)}
                   href={p.url}
@@ -731,101 +757,7 @@ const PageRenderer: React.FC = () => {
         }
         case 'counter': return <CounterBlock block={block} />;
         case 'menu': {
-          const selectedMenu = siteMenus.find((m) => m.name === p.menuId);
-          const links = selectedMenu?.links || [];
-
-          // Strip justify from responsive before CSS generation — we handle it inline
-          // with proper value mapping below (generateResponsiveStyles passes values through
-          // as-is, producing invalid CSS like "justify-content: between")
-          const menuResponsive = p.responsive ? JSON.parse(JSON.stringify(p.responsive)) : undefined;
-          if (menuResponsive) {
-            ['md', 'sm', 'base'].forEach(bp => {
-              if (menuResponsive[bp]) delete menuResponsive[bp].justify;
-            });
-          }
-          const styles = generateResponsiveStyles(block.id, menuResponsive);
-
-          // Hover style via <style> tag
-          const hoverStyle = p.hoverColor ? `
-            #${getBlockId(block.id)} a:hover {
-              color: ${p.hoverColor} !important;
-            }
-          ` : '';
-
-          // Map short-form justify values to CSS justify-content values
-          const justifyValueMap: Record<string, string> = {
-            'start': 'flex-start',
-            'center': 'center',
-            'end': 'flex-end',
-            'between': 'space-between',
-            'around': 'space-around',
-            'evenly': 'space-evenly',
-          };
-
-          // Get justify from responsive styles (desktop-first inheritance: md → base → sm)
-          const justifyFromResponsive = p.responsive?.md?.justify || p.responsive?.base?.justify || p.responsive?.sm?.justify;
-          const mappedJustify = justifyFromResponsive ? (justifyValueMap[justifyFromResponsive] || justifyFromResponsive) : undefined;
-
-          // Determine justifyContent: responsive justify > textAlign-based fallback
-          const flexJustifyContent = mappedJustify || (p.textAlign === 'center' ? 'center' : p.textAlign === 'right' ? 'flex-end' : 'flex-start');
-
-          return (
-            <>
-              {styles}
-              {hoverStyle && <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />}
-              <nav
-                id={p.customId || getBlockId(block.id)}
-                className={p.customClass || ''}
-                style={{
-                  backgroundColor: p.bgColor || undefined,
-                  textAlign: (p.textAlign as any) || undefined,
-                  boxShadow: p.boxShadow || undefined,
-                  zIndex: p.zIndex ?? undefined,
-                  position: (p.zIndex ?? null) !== null ? 'relative' : undefined,
-                  paddingTop: p.pt || undefined,
-                  paddingRight: p.pr || undefined,
-                  paddingBottom: p.pb || undefined,
-                  paddingLeft: p.pl || undefined,
-                  marginTop: p.mt || undefined,
-                  marginRight: p.mr || undefined,
-                  marginBottom: p.mb || undefined,
-                  marginLeft: p.ml || undefined,
-                  opacity: (p.opacity !== undefined && p.opacity !== null) ? (p.opacity <= 1 ? p.opacity : p.opacity / 100) : undefined,
-                }}
-              >
-                {p.menuId && selectedMenu ? (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: (p.menuDirection === 'vertical' ? 'column' : 'row') as any,
-                    gap: p.gap || '24px',
-                    justifyContent: flexJustifyContent as any,
-                  }}>
-                    {links.map((link: any, index: number) => (
-                      <a
-                        key={index}
-                        href={link.url}
-                        style={{
-                          padding: '8px 0',
-                          color: p.textColor || '#000000',
-                          textDecoration: 'none',
-                          transition: 'color 0.2s',
-                          fontWeight: p.fontWeight || undefined,
-                          fontFamily: p.fontFamily || undefined,
-                          textTransform: (p.textTransform && p.textTransform !== 'none') ? p.textTransform : undefined,
-                        }}
-                      >
-                        {lang === 'ar' ? (link.label_ar || link.label_en) : (link.label_en || link.label_ar)}
-                      </a>
-                    ))}
-                  </div>
-                ) : p.menuId && !selectedMenu ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: '#f59e0b' }}>
-                    Menu &quot;{p.menuId}&quot; not found
-                  </div>
-                ) : null}
-              </nav>
-            </>
-          );
+          return <MenuBlock block={block} siteMenus={siteMenus} lang={lang} />;
         }
         default: return null;
       }
@@ -965,6 +897,154 @@ function CounterBlock({ block }: { block: Block }) {
           {p.prefix || ''}{count}{p.suffix || ''}
         </span>
       </div>
+    </>
+  );
+}
+
+function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[]; lang: string }) {
+  const p = block.props;
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const selectedMenu = siteMenus.find((m: any) => m.name === p.menuId);
+  const links = selectedMenu?.links || [];
+
+  // Strip justify from responsive before CSS generation — we handle it inline
+  const menuResponsive = p.responsive ? JSON.parse(JSON.stringify(p.responsive)) : undefined;
+  if (menuResponsive) {
+    ['md', 'sm', 'base'].forEach((bp: string) => {
+      if (menuResponsive[bp]) delete menuResponsive[bp].justify;
+    });
+  }
+  const styles = generateResponsiveStyles(block.id, menuResponsive);
+
+  // Hover style via <style> tag
+  const hoverStyle = p.hoverColor ? `
+    #${getBlockId(block.id)} a:hover {
+      color: ${p.hoverColor} !important;
+    }
+  ` : '';
+
+  // Map short-form justify values to CSS justify-content values
+  const justifyValueMap: Record<string, string> = {
+    'start': 'flex-start',
+    'center': 'center',
+    'end': 'flex-end',
+    'between': 'space-between',
+    'around': 'space-around',
+    'evenly': 'space-evenly',
+  };
+
+  const justifyFromResponsive = p.responsive?.md?.justify || p.responsive?.base?.justify || p.responsive?.sm?.justify;
+  const mappedJustify = justifyFromResponsive ? (justifyValueMap[justifyFromResponsive] || justifyFromResponsive) : undefined;
+  const flexJustifyContent = mappedJustify || (p.textAlign === 'center' ? 'center' : p.textAlign === 'right' ? 'flex-end' : 'flex-start');
+
+  // Collapse breakpoint behavior
+  const collapseBp: string = p.collapseBreakpoint || 'none';
+  const hasCollapse = collapseBp !== 'none';
+  const blockId = p.customId || getBlockId(block.id);
+
+  // Generate collapse CSS
+  let collapseStyle = '';
+  if (hasCollapse) {
+    const maxWidth = collapseBp === '1024px' ? '1023px' : '767px';
+    collapseStyle = `
+      @media (max-width: ${maxWidth}) {
+        #${blockId} .menu-links { display: none !important; }
+        #${blockId}.menu-open .menu-links { display: flex !important; flex-direction: column; width: 100%; }
+        #${blockId} .menu-toggle { display: inline-flex !important; }
+      }
+      @media (min-width: ${collapseBp}) {
+        #${blockId} .menu-toggle { display: none !important; }
+      }
+    `;
+  }
+
+  return (
+    <>
+      {styles}
+      {collapseStyle && <style dangerouslySetInnerHTML={{ __html: collapseStyle }} />}
+      {hoverStyle && <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />}
+      <nav
+        id={blockId}
+        className={`${p.customClass || ''}${mobileOpen && hasCollapse ? ' menu-open' : ''}`}
+        style={{
+          backgroundColor: p.bgColor || undefined,
+          textAlign: (p.textAlign as any) || undefined,
+          boxShadow: p.boxShadow || undefined,
+          zIndex: p.zIndex ?? undefined,
+          position: 'relative',
+          paddingTop: p.pt || undefined,
+          paddingRight: p.pr || undefined,
+          paddingBottom: p.pb || undefined,
+          paddingLeft: p.pl || undefined,
+          marginTop: p.mt || undefined,
+          marginRight: p.mr || undefined,
+          marginBottom: p.mb || undefined,
+          marginLeft: p.ml || undefined,
+          opacity: (p.opacity !== undefined && p.opacity !== null) ? (p.opacity <= 1 ? p.opacity : p.opacity / 100) : undefined,
+        }}
+      >
+        {p.menuId && selectedMenu ? (
+          <>
+            {/* Mobile toggle button */}
+            {hasCollapse && (
+              <button
+                className="menu-toggle"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                style={{
+                  display: 'none',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  color: p.textColor || '#000000',
+                  marginLeft: 'auto',
+                }}
+                aria-label="Toggle menu"
+              >
+                {mobileOpen ? (
+                  <LucideIcons.X size={24} />
+                ) : (
+                  <LucideIcons.Menu size={24} />
+                )}
+              </button>
+            )}
+            <div className="menu-links" style={{
+              display: 'flex',
+              flexDirection: (p.menuDirection === 'vertical' ? 'column' : 'row') as any,
+              gap: p.gap || '24px',
+              justifyContent: flexJustifyContent as any,
+            }}>
+              {links.map((link: any, index: number) => (
+                <a
+                  key={index}
+                  href={link.url}
+                  style={{
+                    padding: '8px 0',
+                    color: p.textColor || '#000000',
+                    textDecoration: 'none',
+                    transition: 'color 0.2s',
+                    fontWeight: p.fontWeight || undefined,
+                    fontFamily: p.fontFamily || undefined,
+                    textTransform: (p.textTransform && p.textTransform !== 'none') ? p.textTransform : undefined,
+                  }}
+                  onClick={() => {
+                    if (hasCollapse) setMobileOpen(false);
+                  }}
+                >
+                  {lang === 'ar' ? (link.label_ar || link.label_en) : (link.label_en || link.label_ar)}
+                </a>
+              ))}
+            </div>
+          </>
+        ) : p.menuId && !selectedMenu ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#f59e0b' }}>
+            Menu &quot;{p.menuId}&quot; not found
+          </div>
+        ) : null}
+      </nav>
     </>
   );
 }
