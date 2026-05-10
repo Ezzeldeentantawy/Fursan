@@ -1078,6 +1078,10 @@ export const elementDefinitions: Record<string, any> = {
       align: 'left',
       menuDirection: 'horizontal',
       gap: '24px',
+      fontSize: '16px',
+      fontWeight: '400',
+      fontFamily: null,
+      textTransform: 'none',
       customClass: null,
       customId: null,
       responsive: { md: {}, sm: {}, base: {} },
@@ -1087,6 +1091,10 @@ export const elementDefinitions: Record<string, any> = {
       { id: 'bgColor', label: 'Background Color', tab: 'design', group: 'Background', type: 'color', responsive: false, default: null },
       { id: 'textColor', label: 'Text Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#000000' },
       { id: 'hoverColor', label: 'Hover Color', tab: 'design', group: 'Typography', type: 'color', responsive: false, default: '#3b82f6' },
+      { id: 'fontFamily', label: 'Font Family', tab: 'design', group: 'Typography', type: 'font', responsive: false, default: null },
+      { id: 'fontSize', label: 'Font Size', tab: 'design', group: 'Typography', type: 'text', unit: 'px', responsive: true, default: '16px' },
+      { id: 'fontWeight', label: 'Font Weight', tab: 'design', group: 'Typography', type: 'select', responsive: false, default: '400', options: [{ label: '100', value: '100' }, { label: '200', value: '200' }, { label: '300', value: '300' }, { label: '400', value: '400' }, { label: '500', value: '500' }, { label: '600', value: '600' }, { label: '700', value: '700' }, { label: '800', value: '800' }, { label: '900', value: '900' }] },
+      { id: 'textTransform', label: 'Text Transform', tab: 'design', group: 'Typography', type: 'select', responsive: false, default: 'none', options: [{ label: 'None', value: 'none' }, { label: 'Uppercase', value: 'uppercase' }, { label: 'Lowercase', value: 'lowercase' }, { label: 'Capitalize', value: 'capitalize' }] },
       { id: 'align', label: 'Alignment', tab: 'alignment', group: 'Alignment', type: 'select', responsive: true, default: 'left', options: [{ label: 'Left', value: 'left' }, { label: 'Center', value: 'center' }, { label: 'Right', value: 'right' }] },
       { id: 'menuDirection', label: 'Direction', tab: 'alignment', group: 'Layout', type: 'select', responsive: false, default: 'horizontal', options: [{ label: 'Horizontal', value: 'horizontal' }, { label: 'Vertical', value: 'vertical' }] },
       { id: 'gap', label: 'Gap', tab: 'alignment', group: 'Layout', type: 'text', unit: 'px', responsive: false, default: '24px' },
@@ -2553,6 +2561,7 @@ export const CounterComponent: React.FC<any> = (props) => {
 export const MenuComponent: React.FC<any> = (props) => {
   const {
     menuId, bgColor, textColor, hoverColor, align, menuDirection, gap,
+    fontSize, fontWeight, fontFamily, textTransform,
     id, customClass, customId, responsive, activeBreakpoint,
     pt, pr, pb, pl, mt, mr, mb, ml, opacity
   } = props;
@@ -2600,6 +2609,10 @@ export const MenuComponent: React.FC<any> = (props) => {
                   cursor: 'pointer',
                   textDecoration: 'none',
                   transition: 'color 0.2s',
+                  fontSize: fontSize || undefined,
+                  fontWeight: fontWeight || undefined,
+                  fontFamily: fontFamily || undefined,
+                  textTransform: (textTransform && textTransform !== 'none') ? textTransform : undefined,
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = hoverColor || '#3b82f6'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = textColor || '#000000'; }}

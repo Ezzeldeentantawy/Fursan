@@ -117,10 +117,18 @@ const SpacingControl: React.FC<{
   });
 
   const handleChange = (prop: string, num: number | '', unit: string) => {
-    setPropValue(prop, formatNumberValue(num, unit));
+    if (unit === 'auto') {
+      setPropValue(prop, 'auto');
+    } else {
+      setPropValue(prop, formatNumberValue(num, unit));
+    }
   };
 
   const handleUnitChange = (prop: string, unit: string) => {
+    if (unit === 'auto') {
+      setPropValue(prop, 'auto');
+      return;
+    }
     const freshVal = parseNumberValue(getPropValue(prop));
     setPropValue(prop, formatNumberValue(freshVal.num, unit));
   };
@@ -134,25 +142,33 @@ const SpacingControl: React.FC<{
       <div className="grid grid-cols-4 gap-1.5">
         {props.map((prop, i) => (
           <div key={prop} className="flex flex-col items-center gap-0.5">
-            <input
-              type="number"
-              min="0"
-              value={values[prop].num}
-              onChange={(e) => handleChange(
-                prop,
-                e.target.value ? parseFloat(e.target.value) : '',
-                values[prop].unit
+            <div className="relative w-full">
+              <input
+                type="number"
+                min="0"
+                value={values[prop].num}
+                onChange={(e) => handleChange(
+                  prop,
+                  e.target.value ? parseFloat(e.target.value) : '',
+                  values[prop].unit
+                )}
+                disabled={values[prop].unit === 'auto'}
+                className={`w-full h-8 px-1 text-center text-xs bg-slate-800/50 border border-slate-700 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${values[prop].unit === 'auto' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                placeholder={values[prop].unit === 'auto' ? 'Auto' : '0'}
+              />
+              {values[prop].unit === 'auto' && (
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-amber-400 pointer-events-none">
+                  Auto
+                </span>
               )}
-              className="w-full h-8 px-1 text-center text-xs bg-slate-800/50 border border-slate-700 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              placeholder="0"
-            />
+            </div>
             <span className="text-[8px] text-slate-500 uppercase">{labels[i]}</span>
             <select
               value={values[prop].unit}
               onChange={(e) => handleUnitChange(prop, e.target.value)}
               className="w-full h-5 px-0.5 bg-slate-700 border border-slate-600 rounded text-[8px] text-slate-300 focus:outline-none cursor-pointer text-center"
             >
-              {['px', '%', 'em', 'rem', 'vw', 'vh'].map(u => (
+              {['px', '%', 'em', 'rem', 'vw', 'vh', 'auto'].map(u => (
                 <option key={u} value={u} className="bg-slate-800 text-slate-200">{u}</option>
               ))}
             </select>
@@ -356,7 +372,9 @@ export const ElementSettings: React.FC = () => {
   const parseNumberValue = (value: any): { num: number | '', unit: string } => {
     if (value === null || value === undefined || value === '') return { num: '', unit: 'px' };
     if (typeof value === 'number') return { num: value, unit: 'px' };
-    const match = String(value).match(/^([-\d.]+)(.*)$/);
+    const str = String(value);
+    if (str === 'auto') return { num: '', unit: 'auto' };
+    const match = str.match(/^([-\d.]+)(.*)$/);
     if (match) {
       return { num: parseFloat(match[1]) || '', unit: match[2] || 'px' };
     }
@@ -364,6 +382,7 @@ export const ElementSettings: React.FC = () => {
   };
 
   const formatNumberValue = (num: number | '', unit: string): string => {
+    if (unit === 'auto') return 'auto';
     if (num === '' || num === null || num === undefined) return '';
     return `${num}${unit}`;
   };
