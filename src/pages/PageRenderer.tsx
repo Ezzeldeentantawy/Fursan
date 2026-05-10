@@ -809,7 +809,9 @@ const PageRenderer: React.FC = () => {
                           color: p.textColor || '#000000',
                           textDecoration: 'none',
                           transition: 'color 0.2s',
-                          fontWeight: p.menuFontWeight || undefined,
+                          fontWeight: p.fontWeight || undefined,
+                          fontFamily: p.fontFamily || undefined,
+                          textTransform: (p.textTransform && p.textTransform !== 'none') ? p.textTransform : undefined,
                         }}
                       >
                         {lang === 'ar' ? (link.label_ar || link.label_en) : (link.label_en || link.label_ar)}

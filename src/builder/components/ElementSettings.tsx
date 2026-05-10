@@ -179,6 +179,48 @@ const SpacingControl: React.FC<{
   );
 };
 
+// ControlField — extracted as module-level component to prevent focus loss on re-render
+// (Defining it inside ElementSettings would create a new function type on every render,
+//  causing React to unmount/remount all inputs and lose focus on every keystroke.)
+const ControlField: React.FC<{
+  control: ControlDef;
+  inherited: boolean;
+  isOverridden: boolean;
+  onReset: () => void;
+  children: React.ReactNode;
+}> = ({ control, inherited, isOverridden, onReset, children }) => {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          {control.label}
+        </label>
+        {inherited && (
+          <span className="text-[9px] text-slate-500 bg-slate-700/50 px-1.5 py-0.5 rounded">↑ Desktop</span>
+        )}
+        {isOverridden && (
+          <>
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+            <button
+              onClick={onReset}
+              className="text-[10px] text-slate-400 hover:text-red-400 transition-colors"
+              title="Reset to inherit"
+            >
+              <X size={12} />
+            </button>
+          </>
+        )}
+        {control.responsive && (
+          <span className="text-[9px] font-bold text-amber-400/70 bg-amber-500/10 px-1.5 py-0.5 rounded ml-auto">
+            RSP
+          </span>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+};
+
 export const ElementSettings: React.FC = () => {
   const selectedId = useBuilderStore((state) => state.selectedId);
   const tree = useBuilderStore((state) => state.tree);
@@ -1483,42 +1525,6 @@ export const ElementSettings: React.FC = () => {
 
   // ============= CONTROL FIELD WRAPPER =============
 
-  const ControlField: React.FC<{ control: ControlDef; children: React.ReactNode }> = ({ control, children }) => {
-    const inherited = isInherited(control.id);
-    const isOverridden = hasOverride(control.id);
-
-    return (
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            {control.label}
-          </label>
-          {inherited && (
-            <span className="text-[9px] text-slate-500 bg-slate-700/50 px-1.5 py-0.5 rounded">↑ Desktop</span>
-          )}
-          {isOverridden && (
-            <>
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-              <button
-                onClick={() => setPropValue(control.id, null)}
-                className="text-[10px] text-slate-400 hover:text-red-400 transition-colors"
-                title="Reset to inherit"
-              >
-                <X size={12} />
-              </button>
-            </>
-          )}
-          {control.responsive && (
-            <span className="text-[9px] font-bold text-amber-400/70 bg-amber-500/10 px-1.5 py-0.5 rounded ml-auto">
-              RSP
-            </span>
-          )}
-        </div>
-        {children}
-      </div>
-    );
-  };
-
   // ============= TAB AND SECTION RENDERING =============
 
   const tabs: { key: TabKey; label: string }[] = [
@@ -1587,7 +1593,13 @@ export const ElementSettings: React.FC = () => {
                       return <div key={control.id}>{renderControl(control)}</div>;
                     }
                     return (
-                      <ControlField key={control.id} control={control}>
+                      <ControlField
+                        key={control.id}
+                        control={control}
+                        inherited={isInherited(control.id)}
+                        isOverridden={hasOverride(control.id)}
+                        onReset={() => setPropValue(control.id, null)}
+                      >
                         {renderControl(control)}
                       </ControlField>
                     );
