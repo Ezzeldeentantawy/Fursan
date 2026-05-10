@@ -4,6 +4,7 @@ import * as LucideIcons from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { pagesApi as basePagesApi } from '../api/pagesApi';
 import { templatesApi } from '../api/templatesApi';
+import siteMenusApi from '../api/siteMenusApi';
 import { updateFavicon } from '../utils/favicon';
 import {
   Block, BLOCK_CATALOG,
@@ -161,6 +162,7 @@ const PageRenderer: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [headerElements, setHeaderElements] = useState<any[] | null>(null);
   const [footerElements, setFooterElements] = useState<any[] | null>(null);
+  const [siteMenus, setSiteMenus] = useState<any[]>([]);
 
   // Reserved words that should NOT be treated as site domains
   const RESERVED_WORDS = ['admin', 'login', 'register', 'employer', 'api', 'unauthorized'];
@@ -360,6 +362,25 @@ const PageRenderer: React.FC = () => {
     };
 
     loadGlobals();
+  }, [page?.site?.id]);
+
+  // Fetch site menus when page loads (for menu blocks)
+  useEffect(() => {
+    const loadMenus = async () => {
+      const siteId = page?.site?.id;
+      if (!siteId) {
+        setSiteMenus([]);
+        return;
+      }
+      try {
+        const data = await siteMenusApi.getMenus(siteId);
+        setSiteMenus(data.menus || []);
+      } catch (err) {
+        console.warn('[PageRenderer] Failed to load site menus:', err);
+        setSiteMenus([]);
+      }
+    };
+    loadMenus();
   }, [page?.site?.id]);
 
   // Update favicon when page data changes (site favicon)
@@ -674,6 +695,74 @@ const PageRenderer: React.FC = () => {
           return <DynamicIcon {...p} id={block.id} />;
         }
         case 'counter': return <CounterBlock block={block} />;
+        case 'menu': {
+          const selectedMenu = siteMenus.find((m) => m.name === p.menuId);
+          const links = selectedMenu?.links || [];
+          const styles = generateResponsiveStyles(block.id, p.responsive);
+
+          // Hover style via <style> tag
+          const hoverStyle = p.hoverColor ? `
+            #${getBlockId(block.id)} a:hover {
+              color: ${p.hoverColor} !important;
+            }
+          ` : '';
+
+          return (
+            <>
+              {styles}
+              {hoverStyle && <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />}
+              <nav
+                id={p.customId || getBlockId(block.id)}
+                className={p.customClass || ''}
+                style={{
+                  backgroundColor: p.bgColor || undefined,
+                  textAlign: (p.textAlign as any) || undefined,
+                  boxShadow: p.boxShadow || undefined,
+                  zIndex: p.zIndex ?? undefined,
+                  position: (p.zIndex ?? null) !== null ? 'relative' : undefined,
+                  paddingTop: p.pt || undefined,
+                  paddingRight: p.pr || undefined,
+                  paddingBottom: p.pb || undefined,
+                  paddingLeft: p.pl || undefined,
+                  marginTop: p.mt || undefined,
+                  marginRight: p.mr || undefined,
+                  marginBottom: p.mb || undefined,
+                  marginLeft: p.ml || undefined,
+                  opacity: (p.opacity !== undefined && p.opacity !== null) ? (p.opacity <= 1 ? p.opacity : p.opacity / 100) : undefined,
+                }}
+              >
+                {p.menuId && selectedMenu ? (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: (p.menuDirection === 'vertical' ? 'column' : 'row') as any,
+                    gap: p.gap || '24px',
+                    justifyContent: (p.textAlign === 'center' ? 'center' : p.textAlign === 'right' ? 'flex-end' : 'flex-start') as any,
+                  }}>
+                    {links.map((link: any, index: number) => (
+                      <a
+                        key={index}
+                        href={link.url}
+                        style={{
+                          padding: '8px 0',
+                          color: p.textColor || '#000000',
+                          textDecoration: 'none',
+                          transition: 'color 0.2s',
+                          fontWeight: p.menuFontWeight || undefined,
+                        }}
+                      >
+                        {lang === 'ar' ? (link.label_ar || link.label_en) : (link.label_en || link.label_ar)}
+                      </a>
+                    ))}
+                  </div>
+                ) : p.menuId && !selectedMenu ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#f59e0b' }}>
+                    Menu &quot;{p.menuId}&quot; not found
+                  </div>
+                ) : null}
+              </nav>
+            </>
+          );
+        }
         default: return null;
       }
     })();
