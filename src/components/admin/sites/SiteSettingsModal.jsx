@@ -12,6 +12,7 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
   const [faviconFile, setFaviconFile] = useState(null);
   const [faviconPreview, setFaviconPreview] = useState('');
   const [menus, setMenus] = useState([]);
+  const [activeMenuIndex, setActiveMenuIndex] = useState(0);
   const [socialLinks, setSocialLinks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -158,7 +159,9 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
   };
 
   const addMenuGroup = () => {
+    const newIndex = menus.length;
     setMenus([...menus, { name: '', links: [] }]);
+    setActiveMenuIndex(newIndex);
   };
 
   const updateMenuGroup = (index, field, value) => {
@@ -168,7 +171,14 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
   };
 
   const removeMenuGroup = (index) => {
-    setMenus(menus.filter((_, i) => i !== index));
+    const updated = menus.filter((_, i) => i !== index);
+    setMenus(updated);
+    // Adjust active tab after removal
+    if (updated.length === 0) {
+      setActiveMenuIndex(0);
+    } else if (activeMenuIndex >= index) {
+      setActiveMenuIndex(Math.max(0, activeMenuIndex - 1));
+    }
   };
 
   const addLink = (menuIndex) => {
@@ -187,6 +197,17 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
   const updateLink = (menuIndex, linkIndex, field, value) => {
     const updated = [...menus];
     updated[menuIndex].links[linkIndex][field] = value;
+    setMenus(updated);
+  };
+
+  const handlePageSelect = (menuIndex, linkIndex, pageId) => {
+    const selectedPageId = pageId ? parseInt(pageId) : null;
+    const selectedPage = pages.find(p => p.id === selectedPageId);
+    const updated = [...menus];
+    updated[menuIndex].links[linkIndex].page_id = selectedPageId;
+    if (selectedPage) {
+      updated[menuIndex].links[linkIndex].url = `/${selectedPage.slug}`;
+    }
     setMenus(updated);
   };
 
@@ -329,18 +350,53 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
                     </button>
                   </div>
 
-                  {menus.map((menu, menuIndex) => (
-                    <div key={menuIndex} className="bg-slate-800 rounded-lg p-4 space-y-4">
+                  {/* Tab bar */}
+                  {menus.length > 0 && (
+                    <div className="flex items-center gap-1 border-b border-slate-700 pb-1 overflow-x-auto">
+                      {menus.map((menu, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setActiveMenuIndex(index)}
+                          className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-t transition-colors whitespace-nowrap ${
+                            activeMenuIndex === index
+                              ? 'bg-slate-800 text-blue-400 border-b-2 border-blue-400'
+                              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                          }`}
+                        >
+                          <span>{menu.name || `Menu ${index + 1}`}</span>
+                          <X
+                            size={12}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeMenuGroup(index);
+                            }}
+                            className="text-slate-500 hover:text-red-400 flex-shrink-0"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Empty state */}
+                  {menus.length === 0 && (
+                    <div className="text-center text-slate-500 py-8 text-sm">
+                      No menu groups yet. Click "Add Menu Group" to create one.
+                    </div>
+                  )}
+
+                  {/* Active menu content */}
+                  {menus.length > 0 && menus[activeMenuIndex] && (
+                    <div className="bg-slate-800 rounded-lg p-4 space-y-4">
                       <div className="flex items-center justify-between">
                         <input
                           type="text"
-                          value={menu.name}
-                          onChange={(e) => updateMenuGroup(menuIndex, 'name', e.target.value)}
+                          value={menus[activeMenuIndex].name}
+                          onChange={(e) => updateMenuGroup(activeMenuIndex, 'name', e.target.value)}
                           placeholder="Menu Group Name (e.g., Main Menu)"
                           className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <button
-                          onClick={() => removeMenuGroup(menuIndex)}
+                          onClick={() => removeMenuGroup(activeMenuIndex)}
                           className="ml-2 p-2 text-red-400 hover:text-red-300"
                         >
                           <Trash2 size={16} />
@@ -351,7 +407,7 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-slate-400">Links</span>
                           <button
-                            onClick={() => addLink(menuIndex)}
+                            onClick={() => addLink(activeMenuIndex)}
                             className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300"
                           >
                             <Plus size={14} />
@@ -359,20 +415,20 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
                           </button>
                         </div>
 
-                        {menu.links.map((link, linkIndex) => (
+                        {menus[activeMenuIndex].links.map((link, linkIndex) => (
                           <div key={linkIndex} className="bg-slate-700 rounded-lg p-3 space-y-3">
                             <div className="grid grid-cols-2 gap-3">
                               <input
                                 type="text"
                                 value={link.label_en}
-                                onChange={(e) => updateLink(menuIndex, linkIndex, 'label_en', e.target.value)}
+                                onChange={(e) => updateLink(activeMenuIndex, linkIndex, 'label_en', e.target.value)}
                                 placeholder="Label (English)"
                                 className="px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white placeholder-slate-400 text-sm"
                               />
                               <input
                                 type="text"
                                 value={link.label_ar}
-                                onChange={(e) => updateLink(menuIndex, linkIndex, 'label_ar', e.target.value)}
+                                onChange={(e) => updateLink(activeMenuIndex, linkIndex, 'label_ar', e.target.value)}
                                 placeholder="Label (Arabic)"
                                 className="px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white placeholder-slate-400 text-sm"
                               />
@@ -381,13 +437,13 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
                               <input
                                 type="text"
                                 value={link.url}
-                                onChange={(e) => updateLink(menuIndex, linkIndex, 'url', e.target.value)}
+                                onChange={(e) => updateLink(activeMenuIndex, linkIndex, 'url', e.target.value)}
                                 placeholder="URL (optional if page selected)"
                                 className="px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white placeholder-slate-400 text-sm"
                               />
                               <select
                                 value={link.page_id || ''}
-                                onChange={(e) => updateLink(menuIndex, linkIndex, 'page_id', e.target.value ? parseInt(e.target.value) : null)}
+                                onChange={(e) => handlePageSelect(activeMenuIndex, linkIndex, e.target.value)}
                                 className="px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
                               >
                                 <option value="">Select Page (optional)</option>
@@ -402,12 +458,12 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
                               <input
                                 type="number"
                                 value={link.order}
-                                onChange={(e) => updateLink(menuIndex, linkIndex, 'order', parseInt(e.target.value))}
+                                onChange={(e) => updateLink(activeMenuIndex, linkIndex, 'order', parseInt(e.target.value))}
                                 placeholder="Order"
                                 className="w-20 px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white text-sm"
                               />
                               <button
-                                onClick={() => removeLink(menuIndex, linkIndex)}
+                                onClick={() => removeLink(activeMenuIndex, linkIndex)}
                                 className="p-1 text-red-400 hover:text-red-300"
                               >
                                 <Trash2 size={14} />
@@ -417,7 +473,7 @@ const SiteSettingsModal = ({ site, isOpen, onClose, onSave }) => {
                         ))}
                       </div>
                     </div>
-                  ))}
+                  )}
 
                   <div className="flex justify-end">
                     <button
