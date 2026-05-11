@@ -6,7 +6,7 @@
  *   - Async icon resolution via IconRegistry (dynamic imports)
  *   - Multi-pack support (lucide, fa, md, io, bs, hi, ai, fi, etc.)
  *   - Image source fallback (source === 'image' or imageUrl)
- *   - customCss injection into a scoped <style> tag
+ *   - Page-level customCss consumed separately
  *   - Responsive padding overrides from the `responsive` prop
  *   - Skeleton placeholder during loading (no layout shift)
  *   - Link wrapping (linkUrl)
@@ -17,7 +17,7 @@
  *   <DynamicIcon {...block.props} id={block.id} />
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useIconResolver } from './useIconResolver';
 
 // ---------------------------------------------------------------------------
@@ -68,8 +68,7 @@ const DynamicIcon = React.memo(
     customClass,
     customId,
 
-    // CSS / effects
-    customCss,
+    // Page-level CSS/JS consumed separately
 
     // Responsive overrides
     responsive,
@@ -108,25 +107,6 @@ const DynamicIcon = React.memo(
       isImage ? null : resolvedIconType,
       isImage ? null : resolvedIconName,
     );
-
-    // ---- Custom CSS injection (scoped to elementId) ----
-    useEffect(() => {
-      if (!customCss) return;
-
-      const styleId = `icon-style-${elementId}`;
-      let tag = document.getElementById(styleId);
-      if (!tag) {
-        tag = document.createElement('style');
-        tag.id = styleId;
-        document.head.appendChild(tag);
-      }
-      tag.textContent = customCss;
-
-      return () => {
-        const existing = document.getElementById(styleId);
-        if (existing) existing.remove();
-      };
-    }, [customCss, elementId]);
 
     // ---- Responsive padding/gap styles ----
     const responsiveStyleTag = useMemo(() => {
@@ -283,7 +263,6 @@ const DynamicIcon = React.memo(
     prev.borderRadius === next.borderRadius &&
     prev.padding === next.padding &&
     prev.boxShadow === next.boxShadow &&
-    prev.customCss === next.customCss &&
     prev.customClass === next.customClass &&
     prev.customId === next.customId &&
     prev.zIndex === next.zIndex &&

@@ -50,7 +50,7 @@ export interface BlockDef {
   fields: Field[];
 }
 
-const COMMON_DEFAULTS = { customClass: '', customId: '', boxShadow: '', customCss: '', zIndex: null, responsive: {} };
+const COMMON_DEFAULTS = { customClass: '', customId: '', boxShadow: '', zIndex: null, responsive: {} };
 const COMMON_FIELDS: Field[] = [
   { key: 'sep_sizing', label: 'Layering & Depth', type: 'separator' },
   { key: 'zIndex', label: 'Z-Index Layer', type: 'number', min: -100, max: 9999, step: 1 },
@@ -58,7 +58,6 @@ const COMMON_FIELDS: Field[] = [
   { key: 'sep_common', label: 'Advanced Identity', type: 'separator' },
   { key: 'customClass', label: 'Custom CSS Class', type: 'text', placeholder: 'my-element-class' },
   { key: 'customId', label: 'Custom HTML ID', type: 'text', placeholder: 'my-element-id' },
-  { key: 'customCss', label: 'Custom CSS', type: 'text', multiline: true, placeholder: '#block-ID { color: red; }' },
   { key: 'responsive', label: 'Responsive Styles', type: 'responsive' },
 ];
 

@@ -486,7 +486,6 @@ const PageRenderer: React.FC = () => {
 
   const renderBlock = (block: Block): React.ReactNode => {
     const p = block.props;
-    const customStyleTag = p.customCss ? <style dangerouslySetInnerHTML={{ __html: p.customCss }} /> : null;
     const content = (() => {
       switch (block.type) {
         case 'container': {
@@ -791,7 +790,7 @@ const PageRenderer: React.FC = () => {
         default: return null;
       }
     })();
-    return <React.Fragment key={block.id}>{customStyleTag}{content}</React.Fragment>;
+    return <React.Fragment key={block.id}>{content}</React.Fragment>;
   };
 
   return (
