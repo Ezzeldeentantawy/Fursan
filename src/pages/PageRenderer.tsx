@@ -648,31 +648,61 @@ const PageRenderer: React.FC = () => {
               {wrapperDisplayCSS && <style dangerouslySetInnerHTML={{ __html: wrapperDisplayCSS }} />}
               <style dangerouslySetInnerHTML={{ __html: hoverStyle }} />
               <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`${alignClass(p.align)} ${p.customClass || ''}`} style={{ display: p.responsive?.md?.display || undefined }}>
-                <a
-                  id={getBlockId(block.id)}
-                  href={p.url}
-                  className={`inline-flex items-center gap-2 font-bold transition-all duration-200 ${p.size === 'sm' ? 'px-4 py-2 text-xs' : p.size === 'lg' ? 'px-10 py-5 text-base' : 'px-8 py-4 text-sm'} rounded-xl`}
-                  style={{
-                    backgroundColor: p.bgColor,
-                    borderRadius: p.borderRadius,
-                    color: p.textColor,
-                    borderWidth: p.borderWidth,
-                    borderStyle: p.borderStyle,
-                    borderColor: p.borderColor,
-                    width: p.width || undefined,
-                    maxWidth: p.maxWidth || undefined,
-                    padding: p.padding,
-                    justifyContent: 'center',
-                    boxShadow: p.boxShadow,
-                    zIndex: p.zIndex ?? undefined,
-                    position: (p.zIndex ?? null) !== null ? 'relative' : undefined,
-                    ...getTypoStyles(p)
-                  }}
-                >
-                  {p.icon && p.iconPos === 'left' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
-                  {p.text}
-                  {p.icon && p.iconPos === 'right' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
-                </a>
+                {p.url && isInternalUrl(p.url) ? (
+                  <Link
+                    id={getBlockId(block.id)}
+                    to={p.url}
+                    className={`inline-flex items-center gap-2 font-bold transition-all duration-200 ${p.size === 'sm' ? 'px-4 py-2 text-xs' : p.size === 'lg' ? 'px-10 py-5 text-base' : 'px-8 py-4 text-sm'} rounded-xl`}
+                    style={{
+                      backgroundColor: p.bgColor,
+                      borderRadius: p.borderRadius,
+                      color: p.textColor,
+                      borderWidth: p.borderWidth,
+                      borderStyle: p.borderStyle,
+                      borderColor: p.borderColor,
+                      width: p.width || undefined,
+                      maxWidth: p.maxWidth || undefined,
+                      padding: p.padding,
+                      justifyContent: 'center',
+                      boxShadow: p.boxShadow,
+                      zIndex: p.zIndex ?? undefined,
+                      position: (p.zIndex ?? null) !== null ? 'relative' : undefined,
+                      ...getTypoStyles(p)
+                    }}
+                  >
+                    {p.icon && p.iconPos === 'left' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
+                    {p.text}
+                    {p.icon && p.iconPos === 'right' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
+                  </Link>
+                ) : (
+                  <a
+                    id={getBlockId(block.id)}
+                    href={p.url || '#'}
+                    target={p.url && !p.url.startsWith('#') ? '_blank' : undefined}
+                    rel={p.url && !p.url.startsWith('#') ? 'noopener noreferrer' : undefined}
+                    className={`inline-flex items-center gap-2 font-bold transition-all duration-200 ${p.size === 'sm' ? 'px-4 py-2 text-xs' : p.size === 'lg' ? 'px-10 py-5 text-base' : 'px-8 py-4 text-sm'} rounded-xl`}
+                    style={{
+                      backgroundColor: p.bgColor,
+                      borderRadius: p.borderRadius,
+                      color: p.textColor,
+                      borderWidth: p.borderWidth,
+                      borderStyle: p.borderStyle,
+                      borderColor: p.borderColor,
+                      width: p.width || undefined,
+                      maxWidth: p.maxWidth || undefined,
+                      padding: p.padding,
+                      justifyContent: 'center',
+                      boxShadow: p.boxShadow,
+                      zIndex: p.zIndex ?? undefined,
+                      position: (p.zIndex ?? null) !== null ? 'relative' : undefined,
+                      ...getTypoStyles(p)
+                    }}
+                  >
+                    {p.icon && p.iconPos === 'left' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
+                    {p.text}
+                    {p.icon && p.iconPos === 'right' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
+                  </a>
+                )}
               </div>
             </React.Fragment>
           );
@@ -902,6 +932,21 @@ function CounterBlock({ block }: { block: Block }) {
   );
 }
 
+/** Check if a URL should use client-side routing (Link) vs a regular <a> tag */
+function isInternalUrl(url: string): boolean {
+  if (!url || url.startsWith('#')) return false;
+  if (url.startsWith('mailto:') || url.startsWith('tel:')) return false;
+  if (url.startsWith('//')) return false; // protocol-relative
+  if (url.startsWith('/')) return true;   // relative path → internal
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === window.location.hostname;
+  } catch {
+    // Invalid URL (e.g. a bare path without leading /) → treat as external
+    return false;
+  }
+}
+
 function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[]; lang: string }) {
   const p = block.props;
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -1080,26 +1125,47 @@ function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[];
                 width: '100vw',
               } : {}),
             }}>
-              {links.map((link: any, index: number) => (
-                <a
-                  key={index}
-                  href={link.url}
-                  style={{
-                    padding: '8px 0',
-                    color: p.textColor || '#000000',
-                    textDecoration: 'none',
-                    transition: 'color 0.2s',
-                    fontWeight: p.fontWeight || undefined,
-                    fontFamily: p.fontFamily || undefined,
-                    textTransform: (p.textTransform && p.textTransform !== 'none') ? p.textTransform : undefined,
-                  }}
-                  onClick={() => {
-                    if (hasCollapse) setMobileOpen(false);
-                  }}
-                >
-                  {lang === 'ar' ? (link.label_ar || link.label_en) : (link.label_en || link.label_ar)}
-                </a>
-              ))}
+              {links.map((link: any, index: number) => {
+                const linkLabel = lang === 'ar' ? (link.label_ar || link.label_en) : (link.label_en || link.label_ar);
+                const linkStyle: React.CSSProperties = {
+                  padding: '8px 0',
+                  color: p.textColor || '#000000',
+                  textDecoration: 'none',
+                  transition: 'color 0.2s',
+                  fontWeight: p.fontWeight || undefined,
+                  fontFamily: p.fontFamily || undefined,
+                  textTransform: (p.textTransform && p.textTransform !== 'none') ? p.textTransform : undefined,
+                };
+                const handleClick = () => {
+                  if (hasCollapse) setMobileOpen(false);
+                };
+
+                if (link.url && isInternalUrl(link.url)) {
+                  return (
+                    <Link
+                      key={index}
+                      to={link.url}
+                      style={linkStyle}
+                      onClick={handleClick}
+                    >
+                      {linkLabel}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <a
+                    key={index}
+                    href={link.url || '#'}
+                    target={link.url && !link.url.startsWith('#') ? '_blank' : undefined}
+                    rel={link.url && !link.url.startsWith('#') ? 'noopener noreferrer' : undefined}
+                    style={linkStyle}
+                    onClick={handleClick}
+                  >
+                    {linkLabel}
+                  </a>
+                );
+              })}
             </div>
           </>
         ) : p.menuId && !selectedMenu ? (
