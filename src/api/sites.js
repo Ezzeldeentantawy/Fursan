@@ -10,4 +10,6 @@ export const sitesApi = {
   toggleDefault: (id) => api.patch(`/api/v1/sites/${id}/toggle-default`),
   getDefault: () => api.get('/api/v1/sites/default', { params: { include: 'favicon' } }),
   checkDomain: (domain) => api.get(`/api/v1/sites/check-domain/${domain}`),
+  getGlobalCss: (id) => api.get(`/api/v1/sites/${id}/global-css`),
+  updateGlobalCss: (id, globalCss) => api.put(`/api/v1/sites/${id}/global-css`, { global_css: globalCss }),
 };

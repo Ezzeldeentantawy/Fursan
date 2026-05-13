@@ -4,6 +4,7 @@ import SiteAdminGuard from './components/SiteAdminGuard';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './pages/admin/dashboard';
 import SiteAdminDashboard from './pages/admin/SiteAdminDashboard';
+import SiteGlobalCss from './pages/admin/SiteGlobalCss';
 import Builder from './pages/admin/Pages/Builder';
 import PagesList from './pages/admin/Pages';
 import PageEditMetadata from './pages/admin/Pages/edit';
@@ -67,8 +68,9 @@ function App() {
               <Route path="templates" element={<TemplatesIndex />} />
               <Route path="templates/:id/edit" element={<Builder />} />
               <Route path="media" element={<MediaManager />} />
+              <Route path="global-css" element={<SiteGlobalCss />} />
               <Route path="profile" element={<Profile />} />
-               
+                
                {/* Catch-all for invalid site admin routes */}
               <Route path="*" element={<Navigate to="/admin/site/dashboard" replace />} />
             </Route>

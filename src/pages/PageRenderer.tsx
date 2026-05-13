@@ -518,13 +518,16 @@ const PageRenderer: React.FC = () => {
             zIndex: p.zIndex ?? undefined, 
             position: (p.zIndex ?? null) !== null ? 'relative' : undefined
           };
+          const Tag = p.tag === 'a' ? 'a' : p.tag || 'div';
+          const linkProps = p.tag === 'a' ? { href: p.linkUrl || '#', target: p.linkTarget || '_self', ...(p.linkTarget === '_blank' ? { rel: 'noopener noreferrer' } : {}) } : {};
+
           return (
             <>
-                {styles}
-                <div id={getBlockId(block.id)} style={containerStyle} className={`${p.customClass || ''}`}>
-                  {(block.children ?? []).map(renderBlock)}
-                </div>
-              </>
+              {styles}
+              <Tag id={getBlockId(block.id)} style={containerStyle} className={`${p.customClass || ''}`} {...linkProps}>
+                {(block.children ?? []).map(renderBlock)}
+              </Tag>
+            </>
           );
         }
         case 'hero': return (
@@ -795,6 +798,11 @@ const PageRenderer: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-white ${lang === 'ar' ? 'rtl' : 'ltr'}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      {/* Global Site CSS */}
+      {page?.site?.global_css && (
+        <style id="site-global-css" dangerouslySetInnerHTML={{ __html: page.site.global_css }} />
+      )}
+
       {/* Custom CSS injection */}
       {(() => {
         const activeContent = lang === 'ar' ? (page.content_ar || page.content) : page.content;

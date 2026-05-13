@@ -7,6 +7,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard } from 'lucide-react';
 import {
   DndContext,
   DragEndEvent,
@@ -887,27 +888,41 @@ export const Builder: React.FC = () => {
         />
         
         {/* Breakpoint Preview Bar - Dark Theme */}
-        <div className="bg-slate-900 border-b border-slate-700 px-4 py-2 flex items-center justify-center gap-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mr-2">Preview:</span>
-          {breakpoints.map((bp) => {
-            const Icon = bp.icon;
-            return (
-              <button
-                key={bp.key}
-                onClick={() => setActiveBp(bp.key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl transition-all ${
-                  activeBp === bp.key
-                    ? 'bg-blue-500 text-white font-medium shadow-sm'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-300'
-                }`}
-                title={`${bp.label} (${bp.width})`}
-              >
-                <Icon size={12} />
-                <span>{bp.label}</span>
-                <span className="text-[10px] opacity-75">{bp.width}</span>
-              </button>
-            );
-          })}
+        <div className="bg-slate-900 border-b border-slate-700 px-4 py-2 flex items-center gap-2">
+          {/* Admin Dashboard Button */}
+          <a
+            href={isTemplateMode || window.location.pathname.includes('/admin/site/') ? '/react.fursan/admin/site/dashboard' : '/react.fursan/admin/dashboard'}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-slate-800 text-slate-400 hover:bg-blue-500 hover:text-white transition-all"
+            title="Go to Dashboard"
+          >
+            <LayoutDashboard size={12} />
+            <span>Dashboard</span>
+          </a>
+          
+          <div className="flex-1" />
+          
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mr-2">Preview:</span>
+            {breakpoints.map((bp) => {
+              const Icon = bp.icon;
+              return (
+                <button
+                  key={bp.key}
+                  onClick={() => setActiveBp(bp.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl transition-all ${
+                    activeBp === bp.key
+                      ? 'bg-blue-500 text-white font-medium shadow-sm'
+                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-300'
+                  }`}
+                  title={`${bp.label} (${bp.width})`}
+                >
+                  <Icon size={12} />
+                  <span>{bp.label}</span>
+                  <span className="text-[10px] opacity-75">{bp.width}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         
         <div className="flex-1 flex overflow-hidden">

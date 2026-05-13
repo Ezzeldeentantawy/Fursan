@@ -7,7 +7,8 @@ import {
   Settings,
   Image,
   User,
-  LayoutTemplate
+  LayoutTemplate,
+  Code
 } from 'lucide-react';
 import { useAuth } from '../../components/isLoggedIn';
 
@@ -18,6 +19,8 @@ const allNavItems = [
   { path: '/admin/sites', label: 'Sites', icon: Globe, roles: ['super_admin'] },
   { path: '/admin/users', label: 'Users', icon: Users, roles: ['super_admin'] },
   { path: '/admin/media', label: 'Media', icon: Image, roles: ['super_admin', 'site_admin'] },
+  { path: '/admin/sites', label: 'Custom CSS', icon: Code, roles: ['super_admin'] },
+  { path: '/admin/site/global-css', label: 'Custom CSS', icon: Code, roles: ['site_admin'] },
   { path: '/admin/profile', label: 'Profile', icon: User, roles: ['super_admin', 'site_admin'] },
 ];
 

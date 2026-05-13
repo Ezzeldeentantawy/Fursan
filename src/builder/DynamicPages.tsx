@@ -521,7 +521,8 @@ export const elementDefinitions: Record<string, any> = {
       zIndex: null,
       linkUrl: null,
       linkTarget: '_self',
-       customClass: null,
+      linkType: 'url',
+        customClass: null,
        customId: null,
        transitionDuration: '200ms',
        transitionEasing: 'ease',
@@ -542,7 +543,7 @@ export const elementDefinitions: Record<string, any> = {
      },
      controls: [
        // Content tab
-       { id: 'tag', label: 'HTML Tag', tab: 'content', group: 'Content', type: 'select', responsive: false, default: 'div', options: [{ label: 'div', value: 'div' }, { label: 'section', value: 'section' }, { label: 'article', value: 'article' }, { label: 'aside', value: 'aside' }, { label: 'header', value: 'header' }, { label: 'footer', value: 'footer' }, { label: 'main', value: 'main' }, { label: 'nav', value: 'nav' }] },
+        { id: 'tag', label: 'HTML Tag', tab: 'content', group: 'Content', type: 'select', responsive: false, default: 'div', options: [{ label: 'div', value: 'div' }, { label: 'section', value: 'section' }, { label: 'article', value: 'article' }, { label: 'aside', value: 'aside' }, { label: 'header', value: 'header' }, { label: 'footer', value: 'footer' }, { label: 'main', value: 'main' }, { label: 'nav', value: 'nav' }, { label: 'a (Link)', value: 'a' }] },
       { id: 'linkUrl', label: 'Link URL', tab: 'content', group: 'Content', type: 'text', responsive: false, default: null, placeholder: 'https://...' },
       { id: 'linkTarget', label: 'Link Target', tab: 'content', group: 'Content', type: 'select', responsive: false, default: '_self', options: [{ label: 'Same Tab', value: '_self' }, { label: 'New Tab', value: '_blank' }] },
       { id: 'overflow', label: 'Overflow', tab: 'content', group: 'Content', type: 'select', responsive: false, default: 'visible', options: [{ label: 'Visible', value: 'visible' }, { label: 'Hidden', value: 'hidden' }, { label: 'Scroll', value: 'scroll' }, { label: 'Auto', value: 'auto' }] },
@@ -1406,7 +1407,7 @@ export const ContainerComponent: React.FC<any> = (props) => {
       borderRadius, borderWidth, borderColor, borderStyle, padding, direction, align, justify, gap,
       children, responsive, id, customClass, customId, boxShadow, zIndex, textAlign, flexWrap, display,
       flexDir, items,
-      bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl,
+      bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl, linkTarget,
       margin, marginTop, marginRight, marginBottom, marginLeft, activeBreakpoint, className: dndClassName,
       transitionDuration, transitionEasing,
       childrenCount
@@ -1549,8 +1550,8 @@ export const ContainerComponent: React.FC<any> = (props) => {
   }
 
   // Handle tag and link
-  const Tag = (tag === 'a' && linkUrl) ? 'a' : tag || 'div';
-  const linkProps = (tag === 'a' && linkUrl) ? { href: linkUrl } : {};
+  const Tag = tag === 'a' ? 'a' : tag || 'div';
+  const linkProps = tag === 'a' ? { href: linkUrl || '#', target: linkTarget || '_self', ...(linkTarget === '_blank' ? { rel: 'noopener noreferrer' } : {}) } : {};
 
   // ✅ Generate responsive styles as <style> tags for builder preview
   // Skip in builder (activeBreakpoint set) — inline styles from mergeResponsiveStyles are used instead

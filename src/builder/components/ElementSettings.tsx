@@ -1241,6 +1241,7 @@ export const ElementSettings: React.FC = () => {
       { value: 'footer', label: '<footer>', desc: 'Page/section footer' },
       { value: 'main', label: '<main>', desc: 'Main content area' },
       { value: 'nav', label: '<nav>', desc: 'Navigation' },
+      { value: 'a', label: '<a>', desc: 'Anchor / Link' },
     ];
 
     return (
@@ -1568,7 +1569,14 @@ export const ElementSettings: React.FC = () => {
   ];
 
   const getControlsForTab = (tab: TabKey) => {
-    return controls.filter((control) => control.tab === tab);
+    const currentTag = getPropValue('tag');
+    return controls.filter((control) => {
+      // Hide linkUrl and linkTarget when tag is NOT 'a'
+      if ((control.id === 'linkUrl' || control.id === 'linkTarget') && currentTag !== 'a') {
+        return false;
+      }
+      return control.tab === tab;
+    });
   };
 
   // Group controls by their group property
@@ -1588,7 +1596,12 @@ export const ElementSettings: React.FC = () => {
 
   const renderSection = (sectionName: string, sectionGroups: string[]) => {
     const isExpanded = expandedSections.has(sectionName);
-    const sectionControls = controls.filter(c => sectionGroups.includes(c.group || 'General'));
+    const currentTag = getPropValue('tag');
+    const sectionControls = controls.filter(c => {
+      // Hide linkUrl and linkTarget when tag is NOT 'a'
+      if ((c.id === 'linkUrl' || c.id === 'linkTarget') && currentTag !== 'a') return false;
+      return sectionGroups.includes(c.group || 'General');
+    });
     const controlCount = sectionControls.length;
 
     // Skip empty sections
