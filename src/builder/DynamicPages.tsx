@@ -2752,9 +2752,6 @@ export const MenuComponent: React.FC<any> = (props) => {
             )}
             <div className="menu-links" style={{
               display: shouldCollapse && !mobileOpen ? 'none' : 'flex',
-              position: 'absolute',
-              top: '100%',
-              left: 0,
               width: '100%',
               flexDirection: (shouldCollapse && mobileOpen ? 'column' : (menuDirection === 'vertical' ? 'column' : 'row')) as any,
               gap: (shouldCollapse && mobileOpen ? '2px' : (gap || '24px')),
