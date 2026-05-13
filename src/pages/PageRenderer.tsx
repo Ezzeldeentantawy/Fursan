@@ -166,6 +166,27 @@ const normalizeResponsiveJustify = (elements: any[]) => {
 };
 
 /**
+ * Resolve color prop with support for #RRGGBBAA (new format) 
+ * and legacy {prop}Opacity (old format).
+ * CSS natively handles #RRGGBBAA, so for new data no change is needed.
+ * For legacy data with separate opacity, merge them.
+ * 
+ * Must be at module level (not inside PageRenderer) because it's used by
+ * standalone sub-components: AccordionItem, CounterBlock, MenuBlock.
+ */
+const resolveColor = (color: string | undefined, opacity: number | undefined | null): string | undefined => {
+  if (!color || color === 'transparent') return color;
+  // New format already includes alpha (8-digit hex)
+  if (color.length === 9) return color;
+  // Legacy format: merge with opacity if present
+  if (opacity !== undefined && opacity !== null && opacity < 100) {
+    const alphaHex = Math.round((opacity / 100) * 255).toString(16).padStart(2, '0');
+    return color + alphaHex;
+  }
+  return color;
+};
+
+/**
  * PageRenderer Component
  * Renders dynamic pages based on URL parameters (siteDomain and pageSlug)
  * Fetches page data from the backend and renders blocks based on language
@@ -496,7 +517,7 @@ const PageRenderer: React.FC = () => {
           const styles = generateResponsiveStyles(block.id, p.responsive);
           const bw = p.borderWidth ? (isNaN(Number(p.borderWidth)) ? p.borderWidth : `${p.borderWidth}px`) : undefined;
           // Clean background image URL if present
-          const bgImageUrl = p.bgImage ? `url(${cleanUrl(p.bgImage)}) center / ${p.bgSize ?? 'cover'} no-repeat` : (p.bgColor || undefined);
+          const bgImageUrl = p.bgImage ? `url(${cleanUrl(p.bgImage)}) center / ${p.bgSize ?? 'cover'} no-repeat` : (resolveColor(p.bgColor, p.bgColorOpacity) || undefined);
           const containerStyle: React.CSSProperties = {
             minHeight: p.minHeight || undefined, 
             minWidth: p.minWidth || undefined, 
@@ -509,7 +530,7 @@ const PageRenderer: React.FC = () => {
             flexWrap: p.flexWrap as any || undefined,
             textAlign: p.textAlign as any || undefined,
             borderWidth: bw || undefined,
-            borderColor: p.borderColor || undefined,
+            borderColor: resolveColor(p.borderColor, p.borderColorOpacity) || undefined,
             borderStyle: p.borderStyle || (bw && bw !== '0px' ? 'solid' : undefined),
             background: bgImageUrl,
             display: p.display || undefined,
@@ -535,7 +556,7 @@ const PageRenderer: React.FC = () => {
           );
         }
         case 'hero': return (
-          <section key={block.id} id={p.customId || getBlockId(block.id)} style={{ background: p.bgColor, color: p.textColor, minHeight: p.minHeight, boxShadow: p.boxShadow, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }} className={`w-full flex flex-col items-${p.align === 'center' ? 'center' : p.align === 'right' ? 'end' : 'start'} justify-center px-12 py-16 ${p.customClass || ''}`}>
+          <section key={block.id} id={p.customId || getBlockId(block.id)} style={{ background: resolveColor(p.bgColor, p.bgColorOpacity), color: resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity), minHeight: p.minHeight, boxShadow: p.boxShadow, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }} className={`w-full flex flex-col items-${p.align === 'center' ? 'center' : p.align === 'right' ? 'end' : 'start'} justify-center px-12 py-16 ${p.customClass || ''}`}>
             <h1 className={`text-4xl font-black mb-4 max-w-3xl ${alignClass(p.align)}`}>{p.title}</h1>
             <p className="text-lg opacity-80 mb-8 max-w-xl">{p.subtitle}</p>
             {p.ctaText && <a href={p.ctaUrl} className="bg-white text-slate-900 font-bold px-8 py-4 rounded-xl text-sm hover:shadow-lg transition transform hover:scale-105">{p.ctaText}</a>}
@@ -556,7 +577,7 @@ const PageRenderer: React.FC = () => {
                   id={getBlockId(block.id)}
                   className={`font-black ${(!typo.fontSize) ? (sizes[p.level] || 'text-3xl') : ''}`}
                   style={{
-                    color: p.color,
+                    color: resolveColor(p.color, p.colorOpacity),
                     textDecoration: p.textDecoration,
                     opacity: p.opacity ?? 1,
                     width: p.width || undefined,
@@ -564,7 +585,7 @@ const PageRenderer: React.FC = () => {
                     background: headingBg,
                     minHeight: p.minHeight || undefined,
                     borderRadius: p.borderRadius,
-                    borderColor: p.borderColor,
+                    borderColor: resolveColor(p.borderColor, p.borderColorOpacity),
                     borderWidth: p.borderWidth,
                     borderStyle: (p.borderWidth && p.borderWidth !== '0px') ? 'solid' : 'none',
                     textAlign: p.textAlign as any,
@@ -586,7 +607,7 @@ const PageRenderer: React.FC = () => {
             <React.Fragment key={block.id}>
               {styles}
                 <div id={p.customId || `${getBlockId(block.id)}-wrap`} className={`${alignClass(p.align)} ${p.customClass || ''}`}>
-                  <div id={getBlockId(block.id)} className="prose max-w-none leading-relaxed" style={{ color: p.color, textDecoration: p.textDecoration, opacity: p.opacity ?? 1, minHeight: p.minHeight || undefined, boxShadow: p.boxShadow, textAlign: p.textAlign as any, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined, ...typo }} dangerouslySetInnerHTML={{ __html: p.html }} />
+                  <div id={getBlockId(block.id)} className="prose max-w-none leading-relaxed" style={{ color: resolveColor(p.color, p.colorOpacity), textDecoration: p.textDecoration, opacity: p.opacity ?? 1, minHeight: p.minHeight || undefined, boxShadow: p.boxShadow, textAlign: p.textAlign as any, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined, ...typo }} dangerouslySetInnerHTML={{ __html: p.html }} />
                 </div>
             </React.Fragment>
           );
@@ -640,9 +661,9 @@ const PageRenderer: React.FC = () => {
           const Icon = p.icon ? (LucideIcons as any)[p.icon] : null;
           const hoverStyle = `
             #${getBlockId(block.id)}:hover {
-              background-color: ${p.hoverBg || p.bgColor || 'initial'} !important;
-              color: ${p.hoverColor || p.textColor || 'initial'} !important;
-              border-color: ${p.hoverBorderColor || p.borderColor || 'initial'} !important;
+              background-color: ${p.hoverBg || resolveColor(p.bgColor, p.bgColorOpacity) || 'initial'} !important;
+              color: ${p.hoverColor || resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity) || 'initial'} !important;
+              border-color: ${p.hoverBorderColor || resolveColor(p.borderColor, p.borderColorOpacity) || 'initial'} !important;
               border-width: ${p.hoverBorderWidth || p.borderWidth || 'initial'} !important;
               border-style: ${p.hoverBorderStyle || p.borderStyle || 'solid'} !important;
               transform: scale(${p.hoverScale || 1}) !important;
@@ -660,12 +681,12 @@ const PageRenderer: React.FC = () => {
                     to={p.url}
                     className={`inline-flex items-center gap-2 font-bold transition-all duration-200 ${p.size === 'sm' ? 'px-4 py-2 text-xs' : p.size === 'lg' ? 'px-10 py-5 text-base' : 'px-8 py-4 text-sm'} rounded-xl`}
                     style={{
-                      backgroundColor: p.bgColor,
+                      backgroundColor: resolveColor(p.bgColor, p.bgColorOpacity),
                       borderRadius: p.borderRadius,
-                      color: p.textColor,
+                      color: resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity),
                       borderWidth: p.borderWidth,
                       borderStyle: p.borderStyle,
-                      borderColor: p.borderColor,
+                      borderColor: resolveColor(p.borderColor, p.borderColorOpacity),
                       width: p.width || undefined,
                       maxWidth: p.maxWidth || undefined,
                       padding: p.padding,
@@ -676,9 +697,9 @@ const PageRenderer: React.FC = () => {
                       ...getTypoStyles(p)
                     }}
                   >
-                    {p.icon && p.iconPos === 'left' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
+                    {p.icon && p.iconPos === 'left' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity)} />}
                     {p.text}
-                    {p.icon && p.iconPos === 'right' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
+                    {p.icon && p.iconPos === 'right' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity)} />}
                   </Link>
                 ) : (
                   <a
@@ -688,12 +709,12 @@ const PageRenderer: React.FC = () => {
                     rel={p.url && !p.url.startsWith('#') ? 'noopener noreferrer' : undefined}
                     className={`inline-flex items-center gap-2 font-bold transition-all duration-200 ${p.size === 'sm' ? 'px-4 py-2 text-xs' : p.size === 'lg' ? 'px-10 py-5 text-base' : 'px-8 py-4 text-sm'} rounded-xl`}
                     style={{
-                      backgroundColor: p.bgColor,
+                      backgroundColor: resolveColor(p.bgColor, p.bgColorOpacity),
                       borderRadius: p.borderRadius,
-                      color: p.textColor,
+                      color: resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity),
                       borderWidth: p.borderWidth,
                       borderStyle: p.borderStyle,
-                      borderColor: p.borderColor,
+                      borderColor: resolveColor(p.borderColor, p.borderColorOpacity),
                       width: p.width || undefined,
                       maxWidth: p.maxWidth || undefined,
                       padding: p.padding,
@@ -704,9 +725,9 @@ const PageRenderer: React.FC = () => {
                       ...getTypoStyles(p)
                     }}
                   >
-                    {p.icon && p.iconPos === 'left' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
+                    {p.icon && p.iconPos === 'left' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity)} />}
                     {p.text}
-                    {p.icon && p.iconPos === 'right' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || p.textColor} />}
+                    {p.icon && p.iconPos === 'right' && Icon && <Icon size={p.iconSize || 18} color={p.iconColor || resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity)} />}
                   </a>
                 )}
               </div>
@@ -715,14 +736,14 @@ const PageRenderer: React.FC = () => {
         }
         case 'divider': return (
           <div key={block.id} id={p.customId || getBlockId(block.id)} className={`${p.customClass || ''}`} style={{ paddingTop: p.padding, paddingBottom: p.padding, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }}>
-            <hr style={{ borderColor: p.color, borderWidth: p.thickness, borderStyle: p.style }} />
+            <hr style={{ borderColor: resolveColor(p.color, p.colorOpacity), borderWidth: p.thickness, borderStyle: p.style }} />
           </div>
         );
         case 'spacer': return <div key={block.id} id={p.customId || getBlockId(block.id)} style={{ height: p.height, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }} className={p.customClass || ''} />;
         case 'card': return (
           <div key={block.id} id={p.customId || getBlockId(block.id)} className={`${p.customClass || ''}`} style={{ zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }}>
-            <div style={{ background: p.bgColor, boxShadow: p.boxShadow || (p.shadow ? '0 4px 24px rgba(0,0,0,0.08)' : 'none') }} className="rounded-2xl p-6 border border-gray-100">
-              <div className="w-8 h-1 rounded-full mb-4" style={{ background: p.accentColor }} />
+            <div style={{ background: resolveColor(p.bgColor, p.bgColorOpacity), boxShadow: p.boxShadow || (p.shadow ? '0 4px 24px rgba(0,0,0,0.08)' : 'none') }} className="rounded-2xl p-6 border border-gray-100">
+              <div className="w-8 h-1 rounded-full mb-4" style={{ background: resolveColor(p.accentColor, p.accentColorOpacity) }} />
               <h3 className="font-bold text-slate-800 text-lg mb-2">{p.title}</h3>
               <p className="text-slate-500 text-sm">{p.body}</p>
             </div>
@@ -737,7 +758,7 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || getBlockId(block.id)} className={`flex items-center ${p.customClass || ''}`} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, boxShadow: p.boxShadow, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }}>
+              <div id={p.customId || getBlockId(block.id)} className={`flex items-center ${p.customClass || ''}`} style={{ backgroundColor: resolveColor(p.bgColor, p.bgColorOpacity), borderRadius: p.borderRadius, padding: p.padding, boxShadow: p.boxShadow, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }}>
                 <div className="flex items-center" style={{ gap: p.gap }}>
                   <div className="shrink-0 flex items-center justify-center" style={{ width: p.iconSize || '24px', height: p.iconSize || '24px' }}>
                     {(!isImage && Icon) ? (
@@ -746,7 +767,7 @@ const PageRenderer: React.FC = () => {
                       p.icon && <img src={listItemIcon} alt="" className="w-full h-full object-contain" />
                     )}
                   </div>
-                  <span style={{ color: p.textColor, ...getTypoStyles(p) }}>{p.text}</span>
+                  <span style={{ color: resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity), ...getTypoStyles(p) }}>{p.text}</span>
                 </div>
               </div>
             </React.Fragment>
@@ -760,13 +781,13 @@ const PageRenderer: React.FC = () => {
           return (
             <React.Fragment key={block.id}>
               {styles}
-              <div id={p.customId || getBlockId(block.id)} style={{ backgroundColor: p.bgColor, borderRadius: p.borderRadius, padding: p.padding, flexDirection: p.flexDir as any, boxShadow: p.boxShadow, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }} className={`flex items-center ${p.customClass || ''}`}>
+              <div id={p.customId || getBlockId(block.id)} style={{ backgroundColor: resolveColor(p.bgColor, p.bgColorOpacity), borderRadius: p.borderRadius, padding: p.padding, flexDirection: p.flexDir as any, boxShadow: p.boxShadow, zIndex: p.zIndex ?? undefined, position: (p.zIndex ?? null) !== null ? 'relative' : undefined }} className={`flex items-center ${p.customClass || ''}`}>
                 <div className="shrink-0" style={{ width: p.imageWidth }}>
                   {p.image ? <img src={imageBoxSrc} alt={p.title} className="w-full h-auto" style={{ borderRadius: p.borderRadius }} /> : <div className="w-full h-32 bg-slate-100 rounded-xl" />}
                 </div>
                 <div className="flex-1 flex flex-col" style={{ gap: '4px', marginLeft: p.flexDir === 'row' ? p.gap : '0', marginRight: p.flexDir === 'row-reverse' ? p.gap : '0', marginTop: p.flexDir === 'column' ? p.gap : '0', marginBottom: p.flexDir === 'column-reverse' ? p.gap : '0' }}>
-                  <Tag className="font-bold m-0 leading-tight image-box-title" style={{ color: p.textColor, ...getTypoStyles(p) }}>{p.title}</Tag>
-                  <div className="opacity-80 text-xs leading-relaxed image-box-desc" style={{ color: p.textColor, ...getTypoStyles(p, 'desc') }}>{p.text}</div>
+                  <Tag className="font-bold m-0 leading-tight image-box-title" style={{ color: resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity), ...getTypoStyles(p) }}>{p.title}</Tag>
+                  <div className="opacity-80 text-xs leading-relaxed image-box-desc" style={{ color: resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity), ...getTypoStyles(p, 'desc') }}>{p.text}</div>
                 </div>
               </div>
             </React.Fragment>
@@ -854,7 +875,7 @@ function AccordionItem({ block }: { block: Block }) {
   const p = block.props;
   const [isOpen, setIsOpen] = useState(false);
   const Icon = p.icon && (LucideIcons as any)[p.icon] ? (LucideIcons as any)[p.icon] : LucideIcons.ChevronDown;
-  const bColor = p.borderColor || '#e2e8f0';
+  const bColor = resolveColor(p.borderColor, p.borderColorOpacity) || '#e2e8f0';
   const styles = generateResponsiveStyles(block.id, p.responsive);
 
   return (
@@ -882,7 +903,7 @@ function AccordionItem({ block }: { block: Block }) {
         <div
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center justify-between cursor-pointer transition-colors px-1 accordion-title"
-          style={{ backgroundColor: p.titleBgColor, color: p.titleTextColor, padding: p.titlePadding }}
+          style={{ backgroundColor: resolveColor(p.titleBgColor, p.titleBgColorOpacity), color: resolveColor(p.titleTextColor, p.titleTextColorOpacity), padding: p.titlePadding }}
         >
           <span className="font-bold text-sm" style={getTypoStyles(p)}>{p.title}</span>
           <div
@@ -890,11 +911,11 @@ function AccordionItem({ block }: { block: Block }) {
             className={`shrink-0 transition-transform duration-300 flex items-center justify-center icon-wrap ${isOpen ? 'rotate-180' : ''}`}
             style={{ width: p.iconWidth || '24px', height: p.iconHeight || '24px' }}
           >
-            <Icon size={p.iconSize || 16} color={p.iconColor || p.titleTextColor} />
+            <Icon size={p.iconSize || 16} color={p.iconColor ? resolveColor(p.iconColor, p.iconColorOpacity) : resolveColor(p.titleTextColor, p.titleTextColorOpacity)} />
           </div>
         </div>
         {isOpen && (
-          <div className="transition-all accordion-content" style={{ backgroundColor: p.contentBgColor, color: p.contentTextColor, padding: p.padding, borderTop: `1px solid ${bColor}` }}>
+          <div className="transition-all accordion-content" style={{ backgroundColor: resolveColor(p.contentBgColor, p.contentBgColorOpacity), color: resolveColor(p.contentTextColor, p.contentTextColorOpacity), padding: p.padding, borderTop: `1px solid ${bColor}` }}>
             <p className="text-sm leading-relaxed whitespace-pre-wrap" style={getTypoStyles(p, 'content')}>{p.text}</p>
           </div>
         )}
@@ -932,7 +953,7 @@ function CounterBlock({ block }: { block: Block }) {
       <div
         id={getBlockId(block.id)}
         style={{
-          backgroundColor: p.bgColor || undefined,
+          backgroundColor: resolveColor(p.bgColor, p.bgColorOpacity) || undefined,
           padding: p.padding || '16px',
           textAlign: (p.textAlign || p.alignment || 'center') as any,
           opacity: (p.opacity !== undefined && p.opacity !== null) ? (p.opacity <= 1 ? p.opacity : p.opacity / 100) : undefined,
@@ -943,7 +964,7 @@ function CounterBlock({ block }: { block: Block }) {
         className={p.customClass || ''}
       >
         <span style={{
-          color: p.numberColor || '#000000',
+          color: resolveColor(p.numberColor, p.numberColorOpacity) || '#000000',
           fontSize: p.fontSize || undefined,
           fontWeight: p.fontWeight || undefined,
         }}>
@@ -1014,7 +1035,7 @@ function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[];
   // Hover style via <style> tag
   const hoverStyle = p.hoverColor ? `
     #${getBlockId(block.id)} a:hover {
-      color: ${p.hoverColor} !important;
+      color: ${resolveColor(p.hoverColor, p.hoverColorOpacity)} !important;
     }
   ` : '';
 
@@ -1046,7 +1067,7 @@ function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[];
   let collapseStyle = '';
   if (hasCollapse) {
     const maxWidth = collapseBp === '1024px' ? '1023px' : '767px';
-    const dropdownBg = p.bgColor || '#ffffff';
+    const dropdownBg = resolveColor(p.bgColor, p.bgColorOpacity) || '#ffffff';
     collapseStyle = `
       @media (max-width: ${maxWidth}) {
         #${blockId} .menu-links { display: none !important; }
@@ -1089,8 +1110,8 @@ function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[];
          id={blockId}
          className={`${p.customClass || ''}${mobileOpen && hasCollapse ? ' menu-open' : ''}`}
         style={{
-          backgroundColor: p.bgColor || undefined,
-          textAlign: textAlignValue as any,
+    backgroundColor: resolveColor(p.bgColor, p.bgColorOpacity) || undefined,
+    textAlign: textAlignValue as any,
           boxShadow: p.boxShadow || undefined,
           zIndex: p.zIndex ?? undefined,
           position: 'relative',
@@ -1123,7 +1144,7 @@ function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[];
                   border: 'none',
                   cursor: 'pointer',
                   padding: '8px',
-                  color: p.textColor || '#000000',
+                  color: resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity) || '#000000',
                   marginLeft: 'auto',
                 }}
                 aria-label="Toggle menu"
@@ -1151,7 +1172,7 @@ function MenuBlock({ block, siteMenus, lang }: { block: Block; siteMenus: any[];
                 const linkLabel = lang === 'ar' ? (link.label_ar || link.label_en) : (link.label_en || link.label_ar);
                 const linkStyle: React.CSSProperties = {
                   padding: '8px 0',
-                  color: p.textColor || '#000000',
+                  color: resolveColor(p.textColor, p.textColorOpacity || p.colorOpacity) || '#000000',
                   textDecoration: 'none',
                   transition: 'color 0.2s',
                   fontWeight: p.fontWeight || undefined,

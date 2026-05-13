@@ -6,6 +6,7 @@ import { findNode } from '../utils/treeUtils';
 import { RichTextEditor } from './RichTextEditor';
 import { MediaBrowser } from './MediaBrowser';
 import { IconPicker, DynamicIcon } from '../../icons';
+import { ColorPicker } from './ColorPicker';
 
 type TabKey = 'content' | 'alignment' | 'design';
 
@@ -621,56 +622,14 @@ export const ElementSettings: React.FC = () => {
   };
 
   const renderColorPicker = (control: ControlDef, value: any, onChange: (v: any) => void) => {
-    const colorValue = (value && value !== 'transparent' && /^#[0-9A-Fa-f]{6}$/.test(value)) ? value : '#000000';
-    const opacity = getPropValue(control.id + 'Opacity') || 100;
-
     return (
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <div
-              className="w-8 h-8 border border-slate-700 rounded-lg cursor-pointer"
-              style={{ backgroundColor: value || 'transparent' }}
-              onClick={() => document.getElementById(`color-input-${control.id}`)?.click()}
-            />
-            {!value || value === 'transparent' ? (
-              <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-xs">⊘</div>
-            ) : null}
-          </div>
-          <input
-            id={`color-input-${control.id}`}
-            type="color"
-            value={colorValue}
-            onChange={(e) => setPropValue(control.id, e.target.value)}
-            className="hidden"
-          />
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => setPropValue(control.id, e.target.value || null)}
-            placeholder="#000000"
-            className="flex-1 px-2 py-1.5 bg-slate-800/50 border border-slate-700 rounded text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-          <button
-            onClick={() => setPropValue(control.id, null)}
-            className="p-1 text-slate-500 hover:text-red-400 transition-colors"
-            title="Clear color"
-          >
-            <X size={14} />
-          </button>
-        </div>
-        <div className="flex items-center gap-1">
-          <input
-            type="number"
-            value={opacity}
-            onChange={(e) => setPropValue(control.id + 'Opacity', e.target.value ? parseInt(e.target.value, 10) : 100)}
-            min={0}
-            max={100}
-            className="w-12 px-1 py-0.5 bg-slate-800/50 border border-slate-700 rounded text-[10px] text-white text-center focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-          <span className="text-[10px] text-slate-500">%</span>
-        </div>
-      </div>
+      <ColorPicker
+        value={value}
+        onChange={onChange}
+        id={control.id}
+        alphaValue={getPropValue(control.id + 'Opacity')}
+        onAlphaChange={(v) => setPropValue(control.id + 'Opacity', v)}
+      />
     );
   };
 
