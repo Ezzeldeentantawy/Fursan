@@ -166,6 +166,38 @@ const normalizeResponsiveJustify = (elements: any[]) => {
 };
 
 /**
+ * Build CSS filter property string from individual effect props.
+ * Only includes non-default values to keep the filter string clean.
+ */
+const buildFilterProps = (p: Record<string, any>): Record<string, string | undefined> => {
+  const parts: string[] = [];
+  if (p.filterBlur) parts.push(`blur(${p.filterBlur}px)`);
+  if (p.filterBrightness && p.filterBrightness !== 100) parts.push(`brightness(${p.filterBrightness}%)`);
+  if (p.filterContrast && p.filterContrast !== 100) parts.push(`contrast(${p.filterContrast}%)`);
+  if (p.filterGrayscale) parts.push(`grayscale(${p.filterGrayscale}%)`);
+  if (p.filterSepia) parts.push(`sepia(${p.filterSepia}%)`);
+  if (p.filterSaturate && p.filterSaturate !== 100) parts.push(`saturate(${p.filterSaturate}%)`);
+  if (p.filterHueRotate) parts.push(`hue-rotate(${p.filterHueRotate}deg)`);
+  const filter = parts.length ? parts.join(' ') : undefined;
+  return { filter };
+};
+
+/**
+ * Build CSS backdrop-filter property string from individual effect props.
+ * Includes WebkitBackdropFilter for Safari compatibility.
+ */
+const buildBackdropFilterProps = (p: Record<string, any>): Record<string, string | undefined> => {
+  const parts: string[] = [];
+  if (p.backdropBlur) parts.push(`blur(${p.backdropBlur}px)`);
+  if (p.backdropSaturate && p.backdropSaturate !== 100) parts.push(`saturate(${p.backdropSaturate}%)`);
+  const backdropFilter = parts.length ? parts.join(' ') : undefined;
+  return {
+    backdropFilter,
+    WebkitBackdropFilter: backdropFilter,
+  };
+};
+
+/**
  * Resolve color prop with support for #RRGGBBAA (new format) 
  * and legacy {prop}Opacity (old format).
  * CSS natively handles #RRGGBBAA, so for new data no change is needed.
@@ -515,6 +547,7 @@ const PageRenderer: React.FC = () => {
       switch (block.type) {
         case 'container': {
           const styles = generateResponsiveStyles(block.id, p.responsive);
+          const blockId = getBlockId(block.id);
           const bw = p.borderWidth ? (isNaN(Number(p.borderWidth)) ? p.borderWidth : `${p.borderWidth}px`) : undefined;
           // Clean background image URL if present
           const bgImageUrl = p.bgImage ? `url(${cleanUrl(p.bgImage)}) center / ${p.bgSize ?? 'cover'} no-repeat` : (resolveColor(p.bgColor, p.bgColorOpacity) || undefined);
@@ -541,15 +574,54 @@ const PageRenderer: React.FC = () => {
             gap: p.gap || undefined,
             boxShadow: p.boxShadow || undefined,
             zIndex: p.zIndex ?? undefined, 
-            position: (p.zIndex ?? null) !== null ? 'relative' : undefined
+            position: (p.zIndex ?? null) !== null ? 'relative' : undefined,
+            // Backdrop filter effects (stays on container — affects content BEHIND)
+            ...buildBackdropFilterProps(p),
           };
+
+          // Build CSS filter for background-only effect (::before pseudo-element)
+          // IMPORTANT: NOT applied to container — that would blur children too.
+          const bgFilterCss = buildFilterProps(p);
+          const hasBgFilter = !!bgFilterCss.filter;
+          let bgFilterStyleTag = null;
+
+          if (hasBgFilter) {
+            const currentBg = containerStyle.background || 'transparent';
+            const currentBorderRadius = containerStyle.borderRadius || '0px';
+            bgFilterStyleTag = (
+              <style>{`
+                #${blockId} {
+                  position: relative !important;
+                  overflow: hidden !important;
+                  background: transparent !important;
+                }
+                #${blockId}::before {
+                  content: '';
+                  position: absolute;
+                  inset: 0;
+                  background: ${currentBg};
+                  filter: ${bgFilterCss.filter};
+                  -webkit-filter: ${bgFilterCss.filter};
+                  z-index: -1;
+                  pointer-events: none;
+                  border-radius: ${currentBorderRadius};
+                }
+              `}</style>
+            );
+            // Clear background from container — it's now on ::before
+            delete containerStyle.background;
+            containerStyle.position = 'relative';
+            containerStyle.overflow = 'hidden';
+          }
+
           const Tag = p.tag === 'a' ? 'a' : p.tag || 'div';
           const linkProps = p.tag === 'a' ? { href: p.linkUrl || '#', target: p.linkTarget || '_self', ...(p.linkTarget === '_blank' ? { rel: 'noopener noreferrer' } : {}) } : {};
 
           return (
             <>
               {styles}
-              <Tag id={getBlockId(block.id)} style={containerStyle} className={`${p.customClass || ''}`} {...linkProps}>
+              {bgFilterStyleTag}
+              <Tag id={blockId} style={containerStyle} className={`${p.customClass || ''}`} {...linkProps}>
                 {(block.children ?? []).map(renderBlock)}
               </Tag>
             </>
@@ -846,7 +918,7 @@ const PageRenderer: React.FC = () => {
             top: 0,
             left: 0,
             width: '100%',
-            zIndex: 50,
+            zIndex: 9999,
           } : undefined}
         >
           {headerElements.map(renderBlock)}

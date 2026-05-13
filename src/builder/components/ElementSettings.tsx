@@ -44,6 +44,7 @@ const GLOBAL_PROPS = new Set([
   'hoverColor', 'hoverBgColor', 'hoverBorderColor', 'hoverBoxShadow', 'hoverScale', 'hoverTranslateY',
   'transitionDuration', 'transitionEasing',
   'filterBlur', 'filterBrightness', 'filterContrast', 'filterGrayscale', 'filterSepia', 'filterHueRotate', 'filterSaturate',
+  'backdropBlur', 'backdropSaturate',
   'hoverFilterBlur', 'hoverFilterBrightness', 'hoverFilterGrayscale',
 ]);
 
@@ -1324,7 +1325,8 @@ export const ElementSettings: React.FC = () => {
       case 'toggle':
         return renderToggle(control, value, (v) => setPropValue(control.id, v));
 
-      case 'slider':
+      case 'slider': {
+        const sliderUnit = control.unit || '%';
         return (
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -1337,10 +1339,11 @@ export const ElementSettings: React.FC = () => {
                 onChange={(e) => setPropValue(control.id, e.target.value ? parseInt(e.target.value, 10) : null)}
                 className="flex-1 accent-blue-500"
               />
-              <span className="text-xs text-slate-400 w-10 text-right">{value !== null && value !== undefined ? `${value}%` : '—'}</span>
+              <span className="text-xs text-slate-400 w-10 text-right">{value !== null && value !== undefined ? `${value}${sliderUnit}` : '—'}</span>
             </div>
           </div>
         );
+      }
 
       case 'richtext':
         return (

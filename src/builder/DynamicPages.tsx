@@ -526,6 +526,16 @@ export const elementDefinitions: Record<string, any> = {
        customId: null,
        transitionDuration: '200ms',
        transitionEasing: 'ease',
+       // Visual effects
+       filterBlur: null,
+       filterBrightness: null,
+       filterContrast: null,
+       filterGrayscale: null,
+       filterSepia: null,
+       filterSaturate: null,
+       filterHueRotate: null,
+       backdropBlur: null,
+       backdropSaturate: null,
        responsive: {
          md: {
            width: null, minWidth: null, maxWidth: null, height: null, minHeight: null, maxHeight: null,
@@ -580,9 +590,20 @@ export const elementDefinitions: Record<string, any> = {
       { id: 'borderStyle', label: 'Border Style', tab: 'design', group: 'Border', type: 'select', responsive: false, default: 'none', options: [{ label: 'None', value: 'none' }, { label: 'Solid', value: 'solid' }, { label: 'Dashed', value: 'dashed' }, { label: 'Dotted', value: 'dotted' }, { label: 'Double', value: 'double' }] },
       { id: 'borderColor', label: 'Border Color', tab: 'design', group: 'Border', type: 'color', responsive: false, default: '#e2e8f0' },
       { id: 'borderRadius', label: 'Border Radius', tab: 'design', group: 'Border', type: 'text', unit: 'px', responsive: false, default: '0px' },
-       { id: 'boxShadow', label: 'Box Shadow', tab: 'design', group: 'Effects', type: 'text', responsive: false, default: null, placeholder: '0 4px 12px rgba(0,0,0,0.1)' },
-        { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
-        { id: 'zIndex', label: 'Z-Index', tab: 'design', group: 'Effects', type: 'number', min: -100, max: 9999, step: 1, responsive: false, default: null },
+        { id: 'boxShadow', label: 'Box Shadow', tab: 'design', group: 'Effects', type: 'text', responsive: false, default: null, placeholder: '0 4px 12px rgba(0,0,0,0.1)' },
+         { id: 'opacity', label: 'Opacity', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, responsive: false },
+         { id: 'zIndex', label: 'Z-Index', tab: 'design', group: 'Effects', type: 'number', min: -100, max: 9999, step: 1, responsive: false, default: null },
+         // CSS Filters
+         { id: 'filterBlur', label: 'Blur', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 20, step: 1, unit: 'px', responsive: false },
+         { id: 'filterBrightness', label: 'Brightness', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 200, step: 1, unit: '%', responsive: false },
+         { id: 'filterContrast', label: 'Contrast', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 200, step: 1, unit: '%', responsive: false },
+         { id: 'filterGrayscale', label: 'Grayscale', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, unit: '%', responsive: false },
+         { id: 'filterSepia', label: 'Sepia', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 100, step: 1, unit: '%', responsive: false },
+         { id: 'filterSaturate', label: 'Saturate', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 200, step: 1, unit: '%', responsive: false },
+         { id: 'filterHueRotate', label: 'Hue Rotate', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 360, step: 1, unit: 'deg', responsive: false },
+         // Backdrop filters
+         { id: 'backdropBlur', label: 'Backdrop Blur', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 20, step: 1, unit: 'px', responsive: false },
+         { id: 'backdropSaturate', label: 'Backdrop Saturate', tab: 'design', group: 'Effects', type: 'slider', min: 0, max: 200, step: 1, unit: '%', responsive: false },
        // Design tab - Transition
        { id: 'transitionDuration', label: 'Transition Duration', tab: 'design', group: 'Transition', type: 'text', responsive: false, default: '200ms' },
        { id: 'transitionEasing', label: 'Transition Easing', tab: 'design', group: 'Transition', type: 'select', responsive: false, default: 'ease', options: [{ label: 'Ease', value: 'ease' }, { label: 'Linear', value: 'linear' }, { label: 'Ease In', value: 'ease-in' }, { label: 'Ease Out', value: 'ease-out' }, { label: 'Ease In Out', value: 'ease-in-out' }] },
@@ -1397,6 +1418,40 @@ ELEMENTS.forEach(el => {
 
 export const CONTAINER_TYPES = ['container'];
 
+// ============= FILTER/EFECT HELPERS =============
+
+/**
+ * Build CSS filter property string from individual effect props.
+ * Only includes non-default values to keep the filter string clean.
+ */
+const buildFilterProps = (p: Record<string, any>): Record<string, string | undefined> => {
+  const parts: string[] = [];
+  if (p.filterBlur) parts.push(`blur(${p.filterBlur}px)`);
+  if (p.filterBrightness && p.filterBrightness !== 100) parts.push(`brightness(${p.filterBrightness}%)`);
+  if (p.filterContrast && p.filterContrast !== 100) parts.push(`contrast(${p.filterContrast}%)`);
+  if (p.filterGrayscale) parts.push(`grayscale(${p.filterGrayscale}%)`);
+  if (p.filterSepia) parts.push(`sepia(${p.filterSepia}%)`);
+  if (p.filterSaturate && p.filterSaturate !== 100) parts.push(`saturate(${p.filterSaturate}%)`);
+  if (p.filterHueRotate) parts.push(`hue-rotate(${p.filterHueRotate}deg)`);
+  const filter = parts.length ? parts.join(' ') : undefined;
+  return { filter };
+};
+
+/**
+ * Build CSS backdrop-filter property string from individual effect props.
+ * Includes WebkitBackdropFilter for Safari compatibility.
+ */
+const buildBackdropFilterProps = (p: Record<string, any>): Record<string, string | undefined> => {
+  const parts: string[] = [];
+  if (p.backdropBlur) parts.push(`blur(${p.backdropBlur}px)`);
+  if (p.backdropSaturate && p.backdropSaturate !== 100) parts.push(`saturate(${p.backdropSaturate}%)`);
+  const backdropFilter = parts.length ? parts.join(' ') : undefined;
+  return {
+    backdropFilter,
+    WebkitBackdropFilter: backdropFilter,
+  };
+};
+
 // ============= COMPONENTS =============
 
 // Container Component
@@ -1410,7 +1465,9 @@ export const ContainerComponent: React.FC<any> = (props) => {
       bgGradient, bgGradientDirection, bgGradientType, bgGradientColor1, bgGradientColor2, tag, linkUrl, linkTarget,
       margin, marginTop, marginRight, marginBottom, marginLeft, activeBreakpoint, className: dndClassName,
       transitionDuration, transitionEasing,
-      childrenCount
+      childrenCount,
+      filterBlur, filterBrightness, filterContrast, filterGrayscale, filterSepia, filterSaturate, filterHueRotate,
+      backdropBlur, backdropSaturate,
       } = props;
 
   // ✅ DEBUG: Trace zIndex value
@@ -1500,7 +1557,45 @@ export const ContainerComponent: React.FC<any> = (props) => {
     zIndex: zIndex ?? undefined,
     position: zIndex !== null && zIndex !== undefined ? 'relative' : undefined,
     ...(transitionDuration && transitionEasing ? { transition: `all ${transitionDuration} ${transitionEasing}` } : {}),
+    // Backdrop filter effects (stays on container — affects content BEHIND the element)
+    ...buildBackdropFilterProps({ backdropBlur, backdropSaturate }),
   };
+
+  // ✅ Build CSS filter for background-only effect
+  // IMPORTANT: filter is NOT applied to the container itself because that would blur children too.
+  // Instead, we render it on a ::before pseudo-element so only the background is affected.
+  const bgFilterCss = buildFilterProps({ filterBlur, filterBrightness, filterContrast, filterGrayscale, filterSepia, filterSaturate, filterHueRotate });
+  const hasBgFilter = !!bgFilterCss.filter;
+  let bgFilterStyleTag = null;
+
+  if (hasBgFilter) {
+    const currentBg = containerStyle.background || 'transparent';
+    const currentBorderRadius = containerStyle.borderRadius || '0px';
+    bgFilterStyleTag = (
+      <style>{`
+        #${id} {
+          position: relative !important;
+          overflow: hidden !important;
+          background: transparent !important;
+        }
+        #${id}::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: ${currentBg};
+          filter: ${bgFilterCss.filter};
+          -webkit-filter: ${bgFilterCss.filter};
+          z-index: -1;
+          pointer-events: none;
+          border-radius: ${currentBorderRadius};
+        }
+      `}</style>
+    );
+    // Clear background from container — it's now on ::before
+    delete containerStyle.background;
+    containerStyle.position = 'relative';
+    containerStyle.overflow = 'hidden';
+  }
 
   // ✅ Apply flexDirection: check responsive first (short-form key), then props
   // Note: mergeResponsiveStyles now returns short-form keys (flexDir, not flexDirection)
@@ -1561,6 +1656,8 @@ export const ContainerComponent: React.FC<any> = (props) => {
     <>
       {/* Render responsive styles */}
       {responsiveStylesElement}
+      {/* Background-only filter layer (::before pseudo-element) */}
+      {bgFilterStyleTag}
       
       <Tag
         id={id}
