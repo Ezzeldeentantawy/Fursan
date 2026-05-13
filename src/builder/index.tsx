@@ -72,6 +72,8 @@ export const Builder: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentLang, setCurrentLang] = useState<'en' | 'ar'>('en');
   const [pageData, setPageData] = useState<any>(null);
+  const [templateType, setTemplateType] = useState<string | null>(null);
+  const [headerPosition, setHeaderPosition] = useState<'static' | 'fixed'>('static');
   
   // Drag state
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -281,6 +283,8 @@ export const Builder: React.FC = () => {
       if (!id || id === 'new') {
         resetTree();
         setPageTitle('');
+        setTemplateType(null);
+        setHeaderPosition('static');
         return;
       }
 
@@ -309,6 +313,12 @@ export const Builder: React.FC = () => {
             } else {
               setPageData(null);
             }
+            
+            // Store template type for header position detection
+            setTemplateType(data.type || null);
+            // Extract header position from content
+            const contentHeaderPos = data.content?.headerPosition || 'static';
+            setHeaderPosition(contentHeaderPos);
             
             // Templates have a single content field (no language variants)
             // Structure: content = { elements: [...], customCss: "...", customJs: "..." }
@@ -689,10 +699,11 @@ export const Builder: React.FC = () => {
         console.warn(`[Builder] Removed ${elements.length - uniqueElements.length} duplicates before saving`);
       }
       
-      const contentData = { 
+      const contentData: any = { 
         elements: uniqueElements,
         customCss: useBuilderStore.getState().customCss || null,
         customJs: useBuilderStore.getState().customJs || null,
+        ...(isTemplateMode && templateType === 'header' ? { headerPosition } : {}),
       };
       
       console.log('[Builder] Saving contentData:', contentData);
@@ -723,7 +734,7 @@ export const Builder: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [id, tree, setTree, currentLang, isTemplateMode]);
+  }, [id, tree, setTree, currentLang, isTemplateMode, templateType, headerPosition]);
 
   // Site ID from loaded page data (templates need this)
   const siteId = pageData?.site?.id || null;
@@ -885,6 +896,9 @@ export const Builder: React.FC = () => {
           currentLang={currentLang}
           onLanguageSwitch={handleLanguageSwitch}
           pageData={pageData}
+          isHeader={templateType === 'header'}
+          headerPosition={headerPosition}
+          onHeaderPositionChange={setHeaderPosition}
         />
         
         {/* Breakpoint Preview Bar - Dark Theme */}

@@ -16,9 +16,12 @@ interface ToolbarProps {
   currentLang?: 'en' | 'ar';
   onLanguageSwitch?: (lang: 'en' | 'ar') => void;
   pageData?: any; // Full page data including content and content_ar
+  isHeader?: boolean;
+  headerPosition?: 'static' | 'fixed';
+  onHeaderPositionChange?: (pos: 'static' | 'fixed') => void;
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlug, isDefaultSite = false, onSave, isSaving, onToggleNavigator, showNavigator, onToggleTemplates, onToggleCustomCode, currentLang = 'en', onLanguageSwitch, pageData }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlug, isDefaultSite = false, onSave, isSaving, onToggleNavigator, showNavigator, onToggleTemplates, onToggleCustomCode, currentLang = 'en', onLanguageSwitch, pageData, isHeader = false, headerPosition = 'static', onHeaderPositionChange }) => {
   const temporal = useBuilderStore.temporal;
   const tree = useBuilderStore((state) => state.tree);
 
@@ -94,6 +97,34 @@ export const Toolbar: React.FC<ToolbarProps> = ({ pageTitle, siteDomain, pageSlu
 
       {/* Center Section - Actions */}
       <div className="flex items-center gap-2">
+        {/* Header Position Toggle (only for header templates) */}
+        {isHeader && (
+          <div className="flex items-center gap-1 bg-slate-800 rounded-xl p-1 mr-2">
+            <button
+              onClick={() => onHeaderPositionChange?.('static')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                headerPosition === 'static' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Static - Normal document flow"
+            >
+              Static
+            </button>
+            <button
+              onClick={() => onHeaderPositionChange?.('fixed')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                headerPosition === 'fixed' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Fixed - Stays at top of viewport"
+            >
+              Fixed
+            </button>
+          </div>
+        )}
+
         {/* Language Switcher */}
         {onLanguageSwitch && (
           <div className="flex items-center gap-1 bg-slate-800 rounded-xl p-1 mr-2">

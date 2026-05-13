@@ -187,6 +187,7 @@ const PageRenderer: React.FC = () => {
   const [headerElements, setHeaderElements] = useState<any[] | null>(null);
   const [footerElements, setFooterElements] = useState<any[] | null>(null);
   const [siteMenus, setSiteMenus] = useState<any[]>([]);
+  const [headerPosition, setHeaderPosition] = useState<'static' | 'fixed'>('static');
 
   // Reserved words that should NOT be treated as site domains
   const RESERVED_WORDS = ['admin', 'login', 'register', 'employer', 'api', 'unauthorized'];
@@ -374,8 +375,11 @@ const PageRenderer: React.FC = () => {
         // Extract elements from header
         if (data?.header?.content?.elements) {
           setHeaderElements(data.header.content.elements);
+          // Extract header position (default to 'static')
+          setHeaderPosition(data.header.content?.headerPosition || 'static');
         } else {
           setHeaderElements(null);
+          setHeaderPosition('static');
         }
 
         // Extract elements from footer
@@ -814,16 +818,27 @@ const PageRenderer: React.FC = () => {
 
       {/* Site Header (from template) */}
       {headerElements && headerElements.length > 0 && (
-        <header className="site-header">
+        <header
+          className="site-header"
+          style={headerPosition === 'fixed' ? {
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            zIndex: 50,
+          } : undefined}
+        >
           {headerElements.map(renderBlock)}
         </header>
       )}
 
       {/* Page Content - select content based on current language */}
-      {(() => {
-        const activeContent = lang === 'ar' ? (page.content_ar || page.content) : page.content;
-        return activeContent?.elements && Array.isArray(activeContent.elements) && activeContent.elements.map(renderBlock);
-      })()}
+      <div>
+        {(() => {
+          const activeContent = lang === 'ar' ? (page.content_ar || page.content) : page.content;
+          return activeContent?.elements && Array.isArray(activeContent.elements) && activeContent.elements.map(renderBlock);
+        })()}
+      </div>
 
       {/* Site Footer (from template) */}
       {footerElements && footerElements.length > 0 && (
