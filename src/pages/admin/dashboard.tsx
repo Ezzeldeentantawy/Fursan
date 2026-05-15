@@ -18,6 +18,7 @@ import {
   Calendar,
   Sparkles
 } from 'lucide-react';
+import { useAuth } from '../../components/isLoggedIn';
 import { statsApi } from '../../api/statsApi';
 import { pagesApi } from '../../api/pagesApi';
 import { usersApi } from '../../api/usersApi';
@@ -39,36 +40,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Get user role from localStorage
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  const { user } = useAuth();
   const isSuperAdmin = user?.role === 'super_admin';
-  
-  // Debug: Log user info
-  console.log('Dashboard - User from localStorage:', user);
-  console.log('Dashboard - isSuperAdmin:', isSuperAdmin);
-  console.log('Dashboard - User role:', user?.role);
-  
-  // If user data is missing or invalid, try to fetch from API
-  useEffect(() => {
-    if (!user || !user.role) {
-      console.warn('Dashboard - No valid user data in localStorage, fetching from API...');
-      const fetchUser = async () => {
-        try {
-          const res = await api.get('/api/v1/user');
-          const userData = res.data?.data || res.data;
-          if (userData && userData.role) {
-            localStorage.setItem('user', JSON.stringify(userData));
-            console.log('Dashboard - Updated user from API:', userData);
-            window.location.reload(); // Reload to update isSuperAdmin
-          }
-        } catch (err) {
-          console.error('Dashboard - Failed to fetch user:', err);
-        }
-      };
-      fetchUser();
-    }
-  }, []);
 
   useEffect(() => {
     fetchDashboardData();

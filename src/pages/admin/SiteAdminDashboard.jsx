@@ -14,6 +14,7 @@ import {
   Sparkles,
   Plus
 } from 'lucide-react';
+import { useAuth } from '../../components/isLoggedIn';
 import { pagesApi } from '../../api/pagesApi';
 import { mediaApi } from '../../api/media';
 import { sitesApi } from '../../api/sites';
@@ -32,9 +33,7 @@ const SiteAdminDashboard = () => {
   const [error, setError] = useState(null);
   const [siteName, setSiteName] = useState('');
 
-  // Get current user from localStorage
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  const { user } = useAuth();
   const siteId = user?.site_id;
 
   useEffect(() => {

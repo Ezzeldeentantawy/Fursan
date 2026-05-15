@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../components/isLoggedIn';
 import { sitesApi } from '../../api/sites';
 
 const SiteGlobalCss = () => {
@@ -8,9 +9,7 @@ const SiteGlobalCss = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
 
-  // Get current user's site_id
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  const { user } = useAuth();
   const siteId = user?.site_id;
 
   useEffect(() => {

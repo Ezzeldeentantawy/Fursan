@@ -52,8 +52,9 @@ const LoginForm = ({ lang = 'en', ...props }) => {
     setError('');
     
     try {
-      const userData = await authApi.login(email, password);
-      // Handle successful login
+      const response = await authApi.login(email, password);
+      // Token is already stored by authApi.login()
+      // Reload page so AuthContext picks up the new token
       window.location.reload();
     } catch (err) {
       setError(lang === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed');

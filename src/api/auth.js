@@ -59,6 +59,13 @@ export const authApi = {
        // Note: auth routes are in web.php, not api.php
        const res = await api.post('/auth/login', { email, password });
        console.log('[Auth] Login response:', res.status);
+       
+       // Store the auth token from the response
+       if (res.data.token) {
+         localStorage.setItem('auth_token', res.data.token);
+         console.log('[Auth] Token stored in localStorage');
+       }
+       
        return res.data; // Return full response (includes user.data and redirect)
     } catch (err) {
       console.error('[Auth] Login error:', err.message);
@@ -93,6 +100,13 @@ export const authApi = {
         password_confirmation: passwordConfirmation
       });
       console.log('[Auth] Registration response:', res.status);
+      
+      // Store the auth token from the response
+      if (res.data.token) {
+        localStorage.setItem('auth_token', res.data.token);
+        console.log('[Auth] Token stored in localStorage');
+      }
+      
       return res.data.data || res.data;
     } catch (err) {
       console.error('[Auth] Registration error:', err.message);

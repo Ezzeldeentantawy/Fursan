@@ -44,10 +44,13 @@ const Login = () => {
             
             console.log('[Login] Extracted user data:', userData);
             
+            // Extract token from response
+            const authToken = response?.token || null;
+            
             if (userData && userData.role) {
                 // Use the auth context's login function to store user data
                 // This ensures AuthContext and localStorage are both updated
-                authLogin(userData);
+                authLogin(userData, authToken);
                 
                 console.log('[Login] Called authLogin with:', userData);
                 

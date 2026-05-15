@@ -23,7 +23,7 @@ interface AuthContextType {
     user: User | null;
     loading: boolean;
     error: string | null;
-    login: (userData: User) => void;
+    login: (userData: User, token?: string) => void;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
     updateProfile: (userData: Partial<User>) => void;
@@ -40,40 +40,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkAuth = useCallback(async () => {
         setLoading(true);
         try {
-            // First check localStorage for user data (set during login)
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                try {
-                    const userData = JSON.parse(storedUser);
-                    // Validate user data has required fields
-                    if (userData && userData.role) {
-                        console.log('[AuthContext] Loaded user from localStorage:', userData);
-                        setUser(userData);
-                        setLoading(false);
-                        return;
-                    } else {
-                        console.warn('[AuthContext] Invalid user data in localStorage, removing...');
-                        localStorage.removeItem('user');
-                    }
-                } catch (parseErr) {
-                    console.error('[AuthContext] Failed to parse user data:', parseErr);
-                    localStorage.removeItem('user');
-                }
+            // First check for an auth token in localStorage
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                // No token means not authenticated
+                console.log('[AuthContext] No auth token found, not authenticated');
+                setUser(null);
+                localStorage.removeItem('user');
+                setError(null);
+                setLoading(false);
+                return;
             }
             
-            // Otherwise check with API
-            console.log('[AuthContext] No valid user in localStorage, checking API...');
+            // Token exists, verify it with the API
+            console.log('[AuthContext] Auth token found, verifying with API...');
             const user = await authApi.checkAuth();
+            
             if (user && user.role) {
+                console.log('[AuthContext] Token verified, user authenticated:', user);
                 setUser(user);
                 localStorage.setItem('user', JSON.stringify(user));
+                setError(null);
             } else {
+                // API returned but no valid user data
+                console.warn('[AuthContext] API returned invalid user data');
                 setUser(null);
+                localStorage.removeItem('user');
+                localStorage.removeItem('auth_token');
             }
-            setError(null);
         } catch (err: any) {
+            console.error('[AuthContext] Auth check failed:', err);
             setUser(null);
-            // Only set error if it's not a simple 401 (unauthorized)
+            localStorage.removeItem('user');
+            localStorage.removeItem('auth_token');
+            
             if (err.response?.status !== 401) {
                 setError("Failed to fetch user session");
             }
@@ -82,9 +83,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    const login = (userData: User) => {
+    const login = (userData: User, token?: string) => {
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
+        if (token) {
+            localStorage.setItem('auth_token', token);
+        }
     };
 
     const updateProfile = (userData: Partial<User>) => {
@@ -100,8 +104,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             await authApi.logout();
             setUser(null);
             localStorage.removeItem('user');
+            localStorage.removeItem('auth_token');
         } catch (err) {
             console.error("Logout failed", err);
+            setUser(null);
+            localStorage.removeItem('user');
+            localStorage.removeItem('auth_token');
         }
     };
 
