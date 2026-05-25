@@ -361,11 +361,18 @@ export const ElementSettings: React.FC = () => {
    * Update a property value respecting responsive/global classification
    */
   const setPropValue = (controlId: string, value: any) => {
+    console.log(`[ElementSettings] setPropValue called: controlId="${controlId}", value=`, value);
+    console.log(`[ElementSettings] selectedId=`, selectedId);
+    console.log(`[ElementSettings] selectedNode exists:`, !!selectedNode);
+    console.log(`[ElementSettings] selectedNode.props:`, selectedNode?.props);
+    console.log(`[ElementSettings] activeBp:`, activeBp);
+    
     // Special handling for spacer height per-breakpoint controls
     if (controlId.startsWith('spacerHeight_')) {
       const bp = controlId.replace('spacerHeight_', '') as Breakpoint;
       const responsive = { ...selectedNode.props.responsive };
       responsive[bp] = { ...responsive[bp], spacerHeight: value || null };
+      console.log(`[ElementSettings] spacerHeight - responsive:`, responsive);
       updateProps(selectedId, { responsive });
       return;
     }
@@ -376,6 +383,8 @@ export const ElementSettings: React.FC = () => {
       const bpProps = { ...responsive[activeBp] };
       bpProps[controlId] = value || null; // null = reset to inherit
       responsive[activeBp] = bpProps;
+      console.log(`[ElementSettings] responsive prop set - responsive:`, responsive);
+      console.log(`[ElementSettings] about to call updateProps with selectedId=`, selectedId);
       updateProps(selectedId, { responsive });
     } else {
       // Global prop: write to top-level props
@@ -398,6 +407,7 @@ export const ElementSettings: React.FC = () => {
         }
         if (changed) extra.responsive = responsive;
       }
+      console.log(`[ElementSettings] global prop set - value:`, { [controlId]: value, ...extra });
       updateProps(selectedId, { [controlId]: value, ...extra });
     }
   };

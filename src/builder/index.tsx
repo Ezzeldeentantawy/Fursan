@@ -707,15 +707,31 @@ export const Builder: React.FC = () => {
       };
       
       console.log('[Builder] Saving contentData:', contentData);
+      console.log('[Builder] First element props:', contentData.elements[0]?.props);
+      console.log('[Builder] First element responsive:', contentData.elements[0]?.props?.responsive);
+      
+      // Check if elements actually have props with responsive data
+      const elementCount = contentData.elements.length;
+      let responsiveCount = 0;
+      contentData.elements.forEach((el: any, i: number) => {
+        if (el.props?.responsive) {
+          responsiveCount++;
+          if (i < 3) console.log(`[Builder] Element ${i} (${el.type}): responsive.md.textAlign =`, el.props.responsive?.md?.textAlign);
+        }
+      });
+      console.log(`[Builder] ${responsiveCount}/${elementCount} elements have responsive props`);
       
       if (isTemplateMode) {
         // Save as template content
         await templatesApi.updateContent(id, contentData);
         alert('Template saved successfully!');
       } else {
-        // Pass lang parameter so Laravel knows which field to update
-        console.log('[Builder] PUT request lang:', currentLang);
-        await pagesApi.update(id, contentData, currentLang);
+        // Wrap content in the appropriate language key so Laravel's UpdatePageRequest
+        // and PageController store it in the correct column (content vs content_ar)
+        const contentKey = currentLang === 'ar' ? 'content_ar' : 'content';
+        const payload = { [contentKey]: contentData };
+        console.log('[Builder] PUT request lang:', currentLang, 'payload key:', contentKey);
+        await pagesApi.update(id, payload, currentLang);
         alert('Page saved successfully!');
       }
       
