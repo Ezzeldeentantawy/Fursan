@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Star, Settings } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Settings, ExternalLink } from 'lucide-react';
 import { sitesApi } from '../../../api/sites';
 import SiteSettingsModal from '../../../components/admin/sites/SiteSettingsModal';
 
@@ -110,6 +110,15 @@ const SitesList = () => {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex justify-end gap-2">
+                    <a
+                      href={`${window.location.origin}${import.meta.env.BASE_URL}${site.is_default ? '' : site.domain}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
+                      title="View Site"
+                    >
+                      <ExternalLink size={14} />
+                    </a>
                     <button
                       onClick={() => openSettingsModal(site)}
                       className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
