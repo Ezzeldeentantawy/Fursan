@@ -536,20 +536,22 @@ export const elementDefinitions: Record<string, any> = {
        filterHueRotate: null,
        backdropBlur: null,
        backdropSaturate: null,
-       responsive: {
-         md: {
-           width: null, minWidth: null, maxWidth: null, height: null, minHeight: null, maxHeight: null,
-           pt: null, pr: null, pb: null, pl: null, mt: null, mr: null, mb: null, ml: null,
-           display: 'flex',
-           flexDirection: 'row',
-           flexWrap: 'wrap',
-           justifyContent: 'flex-start',
-           alignItems: 'stretch',
-           alignContent: 'flex-start',
-         },
-         sm: {},
-         base: {},
-       },
+        responsive: {
+          md: {
+            width: null, minWidth: null, maxWidth: null, height: null, minHeight: null, maxHeight: null,
+            pt: null, pr: null, pb: null, pl: null, mt: null, mr: null, mb: null, ml: null,
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-start',
+            alignItems: 'stretch',
+            alignContent: 'flex-start',
+            gridCols: null,
+            gridRows: null,
+          },
+          sm: {},
+          base: {},
+        },
      },
      controls: [
        // Content tab
@@ -566,8 +568,32 @@ export const elementDefinitions: Record<string, any> = {
       { id: 'alignItems', label: 'Align Items', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'stretch', options: [{ label: 'Stretch', value: 'stretch' }, { label: 'Flex Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'Flex End', value: 'flex-end' }, { label: 'Baseline', value: 'baseline' }] },
       { id: 'alignContent', label: 'Align Content', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'flex-start', options: [{ label: 'Flex Start', value: 'flex-start' }, { label: 'Center', value: 'center' }, { label: 'Flex End', value: 'flex-end' }, { label: 'Space Between', value: 'space-between' }, { label: 'Space Around', value: 'space-around' }, { label: 'Stretch', value: 'stretch' }] },
       { id: 'gap', label: 'Gap', tab: 'alignment', group: 'Layout', type: 'text', responsive: true, default: '0px', placeholder: 'e.g. 20px or 20px 30px' },
-      { id: 'display', label: 'Display', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'flex', options: [{ label: 'Flex', value: 'flex' }, { label: 'Block', value: 'block' }, { label: 'Grid', value: 'grid' }, { label: 'None', value: 'none' }] },
-      // Design tab - Sizing
+       { id: 'display', label: 'Display', tab: 'alignment', group: 'Layout', type: 'select', responsive: true, default: 'flex', options: [{ label: 'Flex', value: 'flex' }, { label: 'Block', value: 'block' }, { label: 'Grid', value: 'grid' }, { label: 'None', value: 'none' }] },
+       { id: 'gridCols', label: 'Grid Columns', tab: 'alignment', group: 'Grid', type: 'select', responsive: true, default: null, options: [
+         { label: 'Auto', value: null },
+         { label: '1', value: '1' },
+         { label: '2', value: '2' },
+         { label: '3', value: '3' },
+         { label: '4', value: '4' },
+         { label: '5', value: '5' },
+         { label: '6', value: '6' },
+         { label: '7', value: '7' },
+         { label: '8', value: '8' },
+         { label: '9', value: '9' },
+         { label: '10', value: '10' },
+         { label: '11', value: '11' },
+         { label: '12', value: '12' },
+       ]},
+       { id: 'gridRows', label: 'Grid Rows', tab: 'alignment', group: 'Grid', type: 'select', responsive: true, default: null, options: [
+         { label: 'Auto', value: null },
+         { label: '1', value: '1' },
+         { label: '2', value: '2' },
+         { label: '3', value: '3' },
+         { label: '4', value: '4' },
+         { label: '5', value: '5' },
+         { label: '6', value: '6' },
+       ]},
+       // Design tab - Sizing
       { id: 'width', label: 'Width', tab: 'design', group: 'Sizing', type: 'text', unit: 'px', responsive: true, default: null },
       { id: 'minWidth', label: 'Min Width', tab: 'design', group: 'Sizing', type: 'text', unit: 'px', responsive: true, default: null },
       { id: 'maxWidth', label: 'Max Width', tab: 'design', group: 'Sizing', type: 'text', unit: 'px', responsive: true, default: null },
@@ -1204,6 +1230,17 @@ export function generateResponsiveStyles(blockId: string, responsive: Record<str
         rule = `display: ${displayVal} !important; `;
       }
       
+      // Special handling for grid properties
+      if (key === 'gridCols') {
+        rule = `grid-template-columns: repeat(${val}, minmax(0, 1fr)) !important; `;
+      }
+      if (key === 'gridRows') {
+        rule = `grid-template-rows: repeat(${val}, minmax(0, 1fr)) !important; `;
+      }
+      if (key === 'colSpan') {
+        rule = `grid-column: span ${val} / span ${val} !important; `;
+      }
+      
       if (rule) {
         allRules += rule; // ✅ Accumulate ALL rules
       }
@@ -1265,6 +1302,10 @@ export const cssPropertyMap: Record<string, string> = {
   rowGap: 'rowGap',
   columnGap: 'columnGap',
   columns: 'columns',
+  // Grid
+  gridCols: 'gridTemplateColumns',
+  gridRows: 'gridTemplateRows',
+  colSpan: 'gridColumn',
   // Sizing
   width: 'width',
   height: 'height',
@@ -1394,6 +1435,13 @@ ELEMENTS.forEach(el => {
   if (el.defaults.responsive.md.display === undefined) {
     el.defaults.responsive.md.display = 'block';
   }
+  // Set default gridCols/gridRows to null if not already set
+  if (el.defaults.responsive.md.gridCols === undefined) {
+    el.defaults.responsive.md.gridCols = null;
+  }
+  if (el.defaults.responsive.md.gridRows === undefined) {
+    el.defaults.responsive.md.gridRows = null;
+  }
   // Add display control if not already defined
   if (el.controls && !el.controls.find((c: any) => c.id === 'display')) {
     el.controls.push({
@@ -1411,6 +1459,54 @@ ELEMENTS.forEach(el => {
         { label: 'Inline Block', value: 'inline-block' },
         { label: 'Grid', value: 'grid' },
         { label: 'None', value: 'none' },
+      ],
+    });
+  }
+  // Add gridCols/gridRows controls alongside display (if display is being auto-injected)
+  // These are added so any element set to display:grid has columns/rows controls.
+  if (el.controls && !el.controls.find((c: any) => c.id === 'gridCols')) {
+    el.controls.push({
+      id: 'gridCols',
+      label: 'Grid Columns',
+      tab: 'design',
+      group: 'Grid',
+      type: 'select',
+      responsive: true,
+      default: null,
+      options: [
+        { label: 'Auto', value: null },
+        { label: '1', value: '1' },
+        { label: '2', value: '2' },
+        { label: '3', value: '3' },
+        { label: '4', value: '4' },
+        { label: '5', value: '5' },
+        { label: '6', value: '6' },
+        { label: '7', value: '7' },
+        { label: '8', value: '8' },
+        { label: '9', value: '9' },
+        { label: '10', value: '10' },
+        { label: '11', value: '11' },
+        { label: '12', value: '12' },
+      ],
+    });
+  }
+  if (el.controls && !el.controls.find((c: any) => c.id === 'gridRows')) {
+    el.controls.push({
+      id: 'gridRows',
+      label: 'Grid Rows',
+      tab: 'design',
+      group: 'Grid',
+      type: 'select',
+      responsive: true,
+      default: null,
+      options: [
+        { label: 'Auto', value: null },
+        { label: '1', value: '1' },
+        { label: '2', value: '2' },
+        { label: '3', value: '3' },
+        { label: '4', value: '4' },
+        { label: '5', value: '5' },
+        { label: '6', value: '6' },
       ],
     });
   }

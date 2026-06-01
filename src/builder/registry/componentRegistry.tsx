@@ -63,6 +63,10 @@ export const propMap: Record<string, { react: string; css: string }> = {
   'spacerHeight': { react: 'height', css: 'height' },
   'dividerWidth': { react: 'width', css: 'width' },
   'dividerThickness': { react: 'borderTopWidth', css: 'border-top-width' },
+  // Grid layout
+  'gridCols': { react: 'gridTemplateColumns', css: 'grid-template-columns' },
+  'gridRows': { react: 'gridTemplateRows', css: 'grid-template-rows' },
+  'colSpan': { react: 'gridColumn', css: 'grid-column' },
   // Text columns
   'columns': { react: 'columns', css: 'columns' },
   // Per-item alignment overrides

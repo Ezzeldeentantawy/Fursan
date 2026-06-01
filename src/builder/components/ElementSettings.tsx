@@ -62,6 +62,8 @@ const RESPONSIVE_PROPS = new Set([
   'spacerHeight',
   'dividerWidth', 'dividerThickness',
   'justifySelf', 'alignSelf',
+  // Grid layout
+  'gridCols', 'gridRows', 'colSpan',
   // Flex layout alignment (short-form)
   'flexDir', 'justify', 'items',
   // Flex layout alignment (full-form — matches control IDs)
@@ -83,6 +85,7 @@ const TAB_SECTIONS: Record<TabKey, Array<{ name: string; groups: string[] }>> = 
   alignment: [
     { name: 'Text Alignment', groups: ['Text Alignment'] },
     { name: 'Layout', groups: ['Layout'] },
+    { name: 'Grid', groups: ['Grid'] },
     { name: 'Self Alignment', groups: ['Self Alignment'] },
   ],
   design: [
@@ -92,6 +95,7 @@ const TAB_SECTIONS: Record<TabKey, Array<{ name: string; groups: string[] }>> = 
     { name: 'Background', groups: ['Background'] },
     { name: 'Border', groups: ['Border'] },
     { name: 'Shadow', groups: ['Shadow'] },
+    { name: 'Grid', groups: ['Grid'] },
     { name: 'Filters', groups: ['Filters'] },
     { name: 'Hover Effects', groups: ['Hover Effects'] },
     { name: 'Effects', groups: ['Effects'] },
@@ -1542,9 +1546,14 @@ export const ElementSettings: React.FC = () => {
 
   const getControlsForTab = (tab: TabKey) => {
     const currentTag = getPropValue('tag');
+    const currentDisplay = getPropValue('display');
     return controls.filter((control) => {
       // Hide linkUrl and linkTarget when tag is NOT 'a'
       if ((control.id === 'linkUrl' || control.id === 'linkTarget') && currentTag !== 'a') {
+        return false;
+      }
+      // Hide gridCols and gridRows when display is NOT 'grid'
+      if ((control.id === 'gridCols' || control.id === 'gridRows') && currentDisplay !== 'grid') {
         return false;
       }
       return control.tab === tab;
@@ -1569,9 +1578,12 @@ export const ElementSettings: React.FC = () => {
   const renderSection = (sectionName: string, sectionGroups: string[]) => {
     const isExpanded = expandedSections.has(sectionName);
     const currentTag = getPropValue('tag');
+    const currentDisplay = getPropValue('display');
     const sectionControls = controls.filter(c => {
       // Hide linkUrl and linkTarget when tag is NOT 'a'
       if ((c.id === 'linkUrl' || c.id === 'linkTarget') && currentTag !== 'a') return false;
+      // Hide gridCols and gridRows when display is NOT 'grid'
+      if ((c.id === 'gridCols' || c.id === 'gridRows') && currentDisplay !== 'grid') return false;
       return sectionGroups.includes(c.group || 'General');
     });
     const controlCount = sectionControls.length;
